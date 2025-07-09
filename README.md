@@ -19,10 +19,50 @@ Complete enterprise-grade platform for managing sports content across multiple T
 
 ## Getting Started
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables (see .env.example)
-4. Run development server: `npm run dev`
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+- OpenAI API key
+- Telegram Bot Token
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Idosegev23/telegrambotsport.git
+   cd telegrambotsport
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your actual API keys
+   ```
+
+4. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+### Default Login
+- **Email**: `triroars@gmail.com`
+- **Password**: `admin123456`
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
 
 ## Production Ready
 This system is production-ready with comprehensive APIs, automation, and business intelligence features.
