@@ -88,7 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timeout')), 10000);
+        setTimeout(() => reject(new Error('Database query timeout')), 5000);
       });
       
       const queryPromise = supabase
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const timeout = setTimeout(() => {
       console.warn('⚠️ AuthContext: Session check timeout, forcing loading to false');
       setLoading(false);
-    }, 5000);
+    }, 3000);
 
     getInitialSession().finally(() => {
       clearTimeout(timeout);

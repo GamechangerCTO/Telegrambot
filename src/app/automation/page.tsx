@@ -358,10 +358,18 @@ export default function AutomationPage() {
   };
 
   const triggerInstantContent = async (contentType: string) => {
+    console.log(`🚀 triggerInstantContent called with: ${contentType}`);
+    
+    // Add visual feedback immediately
+    showNotification(`🚀 Generating ${contentType} content...`, 'success');
+    
     try {
       // Build URL with correct parameters - unified-content expects type in URL params  
       // Don't send target_channels to let API auto-detect active channels and their languages
-      const response = await fetch(`/api/unified-content?action=send_now&type=${contentType}`, {
+      const url = `/api/unified-content?action=send_now&type=${contentType}`;
+      console.log(`📡 Making request to: ${url}`);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -370,15 +378,28 @@ export default function AutomationPage() {
         })
       });
       
+      console.log(`📥 Response status: ${response.status}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
+      console.log(`📋 Response data:`, data);
+      
       if (data.success) {
-        showNotification(`✅ ${contentType} content sent successfully!`);
+        showNotification(`✅ ${contentType} content sent successfully! Channels: ${data.channelsReached || 0}`, 'success');
+        addAutomationLog(`✅ Content sent: ${contentType} to ${data.channelsReached || 0} channels`);
       } else {
-        showNotification(`❌ Error sending ${contentType} content: ${data.error || data.message}`, 'error');
+        const errorMsg = data.error || data.message || 'Unknown error';
+        showNotification(`❌ Error sending ${contentType} content: ${errorMsg}`, 'error');
+        addAutomationLog(`❌ Error sending ${contentType}: ${errorMsg}`);
       }
     } catch (error) {
-      console.error('Error sending content:', error);
-      showNotification(`❌ Network error sending ${contentType} content`, 'error');
+      console.error('❌ Error sending content:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Network error';
+      showNotification(`❌ Network error sending ${contentType} content: ${errorMsg}`, 'error');
+      addAutomationLog(`❌ Network error sending ${contentType}: ${errorMsg}`);
     }
   };
 
@@ -460,10 +481,20 @@ export default function AutomationPage() {
 
       {/* Notification */}
       {notification && (
-        <div className={`mb-6 p-4 rounded-lg ${
-          notification.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+        <div className={`mb-6 p-4 rounded-lg relative ${
+          notification.includes('Error') || notification.includes('❌') 
+            ? 'bg-red-100 text-red-700 border border-red-200' 
+            : 'bg-green-100 text-green-700 border border-green-200'
         }`}>
-            {notification}
+          <div className="flex justify-between items-center">
+            <span>{notification}</span>
+            <button 
+              onClick={() => setNotification(null)}
+              className="ml-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
       
@@ -535,8 +566,12 @@ export default function AutomationPage() {
               <Button
                 key={key}
                 variant="outline"
-                className="h-20 flex flex-col items-center justify-center"
-                onClick={() => triggerInstantContent(key)}
+                className="h-20 flex flex-col items-center justify-center hover:bg-blue-50 transition-colors"
+                onClick={() => {
+                  console.log(`🖱️ Button clicked for content type: ${key}`);
+                  alert(`Button clicked: ${config.name} (${key})`);
+                  triggerInstantContent(key);
+                }}
               >
                 <span className="text-2xl mb-1">{config.emoji}</span>
                 <span className="text-xs text-center">{config.name}</span>
