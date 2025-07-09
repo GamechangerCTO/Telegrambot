@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "telegram-bot-supabase": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:sbp_d918cfa5b6da11a4cf108c8dd4b497aeb441c585@db.ythsmnqclosoxiccchhh.supabase.co:5432/postgres"
+      ]
+    }
+  }
+} 

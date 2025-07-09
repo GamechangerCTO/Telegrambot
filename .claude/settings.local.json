@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run dev:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}
