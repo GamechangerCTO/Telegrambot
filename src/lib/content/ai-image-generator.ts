@@ -530,7 +530,7 @@ The prompt should create an image that perfectly complements this content for so
   }
   
   /**
-   * Generate an image for betting tips content
+   * Generate an atmospheric image for betting tips content - NO STATISTICS
    */
   async generateBettingImage(
     teams: string[],
@@ -538,13 +538,14 @@ The prompt should create an image that perfectly complements this content for so
   ): Promise<GeneratedImage | null> {
     const teamList = teams.join(' vs ');
     
-    // Always use English prompt for better GPT-Image-1 results
-    const prompt = `Real football betting analysis photo: ${teamList}, authentic stadium atmosphere, professional sports analysis, real crowd and betting excitement`;
+    // תמונת אווירה של המשחק ללא נתונים או סטטיסטיקות
+    const prompt = `Stadium atmosphere photo for ${teamList} football match: passionate fans in team colors, stadium crowd energy, team flags and banners, football culture celebration, dramatic stadium lighting, intense rivalry atmosphere, pure football passion, authentic football fan experience, NO numbers, NO statistics, NO data overlays, just pure football emotion and team spirit`;
     
     return this.generateImage({
       prompt: prompt,
-      quality: 'medium',
-      language
+      quality: 'high',
+      language,
+      size: '1024x1024'
     });
   }
   

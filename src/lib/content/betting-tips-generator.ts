@@ -133,9 +133,17 @@ export class BettingTipsGenerator {
       // Step 7: Mark content as used for uniqueness
       await this.markContentAsUsed(analysis, request.channelId);
 
+      const finalContent = aiEditedContent || content;
+      
+      console.log(`🎯 FINAL RESULT for ${request.language}:`);
+      console.log(`   Title: ${analysis.homeTeam} vs ${analysis.awayTeam}`);
+      console.log(`   Final content length: ${finalContent.length} characters`);
+      console.log(`   Using AI edited: ${!!aiEditedContent}`);
+      console.log(`   Content preview: "${finalContent.substring(0, 200)}..."`);
+
       return {
-        title: `🎯 ${analysis.homeTeam} vs ${analysis.awayTeam} - Betting Analysis`,
-        content,
+        title: `🎯 ${analysis.homeTeam} vs ${analysis.awayTeam} - Betting Tips`,
+        content: finalContent, // ⭐ השתמש בתוכן המשופר של AI
         imageUrl,
         analysis,
         aiEditedContent,
@@ -200,9 +208,11 @@ export class BettingTipsGenerator {
     
     // Generate predictions
     const predictions = this.generatePredictions(teamStats, headToHead, match);
+    console.log(`🔮 Generated ${predictions.length} predictions for ${match.homeTeam.name} vs ${match.awayTeam.name}`);
     
     // Calculate overall assessment
     const matchAssessment = this.calculateMatchAssessment(predictions, teamStats);
+    console.log(`📊 Match assessment: ${matchAssessment.overallConfidence}% confidence, ${matchAssessment.predictability} predictability`);
 
     return {
       homeTeam: match.homeTeam.name,
@@ -552,17 +562,12 @@ export class BettingTipsGenerator {
    * 🖼️ Generate betting analysis image
    */
   private async generateBettingImage(analysis: BettingAnalysis): Promise<string | undefined> {
-    const prompt = `Professional football betting analysis illustration: ${analysis.homeTeam} vs ${analysis.awayTeam} in ${analysis.competition}.
-    Modern sports betting design with statistics display, confidence meters, prediction graphics, 
-    odds analysis charts, professional betting aesthetic, clean infographic style, 
-    team colors integration, statistical data visualization, high quality digital art.`;
-
     try {
-      const generatedImage = await aiImageGenerator.generateImage({
-        prompt: prompt,
-        size: '1024x1024',
-        quality: 'high'
-      });
+      // Use the specialized betting image generator that creates atmospheric images
+      const generatedImage = await aiImageGenerator.generateBettingImage(
+        [analysis.homeTeam, analysis.awayTeam],
+        'en' // Language doesn't affect image generation in this case
+      );
       
       if (!generatedImage) return undefined;
 
@@ -583,101 +588,100 @@ export class BettingTipsGenerator {
   }> {
     // Generate base content
     const content = this.generateBaseContent(analysis, language);
+    console.log(`📝 Base content generated (${language}): "${content.substring(0, 150)}..."`);
+    console.log(`📏 Base content length: ${content.length} characters`);
     
     // AI edit for quality and engagement
     const aiEditedContent = await this.aiEditBettingContent(content, analysis, language);
+    console.log(`🤖 AI edited content (${language}): "${aiEditedContent.substring(0, 150)}..."`);
+    console.log(`📏 AI edited content length: ${aiEditedContent.length} characters`);
     
     return { content, aiEditedContent };
   }
 
   /**
-   * 📄 Generate base betting content
+   * 📄 Generate base betting content - REAL BETTING TIPS
    */
   private generateBaseContent(analysis: BettingAnalysis, language: 'en' | 'am' | 'sw'): string {
     const { homeTeam, awayTeam, competition, predictions, matchAssessment, teamStats } = analysis;
     
+    console.log(`🎯 GenerateBaseContent Debug: ${language}, Predictions count: ${predictions?.length || 0}`);
+    console.log(`🔍 Predictions data:`, predictions?.slice(0, 3));
+    
     if (language === 'en') {
-      let content = `🎯 BETTING ANALYSIS: ${homeTeam} vs ${awayTeam}\n\n`;
-      content += `🏆 Competition: ${competition}\n`;
-      content += `📊 Overall Confidence: ${matchAssessment.overallConfidence}%\n`;
-      content += `🎲 Predictability: ${matchAssessment.predictability}\n\n`;
+      let content = `🎯 BETTING TIPS: ${homeTeam} vs ${awayTeam}\n\n`;
       
-      content += `📈 TEAM FORM:\n`;
-      content += `🏠 ${homeTeam}: ${teamStats.home.form} (${teamStats.home.winRate}% win rate)\n`;
-      content += `✈️ ${awayTeam}: ${teamStats.away.form} (${teamStats.away.winRate}% win rate)\n\n`;
-      
-      content += `💡 PREDICTIONS:\n`;
-      predictions.forEach((pred, index) => {
-        content += `${index + 1}. ${pred.prediction}\n`;
-        content += `   📊 Confidence: ${pred.confidence}%\n`;
-        content += `   💰 Est. Odds: ${pred.odds_estimate}\n`;
-        content += `   ⚠️ Risk: ${pred.risk_level}\n`;
-        content += `   📝 Reasoning: ${pred.reasoning}\n\n`;
+      // מציג את הטיפים האמיתיים
+      content += `💰 TOP BETTING TIPS:\n\n`;
+      predictions.slice(0, 3).forEach((pred, index) => {
+        const tipEmoji = index === 0 ? '🏆' : index === 1 ? '⭐' : '💎';
+        content += `${tipEmoji} TIP ${index + 1}: ${pred.prediction}\n`;
+        content += `💰 Odds: ${pred.odds_estimate} | Confidence: ${pred.confidence}%\n`;
+        content += `📝 ${pred.reasoning}\n\n`;
       });
       
-      if (matchAssessment.riskWarning) {
-        content += `⚠️ RISK WARNING: ${matchAssessment.riskWarning}\n\n`;
-      }
+      // הוספת קונטקסט המשחק
+      content += `🏟️ Match Context:\n`;
+      content += `${homeTeam} (Home): ${teamStats.home.form} form, ${teamStats.home.winRate}% win rate\n`;
+      content += `${awayTeam} (Away): ${teamStats.away.form} form, ${teamStats.away.winRate}% win rate\n\n`;
+      
+      // אזהרת אחריות
+      content += `⚠️ Bet responsibly. Only stake what you can afford to lose.\n`;
+      content += `🔞 18+ only. Gambling can be addictive.`;
       
       return content;
     }
     
     if (language === 'am') {
-      let content = `🎯 የውርርድ ትንታኔ: ${homeTeam} በተቃ ${awayTeam}\n\n`;
-      content += `🏆 ውድድር: ${competition}\n`;
-      content += `📊 አጠቃላይ እምነት: ${matchAssessment.overallConfidence}%\n`;
-      content += `🎲 ትንበያ: ${matchAssessment.predictability}\n\n`;
+      let content = `🎯 የውርርድ ምክሮች: ${homeTeam} በተቃ ${awayTeam}\n\n`;
       
-      content += `📈 የቡድን ሁኔታ:\n`;
-      content += `🏠 ${homeTeam}: ${teamStats.home.form} (${teamStats.home.winRate}% ያሸነፈ)\n`;
-      content += `✈️ ${awayTeam}: ${teamStats.away.form} (${teamStats.away.winRate}% ያሸነፈ)\n\n`;
-      
-      content += `💡 ትንበያዎች:\n`;
-      predictions.forEach((pred, index) => {
-        // Translate basic prediction types to Amharic
+      // ዋና ውርርድ ምክሮች
+      content += `💰 ተመራጭ ውርርድ ምክሮች:\n\n`;
+      predictions.slice(0, 3).forEach((pred, index) => {
+        const tipEmoji = index === 0 ? '🏆' : index === 1 ? '⭐' : '💎';
         const translatedPrediction = this.translatePrediction(pred.prediction, 'am');
         const translatedReasoning = this.translateReasoning(pred.reasoning, 'am');
         
-        content += `${index + 1}. ${translatedPrediction}\n`;
-        content += `   📊 እምነት: ${pred.confidence}%\n`;
-        content += `   💰 ግምት: ${pred.odds_estimate}\n`;
-        content += `   ⚠️ ስጋት: ${pred.risk_level}\n`;
-        content += `   📝 ምክንያት: ${translatedReasoning}\n\n`;
+        content += `${tipEmoji} ምክር ${index + 1}: ${translatedPrediction}\n`;
+        content += `💰 ዕድል: ${pred.odds_estimate} | እምነት: ${pred.confidence}%\n`;
+        content += `📝 ${translatedReasoning}\n\n`;
       });
       
-      if (matchAssessment.riskWarning) {
-        content += `⚠️ የስጋት ማስጠንቀቂያ: ${matchAssessment.riskWarning}\n\n`;
-      }
+      // የመጨዋወጫ ስፍራ መረጃ
+      content += `🏟️ የመጫወቻ መረጃ:\n`;
+      content += `${homeTeam} (ቤት): ${teamStats.home.form} ሁኔታ, ${teamStats.home.winRate}% ድል\n`;
+      content += `${awayTeam} (እንግዳ): ${teamStats.away.form} ሁኔታ, ${teamStats.away.winRate}% ድል\n\n`;
+      
+      // ኃላፊነት ማስታወሻ
+      content += `⚠️ በመልከም ሁኔታ ውርርድ ያድርጉ። መጥፋት የሚችሉትን ብቻ ይወርርዱ።\n`;
+      content += `🔞 ከ18 አመት በላይ ብቻ። ውርርድ አሳዛኝ ሊሆን ይችላል።`;
       
       return content;
     }
     
     if (language === 'sw') {
-      let content = `🎯 UCHAMBUZI WA KAMARI: ${homeTeam} dhidi ya ${awayTeam}\n\n`;
-      content += `🏆 Ushindani: ${competition}\n`;
-      content += `📊 Uongozi Jumla: ${matchAssessment.overallConfidence}%\n`;
-      content += `🎲 Ubashiri: ${matchAssessment.predictability}\n\n`;
+      let content = `🎯 MAPENDEKEZO YA KAMARI: ${homeTeam} dhidi ya ${awayTeam}\n\n`;
       
-      content += `📈 HALI YA TIMU:\n`;
-      content += `🏠 ${homeTeam}: ${teamStats.home.form} (${teamStats.home.winRate}% kushinda)\n`;
-      content += `✈️ ${awayTeam}: ${teamStats.away.form} (${teamStats.away.winRate}% kushinda)\n\n`;
-      
-      content += `💡 UBASHIRI:\n`;
-      predictions.forEach((pred, index) => {
-        // Translate basic prediction types to Swahili
+      // Mapendekezo ya kamari
+      content += `💰 MAPENDEKEZO BORA YA KAMARI:\n\n`;
+      predictions.slice(0, 3).forEach((pred, index) => {
+        const tipEmoji = index === 0 ? '🏆' : index === 1 ? '⭐' : '💎';
         const translatedPrediction = this.translatePrediction(pred.prediction, 'sw');
         const translatedReasoning = this.translateReasoning(pred.reasoning, 'sw');
         
-        content += `${index + 1}. ${translatedPrediction}\n`;
-        content += `   📊 Uongozi: ${pred.confidence}%\n`;
-        content += `   💰 Nasibu: ${pred.odds_estimate}\n`;
-        content += `   ⚠️ Hatari: ${pred.risk_level}\n`;
-        content += `   📝 Sababu: ${translatedReasoning}\n\n`;
+        content += `${tipEmoji} PENDEKEZO ${index + 1}: ${translatedPrediction}\n`;
+        content += `💰 Uwezekano: ${pred.odds_estimate} | Ujasiri: ${pred.confidence}%\n`;
+        content += `📝 ${translatedReasoning}\n\n`;
       });
       
-      if (matchAssessment.riskWarning) {
-        content += `⚠️ ONYO LA HATARI: ${matchAssessment.riskWarning}\n\n`;
-      }
+      // Maelezo ya mechi
+      content += `🏟️ Muktadha wa Mechi:\n`;
+      content += `${homeTeam} (Nyumbani): Hali ${teamStats.home.form}, ${teamStats.home.winRate}% ushindi\n`;
+      content += `${awayTeam} (Mgeni): Hali ${teamStats.away.form}, ${teamStats.away.winRate}% ushindi\n\n`;
+      
+      // Onyo la uwajibikaji
+      content += `⚠️ Kamari kwa busara. Tia tu kile unachoweza kupoteza.\n`;
+      content += `🔞 Miaka 18+ tu. Kamari inaweza kusababisha ulezi.`;
       
       return content;
     }
@@ -700,9 +704,9 @@ export class BettingTipsGenerator {
       }
 
       const systemPrompts = {
-        'en': `You are a professional football betting analyst. Create engaging, informative betting analysis content of exactly 4-6 lines. Include relevant emojis and responsible gambling reminders.`,
-        'am': `You are a professional football betting analyst writing in AMHARIC language. You MUST write EVERYTHING in Amharic script - including all content and text. Never use English words. Create engaging betting analysis content of exactly 4-6 lines in Amharic only.`,
-        'sw': `You are a professional football betting analyst writing in SWAHILI language. You MUST write EVERYTHING in Swahili - including all content and text. Never use English words. Create engaging betting analysis content of exactly 4-6 lines in Swahili only.`
+        'en': `You are a professional football betting tipster. Create engaging, practical BETTING TIPS content of exactly 4-6 lines. Focus on ACTIONABLE TIPS and specific recommendations, not analysis. Include emojis and responsible gambling warnings.`,
+        'am': `You are a professional football betting tipster writing in AMHARIC language. You MUST write EVERYTHING in Amharic script. Create engaging BETTING TIPS (not analysis) of exactly 4-6 lines in Amharic only. Focus on specific tips and recommendations.`,
+        'sw': `You are a professional football betting tipster writing in SWAHILI language. You MUST write EVERYTHING in Swahili. Create engaging BETTING TIPS (not analysis) of exactly 4-6 lines in Swahili only. Focus on actionable tips and recommendations.`
       };
 
       // Build comprehensive analysis data for AI
@@ -743,9 +747,9 @@ export class BettingTipsGenerator {
       };
 
       const languageInstructions = {
-        'en': `Create engaging betting analysis content using this comprehensive data. Write exactly 4-6 lines. Include the confidence percentage, key team stats, and top predictions. Add relevant emojis and responsible gambling reminder:`,
-        'am': `ይህን ሰፊ መረጃ በመጠቀም አሳታፊ የውርርድ ትንታኔ ይዘት ፍጠር። በትክክል 4-6 መስመሮች ብቻ ጻፍ። የእምነት መቶኛ፣ ቁልፍ የቡድን ስታቲስቲክስ እና ቀዳሚ ትንበያዎች አካትት። ስሜት ገላጭ ምልክቶች እና የኃላፊነት ውርርድ ማስታወሻ ጨምር። ሁሉም ነገር በአማርኛ ብቻ መሆን አለበት፡`,
-        'sw': `Unda maudhui ya uchambuzi wa kamari ya kuvutia kwa kutumia data hii ya kina. Andika mistari 4-6 tu haswa. Jumuisha asilimia ya imani, takwimu muhimu za timu na utabiri wa juu. Ongeza alama za hisia na kikumbusho cha kamari ya uwajibikaji. Kila kitu kiwe kwa Kiswahili tu:`
+        'en': `Create engaging BETTING TIPS content using this data. Write exactly 4-6 lines. Focus on SPECIFIC ACTIONABLE TIPS like "Bet on Home Win", "Try Over 2.5 Goals", etc. Include odds and confidence. Add emojis and gambling warning:`,
+        'am': `ይህን መረጃ በመጠቀም አሳታፊ የውርርድ ምክሮች ይዘት ፍጠር። በትክክል 4-6 መስመሮች ብቻ ጻፍ። ልዩ ተግባራዊ ምክሮች ላይ አተኩር እንደ "የቤት ድል ውርርድ ያድርጉ"። የዕድል ምጣኔ እና እምነት ያካትቱ። ሁሉም ነገር በአማርኛ ብቻ መሆን አለበት፡`,
+        'sw': `Unda maudhui ya MAPENDEKEZO YA KAMARI kwa kutumia data hii. Andika mistari 4-6 tu haswa. Lenga MAPENDEKEZO MAHUSUSI ya vitendo kama "Weka kamari ya ushindi wa nyumbani". Jumuisha uwezekano na ujasiri. Kila kitu kiwe kwa Kiswahili tu:`
       };
 
       const response = await openai.chat.completions.create({
@@ -768,7 +772,10 @@ export class BettingTipsGenerator {
       
       if (enhancedContent) {
         console.log(`✅ AI enhanced betting content in ${language}: "${enhancedContent.substring(0, 100)}..."`);
+        console.log(`📏 Enhanced content length: ${enhancedContent.length} characters`);
         return enhancedContent;
+      } else {
+        console.log(`❌ AI returned empty content, falling back to template`);
       }
       
     } catch (error) {
@@ -814,7 +821,7 @@ export class BettingTipsGenerator {
       am: [
         '⚠️ 18+ ብቻ - ውርርድ ሱስ ሊፈጥር ይችላል',
         '💰 ማጣት የማትችለውን መጠን በላይ አትዋረድ',
-        '📚 ይህ ትንታኔ ለትምህርት ዓላማ ብቻ ነው',
+        '📚 እነዚህ ምክሮች ለትምህርት ዓላማ ብቻ ናቸው',
         '🆘 የውርርድ ችግር? እርዳታ ያግኙ'
       ],
       sw: [
