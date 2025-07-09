@@ -1611,6 +1611,124 @@ export class UnifiedFootballService {
       smartScorerReady: true // We always have the smart scorer
     };
   }
+
+  /**
+   * 🆕 GET MATCHES BY DATE - Required for live updates generator
+   * Returns matches for a specific date (format: YYYY-MM-DD)
+   */
+  async getMatchesByDate(date: string): Promise<MatchData[]> {
+    try {
+      console.log(`📅 Getting matches for date: ${date}`);
+      
+      const fixtures = await this.footballAPIManager.getFixturesByDate(date);
+      
+      if (!fixtures || fixtures.length === 0) {
+        console.log(`📅 No matches found for ${date}`);
+        return [];
+      }
+
+      // Convert API-Football fixtures to our MatchData format
+      const matches: MatchData[] = fixtures.map(fixture => ({
+        id: fixture.match_id || '',
+        homeTeam: {
+          id: fixture.match_hometeam_id || '',
+          name: fixture.match_hometeam_name || 'Unknown Home Team'
+        },
+        awayTeam: {
+          id: fixture.match_awayteam_id || '',
+          name: fixture.match_awayteam_name || 'Unknown Away Team'
+        },
+        competition: {
+          id: fixture.league_name || '',
+          name: fixture.league_name || 'Unknown Competition'
+        },
+        kickoff: new Date(fixture.match_date || Date.now()),
+        status: this.normalizeStatus(fixture.match_status || 'SCHEDULED'),
+        score: {
+          home: fixture.match_hometeam_score || 0,
+          away: fixture.match_awayteam_score || 0
+        },
+        season: new Date().getFullYear().toString()
+      }));
+
+      console.log(`📅 Found ${matches.length} matches for ${date}`);
+      return matches;
+
+    } catch (error) {
+      console.error(`❌ Error getting matches for date ${date}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 🆕 GET API MANAGER - Required for live updates generator
+   * Provides direct access to FootballAPIManager for statistics and events
+   */
+  async getAPIManager(): Promise<FootballAPIManager> {
+    console.log('⚙️ Providing access to FootballAPIManager for real-time data');
+    return this.footballAPIManager;
+  }
+
+  /**
+   * 🆕 GET LIVE MATCHES - Helper method for live updates
+   * Returns only matches that are currently live
+   */
+  async getLiveMatches(): Promise<MatchData[]> {
+    try {
+      console.log('🔴 Getting live matches...');
+      
+      const today = new Date().toISOString().split('T')[0];
+      const todayMatches = await this.getMatchesByDate(today);
+      
+      // Filter for live matches only
+      const liveMatches = todayMatches.filter(match => 
+        match.status === 'LIVE' || 
+        match.status === 'IN_PLAY' ||
+        match.status?.toLowerCase().includes('live') ||
+        match.status?.toLowerCase().includes('play')
+      );
+
+      console.log(`🔴 Found ${liveMatches.length} live matches`);
+      return liveMatches;
+
+    } catch (error) {
+      console.error('❌ Error getting live matches:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🆕 GET MONITORING STATS - Helper for live updates system
+   */
+  async getMonitoringStats(): Promise<{
+    isRunning: boolean;
+    totalMatches: number;
+    liveMatches: number;
+    apiHealth: boolean;
+  }> {
+    try {
+      const systemHealth = await this.getSystemHealth();
+      const liveMatches = await this.getLiveMatches();
+      const today = new Date().toISOString().split('T')[0];
+      const todayMatches = await this.getMatchesByDate(today);
+
+      return {
+        isRunning: systemHealth.isHealthy,
+        totalMatches: todayMatches.length,
+        liveMatches: liveMatches.length,
+        apiHealth: systemHealth.isHealthy
+      };
+
+    } catch (error) {
+      console.error('❌ Error getting monitoring stats:', error);
+      return {
+        isRunning: false,
+        totalMatches: 0,
+        liveMatches: 0,
+        apiHealth: false
+      };
+    }
+  }
 }
 
 // Export singleton instance for immediate use

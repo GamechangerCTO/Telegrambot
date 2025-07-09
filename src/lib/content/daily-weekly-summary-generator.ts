@@ -966,7 +966,10 @@ export class DailyWeeklySummaryGenerator {
     daily summary layout, professional sports media aesthetic, high quality digital art.`;
 
     try {
-      const imageBuffer = await aiImageGenerator.generateImage(prompt);
+      const imageBuffer = await aiImageGenerator.generateImage({
+        prompt,
+        quality: 'medium'
+      });
       if (!imageBuffer) return undefined;
 
       const fileName = `daily_summary_${Date.now()}.png`;
@@ -999,7 +1002,10 @@ export class DailyWeeklySummaryGenerator {
     weekly summary layout, professional sports media aesthetic, high quality digital art.`;
 
     try {
-      const imageBuffer = await aiImageGenerator.generateImage(prompt);
+      const imageBuffer = await aiImageGenerator.generateImage({
+        prompt,
+        quality: 'medium'
+      });
       if (!imageBuffer) return undefined;
 
       const fileName = `weekly_summary_${Date.now()}.png`;
@@ -1043,12 +1049,36 @@ export class DailyWeeklySummaryGenerator {
   }
 
   private async aiEditDailyContent(content: string, summaryData: DailySummaryData, language: 'en' | 'am' | 'sw'): Promise<string> {
-    const enhanced = `${content}\n\n🔥 What a day of football! Check back tomorrow for more action!\n\n#DailyFootball #FootballSummary #MatchResults #Football`;
+    const engagementText = {
+      'en': '🔥 What a day of football! Check back tomorrow for more action!',
+      'am': '🔥 ምን አይነት የእግር ኳስ ቀን! ነገ ለተጨማሪ እርምጃ ተመለሱ!',
+      'sw': '🔥 Sikuhii ya mpira wa miguu! Rudini kesho kwa matukio mengine!'
+    };
+    
+    const hashtags = {
+      'en': '#DailyFootball #FootballSummary #MatchResults #Football',
+      'am': '#ዕለታዊእግርኳስ #የእግርኳስማጠቃለያ #DailyFootball #Football',
+      'sw': '#MpiraKilaiku #MukhtasariMpira #DailyFootball #Football'
+    };
+    
+    const enhanced = `${content}\n\n${engagementText[language]}\n\n${hashtags[language]}`;
     return enhanced;
   }
 
   private async aiEditWeeklyContent(content: string, summaryData: WeeklySummaryData, language: 'en' | 'am' | 'sw'): Promise<string> {
-    const enhanced = `${content}\n\n📊 Comprehensive weekly analysis complete! Exciting week ahead!\n\n#WeeklyFootball #FootballAnalysis #WeeklyReview #Football`;
+    const engagementText = {
+      'en': '📊 Comprehensive weekly analysis complete! Exciting week ahead!',
+      'am': '📊 አጠቃላይ ሳምንታዊ ትንተና ተጠናቋል! አስደሳች ሳምንት ወደፊት!',
+      'sw': '📊 Uchambuzi mkamilifu wa wiki umekamilika! Wiki ya kusisimua inasubiri!'
+    };
+    
+    const hashtags = {
+      'en': '#WeeklyFootball #FootballAnalysis #WeeklyReview #Football',
+      'am': '#ሳምንታዊእግርኳስ #የእግርኳስትንተና #WeeklyFootball #Football',
+      'sw': '#MpiraWiki #UchambuziMpira #WeeklyFootball #Football'
+    };
+    
+    const enhanced = `${content}\n\n${engagementText[language]}\n\n${hashtags[language]}`;
     return enhanced;
   }
 

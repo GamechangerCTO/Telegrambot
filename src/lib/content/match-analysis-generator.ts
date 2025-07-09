@@ -995,11 +995,11 @@ export class MatchAnalysisGenerator {
     
     // תבנית בסיסית שה-AI ירחיב עליה
     const languageTemplates = {
-      'en': `${homeTeam} vs ${awayTeam} - ${analysis.competition}\n\nMatch Analysis:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% win rate) faces ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% win rate). Current forms: ${teamAnalysis.home.form} vs ${teamAnalysis.away.form}. Prediction: ${prediction.predictedResult} (${prediction.confidence}% confidence).`,
+      'en': `${homeTeam} vs ${awayTeam} - ${analysis.competition}\n\nMatch Analysis:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% win rate) faces ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% win rate). Current forms: ${teamAnalysis.home.form} vs ${teamAnalysis.away.form}. Prediction: ${prediction.predictedResult} (${prediction.confidence}% confidence).\n\n#MatchAnalysis #Football #${homeTeam.replace(/\s+/g, '')} #${awayTeam.replace(/\s+/g, '')}`,
       
-      'am': `${homeTeam} በተቃወመ ${awayTeam} - ${analysis.competition}\n\nየጨዋታ ትንተና:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% ድል) ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% ድል) ይገናኛል። የቅርብ ጊዜ ፎርም: ${teamAnalysis.home.form} በተቃወመ ${teamAnalysis.away.form}። ትንበያ: ${prediction.predictedResult} (${prediction.confidence}% እርግጠኝነት)።`,
+      'am': `${homeTeam} በተቃወመ ${awayTeam} - ${analysis.competition}\n\nየጨዋታ ትንተና:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% ድል) ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% ድል) ይገናኛል። የቅርብ ጊዜ ፎርም: ${teamAnalysis.home.form} በተቃወመ ${teamAnalysis.away.form}። ትንበያ: ${prediction.predictedResult} (${prediction.confidence}% እርግጠኝነት)።\n\n#የጨዋታትንተና #እግርኳስ #MatchAnalysis #Football`,
       
-      'sw': `${homeTeam} dhidi ya ${awayTeam} - ${analysis.competition}\n\nUchambuzi wa Mechi:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% ushindi) anakutana na ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% ushindi). Hali ya sasa: ${teamAnalysis.home.form} dhidi ya ${teamAnalysis.away.form}. Utabiri: ${prediction.predictedResult} (${prediction.confidence}% uhakika).`
+      'sw': `${homeTeam} dhidi ya ${awayTeam} - ${analysis.competition}\n\nUchambuzi wa Mechi:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% ushindi) anakutana na ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% ushindi). Hali ya sasa: ${teamAnalysis.home.form} dhidi ya ${teamAnalysis.away.form}. Utabiri: ${prediction.predictedResult} (${prediction.confidence}% uhakika).\n\n#UchambuziMechi #MpiraMiguu #MatchAnalysis #Football`
     };
     
          return languageTemplates[language] || languageTemplates.en;
@@ -1104,15 +1104,15 @@ export class MatchAnalysisGenerator {
       }
 
       const languagePrompts = {
-        'en': `Expand this football match analysis into a comprehensive, engaging article of 4-6 paragraphs. Include tactical insights, team strengths/weaknesses, key player battles, and detailed predictions. Write in English:`,
-        'am': `Expand this football match analysis into a comprehensive, engaging article of 4-6 paragraphs. Include tactical insights, team strengths/weaknesses, key player battles, and detailed predictions. IMPORTANT: Write the entire response in AMHARIC language only. Do not use English words. Use only Amharic script:`,
-        'sw': `Expand this football match analysis into a comprehensive, engaging article of 4-6 paragraphs. Include tactical insights, team strengths/weaknesses, key player battles, and detailed predictions. IMPORTANT: Write the entire response in SWAHILI language only:`
+        'en': `Expand this football match analysis into a comprehensive, engaging article of 4-6 paragraphs. Include tactical insights, team strengths/weaknesses, key player battles, and detailed predictions. Write in English. END with hashtags in both English and the content language (example: #MatchAnalysis #Football #TeamNames):`,
+        'am': `Expand this football match analysis into a comprehensive, engaging article of 4-6 paragraphs. Include tactical insights, team strengths/weaknesses, key player battles, and detailed predictions. IMPORTANT: Write the entire response in AMHARIC language only. Do not use English words. Use only Amharic script. END with hashtags in both Amharic and English (example: #የጨዋታትንተና #እግርኳስ #MatchAnalysis #Football):`,
+        'sw': `Expand this football match analysis into a comprehensive, engaging article of 4-6 paragraphs. Include tactical insights, team strengths/weaknesses, key player battles, and detailed predictions. IMPORTANT: Write the entire response in SWAHILI language only. END with hashtags in both Swahili and English (example: #UchambuziMechi #MpiraMiguu #MatchAnalysis #Football):`
       };
 
       const systemPrompts = {
-        'en': `You are a professional football analyst writing detailed match previews. Write engaging, informative content that captures the tactical nuances and storylines of the match. Make it interesting but not too long.`,
-        'am': `You are a professional football analyst writing detailed match previews in AMHARIC language. You must write the entire response in Amharic script only. Do not use any English words or phrases. Write engaging, informative content that captures tactical nuances and storylines.`,
-        'sw': `You are a professional football analyst writing detailed match previews in SWAHILI language. You must write the entire response in Swahili only. Do not use any English words. Write engaging, informative content that captures tactical nuances and storylines.`
+        'en': `You are a professional football analyst writing detailed match previews. Write engaging, informative content that captures the tactical nuances and storylines of the match. Make it interesting but not too long. END with hashtags in both English and the content language.`,
+        'am': `You are a professional football analyst writing detailed match previews in AMHARIC language. You must write the entire response in Amharic script only. Do not use any English words or phrases. Write engaging, informative content that captures tactical nuances and storylines. END with hashtags in both Amharic and English.`,
+        'sw': `You are a professional football analyst writing detailed match previews in SWAHILI language. You must write the entire response in Swahili only. Do not use any English words. Write engaging, informative content that captures tactical nuances and storylines. END with hashtags in both Swahili and English.`
       };
 
       const response = await openai.chat.completions.create({

@@ -631,8 +631,19 @@ export class SmartCouponsGenerator {
    * 🤖 AI edit coupon content
    */
   private async aiEditCouponContent(content: string, coupon: CouponData, context: CouponPlacementContext): Promise<string> {
-    // Enhanced version with more engagement and context
-    const enhanced = `${content}\n\n🔥 Don't miss out on this exclusive opportunity!\n\n#ExclusiveOffer #${coupon.brandName.replace(/\s+/g, '')} #Football #Promotion`;
+    const engagementText = {
+      'en': "🔥 Don't miss out on this exclusive opportunity!",
+      'am': '🔥 ይህን ልዩ እድል አታምልጡ!',
+      'sw': '🔥 Usikose fursa hii ya kipekee!'
+    };
+    
+    const hashtags = {
+      'en': `#ExclusiveOffer #${coupon.brandName.replace(/\s+/g, '')} #Football #Promotion`,
+      'am': `#ልዩቅናሽ #ወቅታዊቅናሽ #ExclusiveOffer #${coupon.brandName.replace(/\s+/g, '')} #Football`,
+      'sw': `#ToaZaKipekee #PromoshinZamani #ExclusiveOffer #${coupon.brandName.replace(/\s+/g, '')} #Football`
+    };
+    
+    const enhanced = `${content}\n\n${engagementText[context.language]}\n\n${hashtags[context.language]}`;
     
     return enhanced;
   }

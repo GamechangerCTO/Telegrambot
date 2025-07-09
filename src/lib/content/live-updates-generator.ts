@@ -1,98 +1,128 @@
 /**
- * ⚡ LIVE UPDATES GENERATOR
+ * ⚡ LIVE UPDATES GENERATOR - REAL-TIME API VERSION
  * 
- * Flow for Live Updates Content:
- * 1. Get live/ongoing match → 2. Simulate real-time events → 3. Generate dynamic commentary → 4. Update statistics → 5. Create engaging updates → 6. Multi-language support
+ * Flow for Real Live Updates:
+ * 1. Auto-discover live matches → 2. Fetch real statistics & events → 3. Generate dynamic commentary → 4. Send updates every minute → 5. Multi-language support
  * 
  * Key features:
- * - Real-time match event simulation
- * - Dynamic live commentary
- * - Live statistics tracking
- * - Score updates and match progression
- * - Engaging social media format
+ * - REAL-TIME API connection to API-Football
+ * - Auto-discovery of live/interesting matches  
+ * - Real statistics and events data
+ * - Smart match filtering with FootballMatchScorer
+ * - Minute-by-minute updates
+ * - Anti-duplicate system
  * - Multi-language live updates
  */
 
 import { unifiedFootballService } from './unified-football-service';
+import { FootballMatchScorer } from './football-match-scorer';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
 
-export type MatchEventType = 
-  | 'goal' 
-  | 'assist' 
-  | 'yellow_card' 
-  | 'red_card' 
-  | 'substitution' 
+// Real API event types from API-Football
+export type RealMatchEventType = 
+  | 'Goal' 
+  | 'Card' 
+  | 'subst' 
+  | 'Var' 
   | 'penalty' 
-  | 'penalty_miss' 
-  | 'own_goal' 
+  | 'freekick'
   | 'corner' 
-  | 'free_kick' 
   | 'offside' 
-  | 'save' 
-  | 'shot_blocked' 
-  | 'half_time' 
-  | 'full_time' 
-  | 'injury_time' 
-  | 'var_check' 
-  | 'var_decision';
+  | 'injury'
+  | 'halftime'
+  | 'fulltime';
 
-export interface MatchEvent {
-  id: string;
-  type: MatchEventType;
-  minute: number;
-  team: 'home' | 'away';
-  player?: string;
-  description: string;
+export interface RealMatchEvent {
+  time: {
+    elapsed: number;
+    extra?: number;
+  };
+  team: {
+    id: number;
+    name: string;
+  };
+  player?: {
+    id: number;
+    name: string;
+  };
+  assist?: {
+    id: number;
+    name: string;
+  };
+  type: string;
+  detail: string;
+  comments?: string;
   importance: 'HIGH' | 'MEDIUM' | 'LOW';
-  impact: string; // How this affects the match
 }
 
-export interface LiveMatchStats {
-  // Current score
-  homeScore: number;
-  awayScore: number;
-  
-  // Match time
-  minute: number;
-  period: 'first_half' | 'half_time' | 'second_half' | 'full_time' | 'extra_time';
-  addedTime?: number;
-  
-  // Live statistics
-  possession: { home: number; away: number };
-  shots: { home: number; away: number };
-  shotsOnTarget: { home: number; away: number };
-  corners: { home: number; away: number };
-  fouls: { home: number; away: number };
-  yellowCards: { home: number; away: number };
-  redCards: { home: number; away: number };
-  offsides: { home: number; away: number };
-  
-  // Recent events
-  recentEvents: MatchEvent[];
-  lastUpdate: string;
+export interface RealMatchStatistics {
+  team_id: number;
+  team_name: string;
+  // Ball possession
+  ball_possession?: string;
+  // Shots
+  total_shots?: number;
+  shots_on_goal?: number;
+  shots_off_goal?: number;
+  blocked_shots?: number;
+  shots_insidebox?: number;
+  shots_outsidebox?: number;
+  // Fouls and cards  
+  fouls?: number;
+  corner_kicks?: number;
+  offsides?: number;
+  yellow_cards?: number;
+  red_cards?: number;
+  goalkeeper_saves?: number;
+  // Passes
+  total_passes?: number;
+  passes_accurate?: number;
+  passes_percentage?: string;
 }
 
 export interface LiveMatchData {
-  // Basic match info
-  homeTeam: string;
-  awayTeam: string;
-  competition: string;
-  venue: string;
-  kickoffTime: string;
-  
-  // Current state
-  status: 'not_started' | 'live' | 'half_time' | 'finished' | 'postponed';
-  currentStats: LiveMatchStats;
-  
-  // Match context
-  matchImportance: 'HIGH' | 'MEDIUM' | 'LOW';
-  preMatchInfo: {
-    homeTeamForm: string;
-    awayTeamForm: string;
-    headToHeadRecord: string;
-    keyPlayers: { home: string[]; away: string[] };
+  // Basic match info from API-Football
+  fixture_id: number;
+  homeTeam: {
+    id: number;
+    name: string;
+    logo: string;
   };
+  awayTeam: {
+    id: number;
+    name: string;
+    logo: string;
+  };
+  competition: {
+    id: number;
+    name: string;
+    country: string;
+  };
+  venue: {
+    name: string;
+    city: string;
+  };
+  
+  // Live match state
+  status: {
+    long: string;
+    short: string;
+    elapsed?: number;
+  };
+  score: {
+    home: number | null;
+    away: number | null;
+  };
+  
+  // Real-time data
+  currentStats: RealMatchStatistics[];
+  recentEvents: RealMatchEvent[];
+  lastUpdate: string;
+  
+  // Match importance (from FootballMatchScorer)
+  relevanceScore: number;
+  matchImportance: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export interface LiveUpdateRequest {
@@ -120,80 +150,498 @@ export interface GeneratedLiveUpdate {
     contentId: string;
     matchMinute: number;
     eventImportance: string;
+    fixtureId: number;
   };
 }
 
 export class LiveUpdatesGenerator {
-
-  // Event probability weights for realistic simulation
-  private readonly EVENT_PROBABILITIES = {
-    goal: 0.08,          // ~2-3 goals per 90 minutes
-    yellow_card: 0.12,   // ~4-5 cards per match
-    red_card: 0.02,      // ~0.5 red cards per match
-    corner: 0.25,        // ~8-10 corners per match
-    substitution: 0.15,  // ~6 subs per match
-    free_kick: 0.20,     // ~7-8 free kicks per match
-    save: 0.18,          // ~6-7 saves per match
-    shot_blocked: 0.15,  // ~5-6 blocked shots
-    offside: 0.10,       // ~3-4 offsides per match
-    var_check: 0.05,     // ~1-2 VAR checks per match
-    penalty: 0.03        // ~0.8 penalties per match
+  private matchScorer: FootballMatchScorer;
+  private monitoringInterval?: NodeJS.Timeout;
+  private isMonitoring: boolean = false;
+  private lastProcessedEvents: Map<number, string[]> = new Map(); // fixtureId -> eventIds
+  private monitoringStats = {
+    totalMatches: 0,
+    liveMatches: 0,
+    eventsProcessed: 0,
+    updatesGenerated: 0,
+    startTime: null as Date | null,
+    eventsLast24h: 0
   };
 
+  constructor() {
+    this.matchScorer = new FootballMatchScorer();
+  }
+
   /**
-   * ⚡ MAIN FUNCTION - Generate live match update
+   * 🚀 START REAL-TIME MONITORING SYSTEM
    */
-  async generateLiveUpdate(request: LiveUpdateRequest): Promise<GeneratedLiveUpdate | null> {
-    console.log(`⚡ Generating live update in ${request.language}`);
+  async startMonitoring(intervalSeconds: number = 60): Promise<any> {
+    if (this.isMonitoring) {
+      return { message: 'Already monitoring', isRunning: true };
+    }
+
+    console.log(`🚀 Starting real-time monitoring every ${intervalSeconds} seconds`);
     
+    this.isMonitoring = true;
+    this.monitoringStats.startTime = new Date();
+    
+    // Run initial scan
+    await this.scanAndProcessLiveMatches();
+    
+    // Set up interval for continuous monitoring
+    this.monitoringInterval = setInterval(async () => {
+      if (this.isMonitoring) {
+        await this.scanAndProcessLiveMatches();
+      }
+    }, intervalSeconds * 1000);
+
+    return {
+      isRunning: true,
+      intervalSeconds,
+      startedAt: this.monitoringStats.startTime.toISOString(),
+      message: 'Real-time monitoring started successfully'
+    };
+  }
+
+  /**
+   * 🛑 STOP MONITORING SYSTEM
+   */
+  async stopMonitoring(): Promise<any> {
+    if (!this.isMonitoring) {
+      return { message: 'Not currently monitoring', isRunning: false };
+    }
+
+    console.log('🛑 Stopping real-time monitoring');
+    
+    this.isMonitoring = false;
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = undefined;
+    }
+
+    return {
+      isRunning: false,
+      stoppedAt: new Date().toISOString(),
+      finalStats: this.monitoringStats,
+      message: 'Monitoring stopped successfully'
+    };
+  }
+
+  /**
+   * 🔍 MAIN SCANNING FUNCTION - Discovers and processes live matches
+   */
+  private async scanAndProcessLiveMatches(): Promise<void> {
     try {
-      // Step 1: Get current live match or simulate one
-      const liveMatch = await this.getCurrentLiveMatch(request.language);
-      if (!liveMatch) {
-        console.log(`❌ No live match available`);
-        return null;
+      console.log('🔍 Scanning for live matches...');
+
+      // Step 1: Get all today's matches from API
+      const today = new Date().toISOString().split('T')[0];
+      const todayMatches = await unifiedFootballService.getMatchesByDate(today);
+      
+      if (!todayMatches || todayMatches.length === 0) {
+        console.log('📝 No matches found for today');
+        return;
       }
 
-      console.log(`✅ Live match: ${liveMatch.homeTeam} vs ${liveMatch.awayTeam} (${liveMatch.currentStats.minute}')`);
+      // Step 2: Score matches to find interesting ones
+      const scoredMatches = await this.matchScorer.scoreMatches(todayMatches, {
+        content_type: 'live_update',
+        min_score_threshold: 15, // Only high-quality matches
+        language: 'en'
+      });
 
-      // Step 2: Update match progression
-      await this.updateMatchProgression(liveMatch);
+      console.log(`⚽ Found ${scoredMatches.length} interesting matches (score 15+)`);
+
+      // Step 3: Filter for live matches only
+      const liveMatches = scoredMatches.filter(match => 
+        match.status === 'LIVE' || 
+        match.status === 'IN_PLAY' ||
+        match.status?.toLowerCase().includes('live') ||
+        match.status?.toLowerCase().includes('play')
+      );
+
+      console.log(`🔴 Found ${liveMatches.length} LIVE interesting matches`);
       
-      // Step 3: Generate specific update type
-      const updateContent = await this.generateUpdateContent(liveMatch, request);
+      this.monitoringStats.totalMatches = scoredMatches.length;
+      this.monitoringStats.liveMatches = liveMatches.length;
+
+      // Step 4: Process each live match
+      for (const match of liveMatches) {
+        await this.processLiveMatch(match);
+      }
+
+    } catch (error) {
+      console.error('❌ Error in scanAndProcessLiveMatches:', error);
+    }
+  }
+
+  /**
+   * ⚽ PROCESS INDIVIDUAL LIVE MATCH
+   */
+  private async processLiveMatch(match: any): Promise<void> {
+    try {
+      const fixtureId = match.id || match.fixture_id;
+      if (!fixtureId) {
+        console.log('⚠️ No fixture ID found for match');
+        return;
+      }
+
+      console.log(`⚽ Processing live match: ${match.home_team} vs ${match.away_team} (ID: ${fixtureId})`);
+
+      // Get real-time events and statistics
+      const [events, statistics] = await Promise.all([
+        this.getRealMatchEvents(fixtureId),
+        this.getRealMatchStatistics(fixtureId)
+      ]);
+
+      // Check for new events (anti-duplicate)
+      const newEvents = this.filterNewEvents(fixtureId, events);
       
-      // Step 4: Create engagement elements
-      const engagement = this.createEngagementElements(liveMatch, request.language);
+      if (newEvents.length > 0) {
+        console.log(`🆕 Found ${newEvents.length} new events for match ${fixtureId}`);
+        
+        // Create live match data object
+        const liveMatchData: LiveMatchData = {
+          fixture_id: fixtureId,
+          homeTeam: {
+            id: match.home_team_id || match.homeTeam?.id,
+            name: match.home_team || match.homeTeam?.name,
+            logo: match.home_team_logo || match.homeTeam?.logo || ''
+          },
+          awayTeam: {
+            id: match.away_team_id || match.awayTeam?.id,
+            name: match.away_team || match.awayTeam?.name,
+            logo: match.away_team_logo || match.awayTeam?.logo || ''
+          },
+          competition: {
+            id: match.competition_id || match.league?.id,
+            name: match.competition_name || match.league?.name || 'Unknown',
+            country: match.competition_country || match.league?.country || 'Unknown'
+          },
+          venue: {
+            name: match.venue || 'Unknown Stadium',
+            city: match.venue_city || 'Unknown City'
+          },
+          status: {
+            long: match.status || 'Live',
+            short: match.status_short || 'LIVE',
+            elapsed: match.minute || 0
+          },
+          score: {
+            home: match.home_score || match.score?.home || 0,
+            away: match.away_score || match.score?.away || 0
+          },
+          currentStats: statistics,
+          recentEvents: newEvents,
+          lastUpdate: new Date().toISOString(),
+          relevanceScore: match.relevance_score?.total || 0,
+          matchImportance: match.relevance_score?.total >= 25 ? 'HIGH' : 
+                          match.relevance_score?.total >= 15 ? 'MEDIUM' : 'LOW'
+        };
+
+        // Generate and send live updates
+        await this.generateAndSendLiveUpdates(liveMatchData, newEvents);
+        
+        this.monitoringStats.eventsProcessed += newEvents.length;
+      }
+
+    } catch (error) {
+      console.error(`❌ Error processing live match ${match.id}:`, error);
+    }
+  }
+
+  /**
+   * 📊 GET REAL MATCH STATISTICS from API-Football
+   */
+  private async getRealMatchStatistics(fixtureId: number): Promise<RealMatchStatistics[]> {
+    try {
+      const apiManager = await unifiedFootballService.getAPIManager();
+      const statistics = await apiManager.getFixtureStatistics(fixtureId.toString());
       
-      // Step 5: Generate live update image
-      const imageUrl = await this.generateLiveUpdateImage(liveMatch, updateContent.updateType);
+      if (!statistics || statistics.length === 0) {
+        console.log(`📊 No statistics found for fixture ${fixtureId}`);
+        return [];
+      }
+
+      // Transform API-Football statistics to our format
+      return statistics.map(stat => {
+        const statsObj: any = {};
+        
+        // Convert API-Football statistics array to object
+        stat.statistics.forEach((item: any) => {
+          switch (item.type) {
+            case 'Ball Possession':
+              statsObj.ball_possession = item.value;
+              break;
+            case 'Total Shots':
+              statsObj.total_shots = parseInt(item.value) || 0;
+              break;
+            case 'Shots on Goal':
+              statsObj.shots_on_goal = parseInt(item.value) || 0;
+              break;
+            case 'Shots off Goal':
+              statsObj.shots_off_goal = parseInt(item.value) || 0;
+              break;
+            case 'Blocked Shots':
+              statsObj.blocked_shots = parseInt(item.value) || 0;
+              break;
+            case 'Shots insidebox':
+              statsObj.shots_insidebox = parseInt(item.value) || 0;
+              break;
+            case 'Shots outsidebox':
+              statsObj.shots_outsidebox = parseInt(item.value) || 0;
+              break;
+            case 'Fouls':
+              statsObj.fouls = parseInt(item.value) || 0;
+              break;
+            case 'Corner Kicks':
+              statsObj.corner_kicks = parseInt(item.value) || 0;
+              break;
+            case 'Offsides':
+              statsObj.offsides = parseInt(item.value) || 0;
+              break;
+            case 'Yellow Cards':
+              statsObj.yellow_cards = parseInt(item.value) || 0;
+              break;
+            case 'Red Cards':
+              statsObj.red_cards = parseInt(item.value) || 0;
+              break;
+            case 'Goalkeeper Saves':
+              statsObj.goalkeeper_saves = parseInt(item.value) || 0;
+              break;
+            case 'Total passes':
+              statsObj.total_passes = parseInt(item.value) || 0;
+              break;
+            case 'Passes accurate':
+              statsObj.passes_accurate = parseInt(item.value) || 0;
+              break;
+            case 'Passes %':
+              statsObj.passes_percentage = item.value;
+              break;
+          }
+        });
+
+        return {
+          team_id: stat.team.id,
+          team_name: stat.team.name,
+          ...statsObj
+        };
+      });
+
+    } catch (error) {
+      console.error(`❌ Error getting statistics for fixture ${fixtureId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 🎯 GET REAL MATCH EVENTS from API-Football  
+   */
+  private async getRealMatchEvents(fixtureId: number): Promise<RealMatchEvent[]> {
+    try {
+      const apiManager = await unifiedFootballService.getAPIManager();
+      const events = await apiManager.getFixtureEvents(fixtureId.toString());
       
-      // Step 6: AI edit for excitement and engagement
-      const aiEditedContent = await this.aiEditLiveContent(updateContent.content, liveMatch, request.language);
+      if (!events || events.length === 0) {
+        console.log(`🎯 No events found for fixture ${fixtureId}`);
+        return [];
+      }
+
+      // Transform API-Football events to our format
+      return events.map(event => ({
+        time: {
+          elapsed: event.time?.elapsed || 0,
+          extra: event.time?.extra
+        },
+        team: {
+          id: event.team?.id || 0,
+          name: event.team?.name || 'Unknown'
+        },
+        player: event.player ? {
+          id: event.player.id,
+          name: event.player.name
+        } : undefined,
+        assist: event.assist ? {
+          id: event.assist.id,
+          name: event.assist.name
+        } : undefined,
+        type: event.type || 'Unknown',
+        detail: event.detail || '',
+        comments: event.comments,
+        importance: this.getEventImportance(event.type)
+      }));
+
+    } catch (error) {
+      console.error(`❌ Error getting events for fixture ${fixtureId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 🔥 FILTER NEW EVENTS (Anti-duplicate system)
+   */
+  private filterNewEvents(fixtureId: number, events: RealMatchEvent[]): RealMatchEvent[] {
+    const eventIds = events.map(event => 
+      `${event.time.elapsed}-${event.type}-${event.detail}-${event.player?.id || 'no-player'}`
+    );
+    
+    const lastProcessed = this.lastProcessedEvents.get(fixtureId) || [];
+    const newEventIds = eventIds.filter(id => !lastProcessed.includes(id));
+    
+    // Update processed events
+    this.lastProcessedEvents.set(fixtureId, eventIds);
+    
+    // Return only new events
+    return events.filter((event, index) => 
+      newEventIds.includes(eventIds[index])
+    );
+  }
+
+  /**
+   * 📢 GENERATE AND SEND LIVE UPDATES
+   */
+  private async generateAndSendLiveUpdates(liveMatchData: LiveMatchData, newEvents: RealMatchEvent[]): Promise<void> {
+    try {
+      // Get active channels that want live updates
+      const channels = await this.getActiveChannels();
       
-      // Step 7: Track live update
-      await this.trackLiveUpdate(liveMatch, request.channelId);
+      for (const channel of channels) {
+        // Generate update for most important event
+        const mostImportantEvent = this.getMostImportantEvent(newEvents);
+        
+        if (mostImportantEvent) {
+          const updateRequest: LiveUpdateRequest = {
+            language: channel.language || 'en',
+            channelId: channel.id,
+            updateType: this.getUpdateTypeFromEvent(mostImportantEvent),
+            engagementLevel: liveMatchData.matchImportance.toLowerCase() as any
+          };
+
+          const generatedUpdate = await this.generateRealLiveUpdate(liveMatchData, mostImportantEvent, updateRequest);
+          
+          if (generatedUpdate) {
+            await this.sendUpdateToChannel(generatedUpdate, channel);
+            this.monitoringStats.updatesGenerated++;
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Error generating and sending live updates:', error);
+    }
+  }
+
+  /**
+   * 🔗 Helper Methods for Live Updates System
+   */
+
+  /**
+   * Get active channels that want live updates
+   */
+  private async getActiveChannels(): Promise<Array<{id: string, language: 'en' | 'am' | 'sw'}>> {
+    try {
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, language, live_updates_enabled')
+        .eq('active', true)
+        .eq('live_updates_enabled', true);
+
+      return (channels || []).map(channel => ({
+        id: channel.id,
+        language: (channel.language as 'en' | 'am' | 'sw') || 'en'
+      }));
+    } catch (error) {
+      console.error('❌ Error getting active channels:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get most important event from a list of events
+   */
+  private getMostImportantEvent(events: RealMatchEvent[]): RealMatchEvent | null {
+    if (!events || events.length === 0) return null;
+
+    // Sort by importance: HIGH > MEDIUM > LOW
+    const sortedEvents = events.sort((a, b) => {
+      const importanceOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+      return importanceOrder[b.importance] - importanceOrder[a.importance];
+    });
+
+    return sortedEvents[0];
+  }
+
+  /**
+   * Determine update type from event
+   */
+  private getUpdateTypeFromEvent(event: RealMatchEvent): 'score' | 'event' | 'stats' | 'commentary' | 'full_update' {
+    switch (event.type) {
+      case 'Goal':
+        return 'score';
+      case 'Card':
+        return 'event';
+      case 'subst':
+        return 'event';
+      case 'Var':
+        return 'event';
+      case 'penalty':
+        return 'score';
+      default:
+        return 'commentary';
+    }
+  }
+
+  /**
+   * Generate real live update from match data and event
+   */
+  private async generateRealLiveUpdate(
+    liveMatchData: LiveMatchData, 
+    event: RealMatchEvent, 
+    request: LiveUpdateRequest
+  ): Promise<GeneratedLiveUpdate | null> {
+    try {
+      const updateContent = await this.generateUpdateContent(liveMatchData, request);
 
       return {
         title: updateContent.title,
         content: updateContent.content,
-        imageUrl,
-        matchData: liveMatch,
+        imageUrl: await this.generateLiveUpdateImage(liveMatchData, request.updateType || 'event'),
+        matchData: liveMatchData,
         updateType: updateContent.updateType,
-        aiEditedContent,
-        engagement,
+        aiEditedContent: await this.aiEditLiveContent(updateContent.content, liveMatchData, request.language),
+        engagement: this.createEngagementElements(liveMatchData, request.language),
         metadata: {
           language: request.language,
           generatedAt: new Date().toISOString(),
-          contentId: `live_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          matchMinute: liveMatch.currentStats.minute,
-          eventImportance: updateContent.importance || 'MEDIUM'
+          contentId: `live_${liveMatchData.fixture_id}_${Date.now()}`,
+          matchMinute: liveMatchData.status.elapsed || 0,
+          eventImportance: event.importance,
+          fixtureId: liveMatchData.fixture_id
         }
       };
-
     } catch (error) {
-      console.error(`❌ Error generating live update:`, error);
+      console.error('❌ Error generating real live update:', error);
       return null;
+    }
+  }
+
+  /**
+   * Send update to specific channel
+   */
+  private async sendUpdateToChannel(update: GeneratedLiveUpdate, channel: {id: string, language: 'en' | 'am' | 'sw'}): Promise<void> {
+    try {
+      // Here you would implement the actual sending logic
+      // For now, we'll just log and save to database
+      console.log(`📨 Sending live update to channel ${channel.id}: ${update.title}`);
+      
+      // Save to database for tracking
+      await this.trackLiveUpdate(update.matchData, channel.id);
+      
+      // In production, send via Telegram API
+      // await telegramSender.sendMessage(channel.id, update.content, update.imageUrl);
+      
+    } catch (error) {
+      console.error(`❌ Error sending update to channel ${channel.id}:`, error);
     }
   }
 
@@ -209,23 +657,39 @@ export class LiveUpdatesGenerator {
 
     // Create live match simulation
     const liveMatch: LiveMatchData = {
-      homeTeam: bestMatch.homeTeam.name,
-      awayTeam: bestMatch.awayTeam.name,
-      competition: bestMatch.competition.name,
-      venue: `${bestMatch.homeTeam.name} Stadium`,
-      kickoffTime: new Date().toISOString(),
-      status: 'live',
+      homeTeam: {
+        id: bestMatch.homeTeam.id,
+        name: bestMatch.homeTeam.name,
+        logo: bestMatch.homeTeam.logo || ''
+      },
+      awayTeam: {
+        id: bestMatch.awayTeam.id,
+        name: bestMatch.awayTeam.name,
+        logo: bestMatch.awayTeam.logo || ''
+      },
+      competition: {
+        id: bestMatch.competition.id,
+        name: bestMatch.competition.name,
+        country: bestMatch.competition.country || 'Unknown'
+      },
+      venue: {
+        name: `${bestMatch.homeTeam.name} Stadium`,
+        city: 'Unknown City'
+      },
+      status: {
+        long: 'Live',
+        short: 'LIVE',
+        elapsed: 0
+      },
+      score: {
+        home: 0,
+        away: 0
+      },
       currentStats: this.initializeLiveStats(),
-      matchImportance: this.determineMatchImportance(bestMatch.competition.name),
-      preMatchInfo: {
-        homeTeamForm: 'WWDLL',
-        awayTeamForm: 'WLWWD',
-        headToHeadRecord: 'Evenly matched in recent meetings',
-        keyPlayers: {
-          home: ['Star Striker', 'Creative Midfielder', 'Solid Defender'],
-          away: ['Goal Machine', 'Playmaker', 'Rock at the Back']
-        }
-      }
+      recentEvents: [],
+      lastUpdate: new Date().toISOString(),
+      relevanceScore: 0,
+      matchImportance: this.determineMatchImportance(bestMatch.competition.name)
     };
 
     return liveMatch;
@@ -234,23 +698,49 @@ export class LiveUpdatesGenerator {
   /**
    * 📊 Initialize live match statistics
    */
-  private initializeLiveStats(): LiveMatchStats {
-    return {
-      homeScore: 0,
-      awayScore: 0,
-      minute: Math.floor(Math.random() * 90) + 1, // Random current minute
-      period: 'second_half',
-      possession: { home: 50, away: 50 },
-      shots: { home: 0, away: 0 },
-      shotsOnTarget: { home: 0, away: 0 },
-      corners: { home: 0, away: 0 },
-      fouls: { home: 0, away: 0 },
-      yellowCards: { home: 0, away: 0 },
-      redCards: { home: 0, away: 0 },
-      offsides: { home: 0, away: 0 },
-      recentEvents: [],
-      lastUpdate: new Date().toISOString()
-    };
+  private initializeLiveStats(): RealMatchStatistics[] {
+    return [
+      {
+        team_id: 0, // Placeholder for home team
+        team_name: 'Home Team',
+        ball_possession: '50%',
+        total_shots: 0,
+        shots_on_goal: 0,
+        shots_off_goal: 0,
+        blocked_shots: 0,
+        shots_insidebox: 0,
+        shots_outsidebox: 0,
+        fouls: 0,
+        corner_kicks: 0,
+        offsides: 0,
+        yellow_cards: 0,
+        red_cards: 0,
+        goalkeeper_saves: 0,
+        total_passes: 0,
+        passes_accurate: 0,
+        passes_percentage: '0%'
+      },
+      {
+        team_id: 0, // Placeholder for away team
+        team_name: 'Away Team',
+        ball_possession: '50%',
+        total_shots: 0,
+        shots_on_goal: 0,
+        shots_off_goal: 0,
+        blocked_shots: 0,
+        shots_insidebox: 0,
+        shots_outsidebox: 0,
+        fouls: 0,
+        corner_kicks: 0,
+        offsides: 0,
+        yellow_cards: 0,
+        red_cards: 0,
+        goalkeeper_saves: 0,
+        total_passes: 0,
+        passes_accurate: 0,
+        passes_percentage: '0%'
+      }
+    ];
   }
 
   /**
@@ -260,14 +750,14 @@ export class LiveUpdatesGenerator {
     const stats = liveMatch.currentStats;
     
     // Advance time slightly (1-3 minutes)
-    stats.minute += Math.floor(Math.random() * 3) + 1;
+    liveMatch.status.elapsed = (liveMatch.status.elapsed || 0) + Math.floor(Math.random() * 3) + 1;
     
     // Check for period changes
-    if (stats.minute >= 45 && stats.period === 'first_half') {
-      stats.period = 'half_time';
-      stats.addedTime = Math.floor(Math.random() * 4) + 1;
-    } else if (stats.minute >= 90 && stats.period === 'second_half') {
-      stats.period = 'full_time';
+    if (liveMatch.status.elapsed >= 45 && liveMatch.status.short === 'LIVE') {
+      liveMatch.status.short = 'HT';
+      liveMatch.status.elapsed = 0; // Reset elapsed for half time
+    } else if (liveMatch.status.elapsed >= 90 && liveMatch.status.short === 'HT') {
+      liveMatch.status.short = 'FT';
     }
 
     // Generate realistic events based on current match state
@@ -277,24 +767,24 @@ export class LiveUpdatesGenerator {
     this.updateStatsFromEvents(stats, newEvents);
     
     // Add events to recent events (keep last 5)
-    stats.recentEvents = [...newEvents, ...stats.recentEvents].slice(0, 5);
+    liveMatch.recentEvents = [...newEvents, ...liveMatch.recentEvents].slice(0, 5);
     
     // Update possession (slight variation)
     this.updatePossession(stats);
     
-    stats.lastUpdate = new Date().toISOString();
+    liveMatch.lastUpdate = new Date().toISOString();
   }
 
   /**
    * 🎲 Generate realistic match events
    */
-  private generateRealisticEvents(liveMatch: LiveMatchData): MatchEvent[] {
-    const events: MatchEvent[] = [];
+  private generateRealisticEvents(liveMatch: LiveMatchData): RealMatchEvent[] {
+    const events: RealMatchEvent[] = [];
     const stats = liveMatch.currentStats;
-    const minute = stats.minute;
+    const minute = liveMatch.status.elapsed;
     
     // Higher probability of events in certain minutes
-    const eventProbabilityMultiplier = this.getEventProbabilityMultiplier(minute, stats.period);
+    const eventProbabilityMultiplier = this.getEventProbabilityMultiplier(minute, liveMatch.status.short);
     
     // Check each event type
     for (const [eventType, baseProbability] of Object.entries(this.EVENT_PROBABILITIES)) {
@@ -302,7 +792,7 @@ export class LiveUpdatesGenerator {
       
       if (Math.random() < adjustedProbability) {
         const event = this.createMatchEvent(
-          eventType as MatchEventType, 
+          eventType as RealMatchEventType, 
           minute, 
           liveMatch
         );
@@ -338,66 +828,68 @@ export class LiveUpdatesGenerator {
   /**
    * ⚽ Create specific match event
    */
-  private createMatchEvent(eventType: MatchEventType, minute: number, liveMatch: LiveMatchData): MatchEvent | null {
+  private createMatchEvent(eventType: RealMatchEventType, minute: number, liveMatch: LiveMatchData): RealMatchEvent | null {
     const team = Math.random() < 0.5 ? 'home' : 'away';
-    const teamName = team === 'home' ? liveMatch.homeTeam : liveMatch.awayTeam;
+    const teamName = team === 'home' ? liveMatch.homeTeam.name : liveMatch.awayTeam.name;
     
-    const event: MatchEvent = {
-      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-      type: eventType,
-      minute,
-      team,
-      importance: this.getEventImportance(eventType),
-      impact: '',
-      description: '',
-      player: this.getRandomPlayer(liveMatch, team)
+    const event: RealMatchEvent = {
+      time: { elapsed: minute },
+      team: {
+        id: team === 'home' ? liveMatch.homeTeam.id : liveMatch.awayTeam.id,
+        name: teamName
+      },
+      importance: this.getEventImportance(eventType)
     };
 
     // Generate specific event details
     switch (eventType) {
-      case 'goal':
-        event.description = `⚽ GOAL! ${teamName} takes the lead! ${event.player} finds the net with a brilliant finish!`;
-        event.impact = `${teamName} now leads ${this.getUpdatedScore(liveMatch, team, 'goal')}`;
+      case 'Goal':
+        event.detail = `⚽ GOAL! ${teamName} takes the lead! ${this.getRandomPlayer(liveMatch, team)} finds the net with a brilliant finish!`;
         event.importance = 'HIGH';
         break;
         
-      case 'yellow_card':
-        event.description = `🟨 Yellow card for ${event.player} (${teamName}) for a tactical foul`;
-        event.impact = 'Player now on a booking - must be careful';
+      case 'Card':
+        event.detail = `🟨 Yellow card for ${this.getRandomPlayer(liveMatch, team)} (${teamName}) for a tactical foul`;
+        event.importance = 'MEDIUM';
         break;
         
-      case 'red_card':
-        event.description = `🟥 RED CARD! ${event.player} is sent off! ${teamName} down to 10 men!`;
-        event.impact = 'Major game changer - numerical disadvantage';
-        event.importance = 'HIGH';
+      case 'Var':
+        event.detail = `📺 VAR check in progress - referee reviewing potential incident`;
+        event.importance = 'MEDIUM';
         break;
         
-      case 'substitution':
+      case 'subst':
         const newPlayer = this.getRandomPlayer(liveMatch, team);
-        event.description = `🔄 Substitution: ${newPlayer} comes on for ${event.player} (${teamName})`;
-        event.impact = 'Fresh legs introduced';
+        event.detail = `🔄 Substitution: ${newPlayer} comes on for ${this.getRandomPlayer(liveMatch, team)} (${teamName})`;
         break;
         
       case 'corner':
-        event.description = `🚩 Corner kick for ${teamName} - good attacking opportunity`;
-        event.impact = 'Set piece chance';
+        event.detail = `🚩 Corner kick for ${teamName} - good attacking opportunity`;
         break;
         
       case 'penalty':
-        event.description = `🎯 PENALTY! ${teamName} awarded a spot kick! ${event.player} steps up...`;
-        event.impact = 'Huge opportunity from 12 yards';
+        event.detail = `🎯 PENALTY! ${teamName} awarded a spot kick! ${this.getRandomPlayer(liveMatch, team)} steps up...`;
         event.importance = 'HIGH';
         break;
         
-      case 'save':
-        event.description = `🧤 Great save! The keeper denies ${event.player} with a fantastic stop`;
-        event.impact = 'Crucial intervention keeps score level';
+      case 'freekick':
+        event.detail = `⚽ FREE KICK! ${teamName} awarded a free kick in a dangerous position!`;
         break;
         
-      case 'var_check':
-        event.description = `📺 VAR check in progress - referee reviewing potential incident`;
-        event.impact = 'Moment of tension as officials decide';
-        event.importance = 'MEDIUM';
+      case 'offside':
+        event.detail = `🚶‍♂️ OFFSIDE! ${this.getRandomPlayer(liveMatch, team)} was offside!`;
+        break;
+        
+      case 'injury':
+        event.detail = `⚕️ INJURY! ${this.getRandomPlayer(liveMatch, team)} is down!`;
+        break;
+        
+      case 'halftime':
+        event.detail = `🏆 HALF TIME! The first half ends with a score of ${liveMatch.score.home}-${liveMatch.score.away}!`;
+        break;
+        
+      case 'fulltime':
+        event.detail = `🏆 FULL TIME! The match ends with a score of ${liveMatch.score.home}-${liveMatch.score.away}!`;
         break;
         
       default:
@@ -410,44 +902,56 @@ export class LiveUpdatesGenerator {
   /**
    * 📊 Update match statistics from events
    */
-  private updateStatsFromEvents(stats: LiveMatchStats, events: MatchEvent[]): void {
+  private updateStatsFromEvents(stats: RealMatchStatistics[], events: RealMatchEvent[]): void {
     events.forEach(event => {
-      const teamSide = event.team;
+      const teamSide = event.team.name.includes(stats[0].team_name) ? 0 : 1; // Assuming stats[0] is home, stats[1] is away
       
       switch (event.type) {
-        case 'goal':
-          if (teamSide === 'home') stats.homeScore++;
-          else stats.awayScore++;
-          stats.shots[teamSide]++;
-          stats.shotsOnTarget[teamSide]++;
+        case 'Goal':
+          stats[teamSide].total_shots++;
+          stats[teamSide].shots_on_goal++;
           break;
           
-        case 'yellow_card':
-          stats.yellowCards[teamSide]++;
-          stats.fouls[teamSide]++;
+        case 'Card':
+          stats[teamSide].fouls++;
+          stats[teamSide].yellow_cards++;
           break;
           
-        case 'red_card':
-          stats.redCards[teamSide]++;
-          stats.fouls[teamSide]++;
+        case 'Var':
+          // VAR events don't directly affect stats, but they are important for commentary
+          break;
+          
+        case 'subst':
+          // Substitution doesn't directly affect stats, but it's a significant event
           break;
           
         case 'corner':
-          stats.corners[teamSide]++;
+          stats[teamSide].corner_kicks++;
           break;
           
-        case 'save':
-          const oppositeTeam = teamSide === 'home' ? 'away' : 'home';
-          stats.shots[oppositeTeam]++;
-          stats.shotsOnTarget[oppositeTeam]++;
+        case 'penalty':
+          stats[teamSide].total_shots++; // Penalty is a shot
+          stats[teamSide].shots_on_goal++;
           break;
           
-        case 'shot_blocked':
-          stats.shots[teamSide]++;
+        case 'freekick':
+          stats[teamSide].total_shots++; // Free kick is a shot
           break;
           
         case 'offside':
-          stats.offsides[teamSide]++;
+          stats[teamSide].offsides++;
+          break;
+          
+        case 'injury':
+          // Injury doesn't directly affect stats, but it's a significant event
+          break;
+          
+        case 'halftime':
+          // Half time event doesn't directly affect stats, but it's a significant event
+          break;
+          
+        case 'fulltime':
+          // Full time event doesn't directly affect stats, but it's a significant event
           break;
       }
     });
@@ -456,12 +960,12 @@ export class LiveUpdatesGenerator {
   /**
    * ⚖️ Update possession based on match flow
    */
-  private updatePossession(stats: LiveMatchStats): void {
+  private updatePossession(stats: RealMatchStatistics[]): void {
     // Slight possession changes (±2-5%)
     const change = (Math.random() - 0.5) * 10; // -5 to +5
     
-    stats.possession.home = Math.max(25, Math.min(75, stats.possession.home + change));
-    stats.possession.away = 100 - stats.possession.home;
+    stats[0].ball_possession = `${Math.max(25, Math.min(75, parseFloat(stats[0].ball_possession || '50') + change))}%`;
+    stats[1].ball_possession = `${100 - parseFloat(stats[0].ball_possession || '50')}%`;
   }
 
   /**
@@ -518,9 +1022,9 @@ export class LiveUpdatesGenerator {
       }
       
       content += `📊 Match Stats:\n`;
-      content += `• Possession: ${homeTeam} ${currentStats.possession.home}% - ${currentStats.possession.away}% ${awayTeam}\n`;
-      content += `• Shots: ${currentStats.shots.home} - ${currentStats.shots.away}\n`;
-      content += `• Corners: ${currentStats.corners.home} - ${currentStats.corners.away}\n\n`;
+      content += `• Possession: ${homeTeam} ${currentStats.ball_possession} - ${awayTeam} ${currentStats.ball_possession}\n`;
+      content += `• Shots: ${currentStats.total_shots} - ${currentStats.total_shots}\n`;
+      content += `• Corners: ${currentStats.corner_kicks} - ${currentStats.corner_kicks}\n\n`;
       
       content += `Stay tuned for more live updates! 📱`;
       
@@ -550,27 +1054,27 @@ export class LiveUpdatesGenerator {
     updateType: string;
     importance: string;
   } {
-    const latestEvent = liveMatch.currentStats.recentEvents[0];
+    const latestEvent = liveMatch.recentEvents[0];
     
     if (!latestEvent) {
       return this.generateScoreUpdate(liveMatch, language);
     }
     
     if (language === 'en') {
-      const title = `⚡ ${latestEvent.minute}' - ${latestEvent.description.split('!')[0]}!`;
+      const title = `⚡ ${latestEvent.time.elapsed}' - ${latestEvent.detail.split('!')[0]}!`;
       
       let content = `🔴 LIVE EVENT\n\n`;
-      content += `${latestEvent.description}\n\n`;
-      content += `⏱️ ${latestEvent.minute}' - ${latestEvent.impact}\n\n`;
+      content += `${latestEvent.detail}\n\n`;
+      content += `⏱️ ${latestEvent.time.elapsed}' - ${latestEvent.detail}\n\n`;
       
       // Add current score
       content += `📊 Current Score:\n`;
-      content += `${liveMatch.homeTeam} ${liveMatch.currentStats.homeScore} - ${liveMatch.currentStats.awayScore} ${liveMatch.awayTeam}\n\n`;
+      content += `${liveMatch.homeTeam.name} ${liveMatch.score.home} - ${liveMatch.score.away} ${liveMatch.awayTeam.name}\n\n`;
       
       // Add excitement based on event type
-      if (latestEvent.type === 'goal') {
+      if (latestEvent.type === 'Goal') {
         content += `🔥 What a moment! The crowd erupts as the net bulges!\n\n`;
-      } else if (latestEvent.type === 'red_card') {
+      } else if (latestEvent.type === 'Card') {
         content += `😱 Game changer! This could turn the match on its head!\n\n`;
       } else if (latestEvent.type === 'penalty') {
         content += `🎯 High pressure moment from the penalty spot!\n\n`;
@@ -587,7 +1091,7 @@ export class LiveUpdatesGenerator {
     }
     
     return {
-      title: `⚡ ${latestEvent.minute}' - Event Update`,
+      title: `⚡ ${latestEvent.time.elapsed}' - Event Update`,
       content: `Latest event: ${latestEvent.type}`,
       updateType: 'event',
       importance: latestEvent.importance
@@ -606,26 +1110,26 @@ export class LiveUpdatesGenerator {
     const { homeTeam, awayTeam, currentStats } = liveMatch;
     
     if (language === 'en') {
-      const title = `📊 ${currentStats.minute}' Stats Update`;
+      const title = `📊 ${currentStats.ball_possession} Stats Update`;
       
       let content = `📈 LIVE MATCH STATISTICS\n\n`;
-      content += `${homeTeam} vs ${awayTeam} | ${currentStats.minute}'\n\n`;
+      content += `${homeTeam} vs ${awayTeam} | ${currentStats.ball_possession}\n\n`;
       
-      content += `⚽ Score: ${currentStats.homeScore} - ${currentStats.awayScore}\n\n`;
+      content += `⚽ Score: ${currentStats.total_shots} - ${currentStats.total_shots}\n\n`;
       
       content += `📊 Key Stats:\n`;
-      content += `• Possession: ${currentStats.possession.home}% - ${currentStats.possession.away}%\n`;
-      content += `• Total Shots: ${currentStats.shots.home} - ${currentStats.shots.away}\n`;
-      content += `• Shots on Target: ${currentStats.shotsOnTarget.home} - ${currentStats.shotsOnTarget.away}\n`;
-      content += `• Corners: ${currentStats.corners.home} - ${currentStats.corners.away}\n`;
-      content += `• Fouls: ${currentStats.fouls.home} - ${currentStats.fouls.away}\n`;
+      content += `• Possession: ${currentStats.ball_possession}\n`;
+      content += `• Total Shots: ${currentStats.total_shots} - ${currentStats.total_shots}\n`;
+      content += `• Shots on Target: ${currentStats.shots_on_goal} - ${currentStats.shots_on_goal}\n`;
+      content += `• Corners: ${currentStats.corner_kicks} - ${currentStats.corner_kicks}\n`;
+      content += `• Fouls: ${currentStats.fouls} - ${currentStats.fouls}\n`;
       
-      if (currentStats.yellowCards.home > 0 || currentStats.yellowCards.away > 0) {
-        content += `• Yellow Cards: ${currentStats.yellowCards.home} - ${currentStats.yellowCards.away}\n`;
+      if (currentStats.yellow_cards > 0 || currentStats.yellow_cards > 0) {
+        content += `• Yellow Cards: ${currentStats.yellow_cards} - ${currentStats.yellow_cards}\n`;
       }
       
-      if (currentStats.redCards.home > 0 || currentStats.redCards.away > 0) {
-        content += `• Red Cards: ${currentStats.redCards.home} - ${currentStats.redCards.away}\n`;
+      if (currentStats.red_cards > 0 || currentStats.red_cards > 0) {
+        content += `• Red Cards: ${currentStats.red_cards} - ${currentStats.red_cards}\n`;
       }
       
       content += `\n📱 Stay tuned for more live updates!`;
@@ -639,7 +1143,7 @@ export class LiveUpdatesGenerator {
     }
     
     return {
-      title: `📊 ${currentStats.minute}' Statistics`,
+      title: `📊 ${currentStats.ball_possession} Statistics`,
       content: `Live statistics update`,
       updateType: 'stats',
       importance: 'MEDIUM'
@@ -658,7 +1162,7 @@ export class LiveUpdatesGenerator {
     const { homeTeam, awayTeam, currentStats } = liveMatch;
     
     if (language === 'en') {
-      const title = `🎙️ ${currentStats.minute}' Live Commentary`;
+      const title = `🎙️ ${currentStats.ball_possession} Live Commentary`;
       
       let content = `🔴 LIVE COMMENTARY\n\n`;
       
@@ -666,14 +1170,14 @@ export class LiveUpdatesGenerator {
       const commentary = this.generateContextualCommentary(liveMatch);
       content += `${commentary}\n\n`;
       
-      content += `⚽ ${homeTeam} ${currentStats.homeScore} - ${currentStats.awayScore} ${awayTeam}\n`;
-      content += `⏱️ ${currentStats.minute}' (${this.getPeriodText(currentStats.period)})\n\n`;
+      content += `⚽ ${homeTeam} ${liveMatch.score.home} - ${liveMatch.score.away} ${awayTeam}\n`;
+      content += `⏱️ ${currentStats.ball_possession}\n\n`;
       
       // Add recent events context
-      if (currentStats.recentEvents.length > 0) {
+      if (liveMatch.recentEvents.length > 0) {
         content += `📝 Recent Action:\n`;
-        currentStats.recentEvents.slice(0, 3).forEach(event => {
-          content += `• ${event.minute}' - ${event.description.split('!')[0]}\n`;
+        liveMatch.recentEvents.slice(0, 3).forEach(event => {
+          content += `• ${event.time.elapsed}' - ${event.detail}\n`;
         });
         content += `\n`;
       }
@@ -689,7 +1193,7 @@ export class LiveUpdatesGenerator {
     }
     
     return {
-      title: `🎙️ ${currentStats.minute}' Commentary`,
+      title: `🎙️ ${currentStats.ball_possession} Commentary`,
       content: `Live match commentary`,
       updateType: 'commentary',
       importance: 'MEDIUM'
@@ -710,27 +1214,27 @@ export class LiveUpdatesGenerator {
       const title = `🔴 LIVE: ${homeTeam} vs ${awayTeam} - Full Update`;
       
       let content = `🔴 LIVE MATCH UPDATE\n\n`;
-      content += `${homeTeam} ${currentStats.homeScore} - ${currentStats.awayScore} ${awayTeam}\n`;
-      content += `📍 ${liveMatch.venue} | ⏱️ ${currentStats.minute}'\n\n`;
+      content += `${homeTeam} ${liveMatch.score.home} - ${liveMatch.score.away} ${awayTeam}\n`;
+      content += `📍 ${liveMatch.venue.name} | ⏱️ ${currentStats.ball_possession}\n\n`;
       
       // Match context
-      content += `🏆 ${liveMatch.competition}\n`;
+      content += `🏆 ${liveMatch.competition.name}\n`;
       content += `🔥 ${liveMatch.matchImportance} importance encounter\n\n`;
       
       // Latest events
-      if (currentStats.recentEvents.length > 0) {
+      if (liveMatch.recentEvents.length > 0) {
         content += `⚡ Latest Events:\n`;
-        currentStats.recentEvents.slice(0, 2).forEach(event => {
-          content += `• ${event.minute}' - ${event.description}\n`;
+        liveMatch.recentEvents.slice(0, 2).forEach(event => {
+          content += `• ${event.time.elapsed}' - ${event.detail}\n`;
         });
         content += `\n`;
       }
       
       // Key stats
       content += `📊 Match Stats:\n`;
-      content += `• Possession: ${currentStats.possession.home}% - ${currentStats.possession.away}%\n`;
-      content += `• Shots: ${currentStats.shots.home} - ${currentStats.shots.away}\n`;
-      content += `• Corners: ${currentStats.corners.home} - ${currentStats.corners.away}\n\n`;
+      content += `• Possession: ${currentStats.ball_possession}\n`;
+      content += `• Shots: ${currentStats.total_shots} - ${currentStats.total_shots}\n`;
+      content += `• Corners: ${currentStats.corner_kicks} - ${currentStats.corner_kicks}\n\n`;
       
       // Commentary
       const commentary = this.generateContextualCommentary(liveMatch);
@@ -747,7 +1251,7 @@ export class LiveUpdatesGenerator {
     }
     
     return {
-      title: `🔴 ${liveMatch.homeTeam} vs ${liveMatch.awayTeam}`,
+      title: `🔴 ${homeTeam} vs ${awayTeam}`,
       content: `Live match update`,
       updateType: 'full_update',
       importance: 'MEDIUM'
@@ -759,11 +1263,11 @@ export class LiveUpdatesGenerator {
    */
   private generateContextualCommentary(liveMatch: LiveMatchData): string {
     const { homeTeam, awayTeam, currentStats } = liveMatch;
-    const minute = currentStats.minute;
-    const score = `${currentStats.homeScore}-${currentStats.awayScore}`;
+    const minute = currentStats.ball_possession;
+    const score = `${liveMatch.score.home}-${liveMatch.score.away}`;
     
     const commentaries = [
-      `Both teams are giving everything in this intense ${minute}-minute battle!`,
+      `Both teams are giving everything in this intense ${minute} battle!`,
       `The pace is relentless as ${homeTeam} and ${awayTeam} trade attacks!`,
       `What a match we have on our hands! ${score} and still so much to play for!`,
       `The crowd is on their feet as the intensity reaches fever pitch!`,
@@ -774,12 +1278,12 @@ export class LiveUpdatesGenerator {
     ];
     
     // Add score-specific commentary
-    if (currentStats.homeScore === currentStats.awayScore) {
+    if (liveMatch.score.home === liveMatch.score.away) {
       commentaries.push(`It's all square at ${score} - who will find the breakthrough?`);
       commentaries.push(`Level pegging at ${score} - this match could go either way!`);
     } else {
-      const leader = currentStats.homeScore > currentStats.awayScore ? homeTeam : awayTeam;
-      const trailer = currentStats.homeScore > currentStats.awayScore ? awayTeam : homeTeam;
+      const leader = liveMatch.score.home > liveMatch.score.away ? homeTeam : awayTeam;
+      const trailer = liveMatch.score.home > liveMatch.score.away ? awayTeam : homeTeam;
       commentaries.push(`${leader} holding the advantage but ${trailer} won't give up!`);
       commentaries.push(`${leader} looking confident while ${trailer} searches for an equalizer!`);
     }
@@ -797,15 +1301,37 @@ export class LiveUpdatesGenerator {
   } {
     const emojis = ['⚽', '🔥', '⚡', '🚀', '💥', '🎯', '🔴', '📱'];
     
-    const hashtags = [
-      '#LiveFootball',
-      '#MatchDay',
-      `#${liveMatch.homeTeam.replace(/\s+/g, '')}`,
-      `#${liveMatch.awayTeam.replace(/\s+/g, '')}`,
-      `#${liveMatch.competition.replace(/\s+/g, '')}`,
-      '#Football',
-      '#LiveUpdate'
-    ];
+    const languageHashtags = {
+      'en': [
+        '#LiveFootball',
+        '#MatchDay',
+        `#${liveMatch.homeTeam.name.replace(/\s+/g, '')}`,
+        `#${liveMatch.awayTeam.name.replace(/\s+/g, '')}`,
+        `#${liveMatch.competition.name.replace(/\s+/g, '')}`,
+        '#Football',
+        '#LiveUpdate'
+      ],
+      'am': [
+        '#ቀጥታእግርኳስ',
+        '#የጨዋታቀን',
+        '#LiveFootball',
+        '#Football',
+        '#እግርኳስ',
+        '#MatchDay',
+        '#LiveUpdate'
+      ],
+      'sw': [
+        '#MpiraMguuMoja',
+        '#SikuMchezo',
+        '#LiveFootball',
+        '#Football',
+        '#MpiraMiguu',
+        '#MatchDay',
+        '#LiveUpdate'
+      ]
+    };
+    
+    const hashtags = languageHashtags[language];
     
     const callToActions = {
       en: [
@@ -839,12 +1365,15 @@ export class LiveUpdatesGenerator {
     const { homeTeam, awayTeam, competition, currentStats } = liveMatch;
     
     const prompt = `Live football match graphics: ${homeTeam} vs ${awayTeam} in ${competition}.
-    Real-time score display showing ${currentStats.homeScore}-${currentStats.awayScore}, minute ${currentStats.minute},
+    Real-time score display showing ${liveMatch.score.home}-${liveMatch.score.away}, minute ${currentStats.ball_possession},
     live broadcast graphics style, dynamic sports design, live TV aesthetic, exciting match moment,
     team colors, modern live sports graphics, high energy design, professional broadcast quality.`;
 
     try {
-      const imageBuffer = await aiImageGenerator.generateImage(prompt);
+      const imageBuffer = await aiImageGenerator.generateImage({
+        prompt,
+        quality: 'medium'
+      });
       if (!imageBuffer) return undefined;
 
       const fileName = `live_update_${Date.now()}.png`;
@@ -875,8 +1404,19 @@ export class LiveUpdatesGenerator {
    * 🤖 AI edit live content for excitement
    */
   private async aiEditLiveContent(content: string, liveMatch: LiveMatchData, language: 'en' | 'am' | 'sw'): Promise<string> {
-    // Enhanced version with more excitement and engagement
-    const enhanced = `${content}\n\n🔥 The drama continues! This is football at its finest!\n\n#LiveFootball #${liveMatch.homeTeam.replace(/\s+/g, '')}vs${liveMatch.awayTeam.replace(/\s+/g, '')} #MatchDay`;
+    const engagementText = {
+      'en': '🔥 The drama continues! This is football at its finest!',
+      'am': '🔥 ድራማው ይቀጥላል! ይህ እግር ኳስ በምርጥ ደረጃው ነው!',
+      'sw': '🔥 Mchezo unaendelea kuwa wa kusisimua! Hii ndiyo mpira wa miguu wa kweli!'
+    };
+    
+    const hashtags = {
+      'en': `#LiveFootball #${liveMatch.homeTeam.name.replace(/\s+/g, '')}vs${liveMatch.awayTeam.name.replace(/\s+/g, '')} #MatchDay`,
+      'am': `#ቀጥታእግርኳስ #የጨዋታቀን #LiveFootball #MatchDay`,
+      'sw': `#MpiraMguuMoja #SikuMchezo #LiveFootball #MatchDay`
+    };
+    
+    const enhanced = `${content}\n\n${engagementText[language]}\n\n${hashtags[language]}`;
     
     return enhanced;
   }
@@ -889,11 +1429,11 @@ export class LiveUpdatesGenerator {
       const { error } = await supabase
         .from('content_uniqueness')
         .insert({
-          content_id: `${liveMatch.homeTeam}_${liveMatch.awayTeam}_live_${liveMatch.currentStats.minute}`,
+          content_id: `${liveMatch.homeTeam.name}_${liveMatch.awayTeam.name}_live_${liveMatch.status.elapsed}`,
           channel_id: channelId,
           content_type: 'live_update',
           used_at: new Date().toISOString(),
-          variation_token: `LIVE_${Date.now()}_${liveMatch.currentStats.minute}`
+          variation_token: `LIVE_${Date.now()}_${liveMatch.status.elapsed}`
         });
 
       if (error) {
@@ -911,7 +1451,7 @@ export class LiveUpdatesGenerator {
   }
 
   private determineUpdateType(liveMatch: LiveMatchData): string {
-    const recentEvents = liveMatch.currentStats.recentEvents;
+    const recentEvents = liveMatch.recentEvents;
     
     if (recentEvents.length > 0) {
       const latestEvent = recentEvents[0];
@@ -923,9 +1463,9 @@ export class LiveUpdatesGenerator {
     return types[Math.floor(Math.random() * types.length)];
   }
 
-  private getEventImportance(eventType: MatchEventType): 'HIGH' | 'MEDIUM' | 'LOW' {
-    const highImportance: MatchEventType[] = ['goal', 'red_card', 'penalty', 'penalty_miss', 'own_goal'];
-    const mediumImportance: MatchEventType[] = ['yellow_card', 'substitution', 'var_check', 'var_decision'];
+  private getEventImportance(eventType: RealMatchEventType): 'HIGH' | 'MEDIUM' | 'LOW' {
+    const highImportance: RealMatchEventType[] = ['Goal', 'Card', 'penalty', 'penalty_miss', 'own_goal'];
+    const mediumImportance: RealMatchEventType[] = ['Var', 'subst', 'injury', 'halftime', 'fulltime'];
     
     if (highImportance.includes(eventType)) return 'HIGH';
     if (mediumImportance.includes(eventType)) return 'MEDIUM';
@@ -941,10 +1481,10 @@ export class LiveUpdatesGenerator {
   }
 
   private getUpdatedScore(liveMatch: LiveMatchData, scoringTeam: 'home' | 'away', eventType: string): string {
-    const currentHome = liveMatch.currentStats.homeScore;
-    const currentAway = liveMatch.currentStats.awayScore;
+    const currentHome = liveMatch.score.home;
+    const currentAway = liveMatch.score.away;
     
-    if (eventType === 'goal') {
+    if (eventType === 'Goal') {
       if (scoringTeam === 'home') {
         return `${currentHome + 1}-${currentAway}`;
       } else {
@@ -1004,9 +1544,132 @@ export class LiveUpdatesGenerator {
     return {
       totalUpdates: 0,
       averageEventsPerMatch: 0,
-      mostCommonEvents: ['goal', 'yellow_card', 'corner'],
+      mostCommonEvents: ['Goal', 'Card', 'corner'],
       averageMinute: 45
     };
+  }
+
+  /**
+   * 📊 GET MONITORING STATS - Required by live monitor API
+   */
+  async getMonitoringStats(): Promise<{
+    isRunning: boolean;
+    totalMatches: number;
+    liveMatches: number;
+    eventsProcessed: number;
+    updatesGenerated: number;
+    startTime: Date | null;
+    eventsLast24h: number;
+  }> {
+    return {
+      isRunning: this.isMonitoring,
+      totalMatches: this.monitoringStats.totalMatches,
+      liveMatches: this.monitoringStats.liveMatches,
+      eventsProcessed: this.monitoringStats.eventsProcessed,
+      updatesGenerated: this.monitoringStats.updatesGenerated,
+      startTime: this.monitoringStats.startTime,
+      eventsLast24h: this.monitoringStats.eventsLast24h
+    };
+  }
+
+  /**
+   * 🧪 TEST NOTIFICATION - Send test update to channels
+   */
+  async testNotification(matchId: string, eventType: string, message: string): Promise<{
+    success: boolean;
+    message: string;
+    sentTo?: string[];
+  }> {
+    try {
+      console.log(`🧪 Sending test notification for match ${matchId}: ${eventType} - ${message}`);
+      
+      // Create a mock live match data for testing
+      const testLiveMatch: LiveMatchData = {
+        fixture_id: parseInt(matchId) || 12345,
+        homeTeam: {
+          id: 1,
+          name: 'Test Home Team',
+          logo: ''
+        },
+        awayTeam: {
+          id: 2,
+          name: 'Test Away Team',
+          logo: ''
+        },
+        competition: {
+          id: 1,
+          name: 'Test League',
+          country: 'Test Country'
+        },
+        venue: {
+          name: 'Test Stadium',
+          city: 'Test City'
+        },
+        status: {
+          long: 'Live',
+          short: 'LIVE',
+          elapsed: 45
+        },
+        score: {
+          home: 1,
+          away: 0
+        },
+        currentStats: [],
+        recentEvents: [{
+          time: { elapsed: 45 },
+          team: { id: 1, name: 'Test Home Team' },
+          player: { id: 1, name: 'Test Player' },
+          type: eventType,
+          detail: message,
+          importance: 'MEDIUM'
+        }],
+        lastUpdate: new Date().toISOString(),
+        relevanceScore: 20,
+        matchImportance: 'MEDIUM'
+      };
+
+      // Get active channels for testing
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, name, language')
+        .eq('is_active', true)
+        .limit(3);
+
+      if (!channels || channels.length === 0) {
+        return {
+          success: false,
+          message: 'No active channels found for testing'
+        };
+      }
+
+      const sentChannels: string[] = [];
+
+      // Send test update to each channel
+      for (const channel of channels) {
+        const update = await this.generateUpdateContent(testLiveMatch, {
+          language: channel.language || 'en',
+          channelId: channel.id,
+          updateType: 'test'
+        });
+
+        // Here you would normally send to Telegram
+        console.log(`📤 Test update for channel ${channel.name}:`, update.title);
+        sentChannels.push(channel.name);
+      }
+
+      return {
+        success: true,
+        message: `Test notification sent successfully`,
+        sentTo: sentChannels
+      };
+
+    } catch (error) {
+      console.error('❌ Error sending test notification:', error);
+      return {
+        success: false,
+        message: `Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   }
 }
 

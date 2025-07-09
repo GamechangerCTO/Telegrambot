@@ -310,15 +310,15 @@ export class NewsContentGenerator {
       }
 
       const systemPrompts = {
-        'en': `You are a professional football journalist. Create concise, engaging news summaries of exactly 4-5 lines. Include relevant emojis.`,
-        'am': `You are a professional football journalist writing in AMHARIC language. You MUST write EVERYTHING in Amharic script - including titles, content, and all text. Never use English words. Create concise news summaries of exactly 4-5 lines in Amharic.`,
-        'sw': `You are a professional football journalist writing in SWAHILI language. You MUST write EVERYTHING in Swahili - including titles, content, and all text. Never use English words. Create concise news summaries of exactly 4-5 lines in Swahili.`
+        'en': `You are a professional football journalist. Create concise, engaging news summaries of exactly 4-5 lines. Include relevant emojis. END with hashtags in both English and the content language.`,
+        'am': `You are a professional football journalist writing in AMHARIC language. You MUST write EVERYTHING in Amharic script - including titles, content, and all text. Never use English words. Create concise news summaries of exactly 4-5 lines in Amharic. END with hashtags in both Amharic and English.`,
+        'sw': `You are a professional football journalist writing in SWAHILI language. You MUST write EVERYTHING in Swahili - including titles, content, and all text. Never use English words. Create concise news summaries of exactly 4-5 lines in Swahili. END with hashtags in both Swahili and English.`
       };
 
       const languageInstructions = {
-        'en': `Summarize this football news into exactly 4-5 concise lines. Make it engaging and informative. Include relevant emojis:`,
-        'am': `ይህን የእግር ኳስ ዜና በትክክል 4-5 መስመሮች ብቻ ወደ አማርኛ ተርጉመህ ሙሉ በሙሉ አጠቃልል። አሳታፊ እና መረጃዎች የያዘ እንዲሆን አድርግ። ስሜት ገላጭ ምልክቶች አካትት። ያስታውስ - ምንም የእንግሊዝኛ ቃላት አትጠቀም፤ ሁሉም ነገር በአማርኛ ብቻ መሆን አለበት:`,
-        'sw': `Fupishe habari hii ya mpira wa miguu hasa mistari 4-5 tu kwa Kiswahili. Fanya iwe ya kuvutia na yenye habari muhimu. Jumuisha alama za hisia. Kumbuka - usitumie maneno ya Kiingereza; kila kitu kiwe kwa Kiswahili tu:`
+        'en': `Summarize this football news into exactly 4-5 concise lines. Make it engaging and informative. Include relevant emojis. END with hashtags in both English and the content language (example: #FootballNews #Breaking #TeamNames):`,
+        'am': `ይህን የእግር ኳስ ዜና በትክክል 4-5 መስመሮች ብቻ ወደ አማርኛ ተርጉመህ ሙሉ በሙሉ አጠቃልል። አሳታፊ እና መረጃዎች የያዘ እንዲሆን አድርግ። ስሜት ገላጭ ምልክቶች አካትት። ያስታውስ - ምንም የእንግሊዝኛ ቃላት አትጠቀም፤ ሁሉም ነገር በአማርኛ ብቻ መሆን አለበት። በመጨረሻ በአማርኛ እና በእንግሊዝኛ ሃሽታግዎች ያክሉ (ምሳሌ: #እግርኳስዜና #ዜና #FootballNews #Breaking):`,
+        'sw': `Fupishe habari hii ya mpira wa miguu hasa mistari 4-5 tu kwa Kiswahili. Fanya iwe ya kuvutia na yenye habari muhimu. Jumuisha alama za hisia. Kumbuka - usitumie maneno ya Kiingereza; kila kitu kiwe kwa Kiswahili tu. MALIZIA na hashtags kwa Kiswahili na Kiingereza (mfano: #HabariMpira #Breaking #FootballNews):`
       };
 
       const response = await openai.chat.completions.create({
@@ -357,13 +357,14 @@ export class NewsContentGenerator {
    */
   private createTemplateNewsContent(news: NewsItem, language: 'en' | 'am' | 'sw'): string {
     const shortContent = this.shortenContent(news.content, 200); // Much shorter
+    const hashtagsFromContent = this.extractHashtags(news.content);
     
     const templates = {
-      en: `⚽ ${this.extractMainPoint(news.title, shortContent)}\n\n${shortContent}\n\n🔗 Source: ${news.source}`,
+      en: `⚽ ${this.extractMainPoint(news.title, shortContent)}\n\n${shortContent}\n\n🔗 Source: ${news.source}\n\n#FootballNews #Breaking #${hashtagsFromContent}`,
       
-      am: `⚽ ${this.translateToAmharic(news.title)}\n\n${this.translateToAmharic(shortContent)}\n\n🔗 ምንጭ፡ ${news.source}`,
+      am: `⚽ ${this.translateToAmharic(news.title)}\n\n${this.translateToAmharic(shortContent)}\n\n🔗 ምንጭ፡ ${news.source}\n\n#እግርኳስዜና #ዜና #FootballNews #Breaking`,
       
-      sw: `⚽ ${this.translateToSwahili(news.title)}\n\n${this.translateToSwahili(shortContent)}\n\n🔗 Chanzo: ${news.source}`
+      sw: `⚽ ${this.translateToSwahili(news.title)}\n\n${this.translateToSwahili(shortContent)}\n\n🔗 Chanzo: ${news.source}\n\n#HabariMpira #Breaking #FootballNews`
     };
 
     return templates[language] || templates.en;
@@ -464,7 +465,7 @@ export class NewsContentGenerator {
         return [];
       }
 
-      return data?.map(item => item.content_id) || [];
+      return data?.map((item: any) => item.content_id) || [];
 
     } catch (error) {
       console.error(`❌ Error in getUsedContentIds:`, error);

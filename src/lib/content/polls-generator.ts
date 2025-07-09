@@ -965,8 +965,19 @@ export class PollsGenerator {
    * 🤖 AI edit poll content
    */
   private async aiEditPollContent(content: string, analysis: PollAnalysis, language: 'en' | 'am' | 'sw'): Promise<string> {
-    // Enhanced version with more engagement
-    const enhanced = `${content}\n🔥 Join the discussion! Your vote counts!\n\n#PollTime #Football #${analysis.homeTeam.replace(/\s+/g, '')}vs${analysis.awayTeam.replace(/\s+/g, '')} #MatchPrediction`;
+    const languageHashtags = {
+      'en': `#PollTime #Football #MatchPrediction #${analysis.homeTeam.replace(/\s+/g, '')}vs${analysis.awayTeam.replace(/\s+/g, '')}`,
+      'am': `#የሕዝብፈተናጊዜ #እግርኳስ #PollTime #Football #MatchPrediction`,
+      'sw': `#WakatiUliza #MpiraMiguu #PollTime #Football #MatchPrediction`
+    };
+    
+    const engagementText = {
+      'en': '🔥 Join the discussion! Your vote counts!',
+      'am': '🔥 ወደ ውይይቱ ይቀላቀሉ! የእርስዎ ድምጽ ይቆጠራል!',
+      'sw': '🔥 Jiunge na mjadala! Kura yako inahesabika!'
+    };
+    
+    const enhanced = `${content}\n\n${engagementText[language]}\n\n${languageHashtags[language]}`;
     
     return enhanced;
   }
