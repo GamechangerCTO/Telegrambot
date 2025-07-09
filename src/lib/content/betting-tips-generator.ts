@@ -704,9 +704,9 @@ export class BettingTipsGenerator {
       }
 
       const systemPrompts = {
-        'en': `You are a professional football betting tipster. Create engaging, practical BETTING TIPS content of exactly 4-6 lines. Focus on ACTIONABLE TIPS and specific recommendations, not analysis. Include emojis and responsible gambling warnings.`,
-        'am': `You are a professional football betting tipster writing in AMHARIC language. You MUST write EVERYTHING in Amharic script. Create engaging BETTING TIPS (not analysis) of exactly 4-6 lines in Amharic only. Focus on specific tips and recommendations.`,
-        'sw': `You are a professional football betting tipster writing in SWAHILI language. You MUST write EVERYTHING in Swahili. Create engaging BETTING TIPS (not analysis) of exactly 4-6 lines in Swahili only. Focus on actionable tips and recommendations.`
+        'en': `You are a professional football betting tipster. Create engaging, practical BETTING TIPS content of exactly 4-6 lines. Focus on ACTIONABLE TIPS and specific recommendations, not analysis. Include emojis and responsible gambling warnings. END with hashtags in both English and the content language.`,
+        'am': `You are a professional football betting tipster writing in AMHARIC language. You MUST write EVERYTHING in Amharic script. Create engaging BETTING TIPS (not analysis) of exactly 4-6 lines in Amharic only. Focus on specific tips and recommendations. END with hashtags in both Amharic and English.`,
+        'sw': `You are a professional football betting tipster writing in SWAHILI language. You MUST write EVERYTHING in Swahili. Create engaging BETTING TIPS (not analysis) of exactly 4-6 lines in Swahili only. Focus on actionable tips and recommendations. END with hashtags in both Swahili and English.`
       };
 
       // Build comprehensive analysis data for AI
@@ -747,9 +747,9 @@ export class BettingTipsGenerator {
       };
 
       const languageInstructions = {
-        'en': `Create engaging BETTING TIPS content using this data. Write exactly 4-6 lines. Focus on SPECIFIC ACTIONABLE TIPS like "Bet on Home Win", "Try Over 2.5 Goals", etc. Include odds and confidence. Add emojis and gambling warning:`,
-        'am': `ይህን መረጃ በመጠቀም አሳታፊ የውርርድ ምክሮች ይዘት ፍጠር። በትክክል 4-6 መስመሮች ብቻ ጻፍ። ልዩ ተግባራዊ ምክሮች ላይ አተኩር እንደ "የቤት ድል ውርርድ ያድርጉ"። የዕድል ምጣኔ እና እምነት ያካትቱ። ሁሉም ነገር በአማርኛ ብቻ መሆን አለበት፡`,
-        'sw': `Unda maudhui ya MAPENDEKEZO YA KAMARI kwa kutumia data hii. Andika mistari 4-6 tu haswa. Lenga MAPENDEKEZO MAHUSUSI ya vitendo kama "Weka kamari ya ushindi wa nyumbani". Jumuisha uwezekano na ujasiri. Kila kitu kiwe kwa Kiswahili tu:`
+        'en': `Create engaging BETTING TIPS content using this data. Write exactly 4-6 lines. Focus on SPECIFIC ACTIONABLE TIPS like "Bet on Home Win", "Try Over 2.5 Goals", etc. Include odds and confidence. Add emojis and gambling warning. END with hashtags in both English and the content language (example: #BettingTips #Football #TeamNames):`,
+        'am': `ይህን መረጃ በመጠቀም አሳታፊ የውርርድ ምክሮች ይዘት ፍጠር። በትክክል 4-6 መስመሮች ብቻ ጻፍ። ልዩ ተግባራዊ ምክሮች ላይ አተኩር እንደ "የቤት ድል ውርርድ ያድርጉ"। የዕድል ምጣኔ እና እምነት ያካትቱ। ሁሉም ነገር በአማርኛ ብቻ መሆን አለበት። በመጨረሻ በአማርኛ እና በእንግሊዝኛ ሃሽታግዎች ያክሉ (ምሳሌ: #የውርርድምክሮች #እግርኳስ #BettingTips #Football):`,
+        'sw': `Unda maudhui ya MAPENDEKEZO YA KAMARI kwa kutumia data hii. Andika mistari 4-6 tu haswa. Lenga MAPENDEKEZO MAHUSUSI ya vitendo kama "Weka kamari ya ushindi wa nyumbani". Jumuisha uwezekano na ujasiri. Kila kitu kiwe kwa Kiswahili tu. MALIZIA na hashtags kwa Kiswahili na Kiingereza (mfano: #KamariTips #Mpira #BettingTips #Football):`
       };
 
       const response = await openai.chat.completions.create({
@@ -795,11 +795,11 @@ export class BettingTipsGenerator {
     }
     
     if (language === 'am') {
-      return `${content}🔥 ይህን የ${analysis.matchAssessment.predictability.toLowerCase()}-እምነት የውርርድ እድል አታመልጡት!\n\n💡 ያስታውሱ: በኃላፊነት ይዋረዱ እና ማጣት የሚችሉትን ብቻ!\n\n#የውርርድጠቃሚ #እግርኳስ #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')}`;
+      return `${content}🔥 ይህን የ${analysis.matchAssessment.predictability.toLowerCase()}-እምነት የውርርድ እድል አታመልጡት!\n\n💡 ያስታውሱ: በኃላፊነት ይዋረዱ እና ማጣት የሚችሉትን ብቻ!\n\n#የውርርድምክሮች #እግርኳስ #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
     }
     
     if (language === 'sw') {
-      return `${content}🔥 Usikose fursa hii ya kamari ya ${analysis.matchAssessment.predictability.toLowerCase()}-uongozi!\n\n💡 Kumbuka: Weka kamari kwa busara na kile unachoweza kupoteza tu!\n\n#KamariTips #Mpira #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')}`;
+      return `${content}🔥 Usikose fursa hii ya kamari ya ${analysis.matchAssessment.predictability.toLowerCase()}-uongozi!\n\n💡 Kumbuka: Weka kamari kwa busara na kile unachoweza kupoteza tu!\n\n#KamariTips #Mpira #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
     }
     
     return content;
