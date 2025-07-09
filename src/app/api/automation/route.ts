@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { RuleExecutor } from '@/lib/automation/rule-executor'
 
 interface AutomationRule {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const orgId = searchParams.get('org_id') || '00000000-0000-0000-0000-000000000001' // Default org for now
 
-    const { data: rules, error } = await supabaseServer
+    const { data: rules, error } = await supabase
       .from('automation_rules')
       .select('*')
       .eq('organization_id', orgId)
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     }
 
-    const { data: newRule, error } = await supabaseServer
+    const { data: newRule, error } = await supabase
       .from('automation_rules')
       .insert(ruleData)
       .select()
@@ -154,7 +154,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { data: updatedRule, error } = await supabaseServer
+    const { data: updatedRule, error } = await supabase
       .from('automation_rules')
       .update({
         ...updateData,
@@ -202,7 +202,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { error } = await supabaseServer
+    const { error } = await supabase
       .from('automation_rules')
       .delete()
       .eq('id', id)

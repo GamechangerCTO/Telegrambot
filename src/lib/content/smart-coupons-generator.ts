@@ -15,7 +15,7 @@
 
 import { unifiedFootballService } from './unified-football-service';
 import { aiImageGenerator } from './ai-image-generator';
-import { supabaseServer } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export type CouponType = 
   | 'betting_bonus'      // Betting site bonuses
@@ -604,7 +604,7 @@ export class SmartCouponsGenerator {
       if (!imageBuffer) return undefined;
 
       const fileName = `coupon_${Date.now()}.png`;
-      const { data, error } = await supabaseServer.storage
+      const { data, error } = await supabase.storage
         .from('content-images')
         .upload(fileName, imageBuffer, {
           contentType: 'image/png',
@@ -616,7 +616,7 @@ export class SmartCouponsGenerator {
         return undefined;
       }
 
-      const { data: urlData } = supabaseServer.storage
+      const { data: urlData } = supabase.storage
         .from('content-images')
         .getPublicUrl(fileName);
 
@@ -643,10 +643,10 @@ export class SmartCouponsGenerator {
   private async trackCouponImpression(couponId: string, context: CouponPlacementContext): Promise<void> {
     try {
       // Update coupon impressions
-      const { error: updateError } = await supabaseServer
+      const { error: updateError } = await supabase
         .from('coupons')
         .update({ 
-          impressions: supabaseServer.sql`impressions + 1`,
+          impressions: supabase.sql`impressions + 1`,
           updated_at: new Date().toISOString()
         })
         .eq('id', couponId);
@@ -656,7 +656,7 @@ export class SmartCouponsGenerator {
       }
 
       // Track impression event
-      const { error: trackError } = await supabaseServer
+      const { error: trackError } = await supabase
         .from('coupon_events')
         .insert({
           coupon_id: couponId,
@@ -767,7 +767,7 @@ export class SmartCouponsGenerator {
         updatedAt: new Date().toISOString()
       };
 
-      const { data, error } = await supabaseServer
+      const { data, error } = await supabase
         .from('coupons')
         .insert(couponData)
         .select()
@@ -790,7 +790,7 @@ export class SmartCouponsGenerator {
    */
   private async getAvailableCoupons(context: CouponPlacementContext): Promise<CouponData[]> {
     try {
-      const { data, error } = await supabaseServer
+      const { data, error } = await supabase
         .from('coupons')
         .select('*')
         .eq('is_active', true)
@@ -814,7 +814,7 @@ export class SmartCouponsGenerator {
    */
   async getCouponPerformanceStats(): Promise<CouponPerformanceStats> {
     try {
-      const { data, error } = await supabaseServer
+      const { data, error } = await supabase
         .from('coupons')
         .select('*')
         .eq('is_active', true);
@@ -852,7 +852,7 @@ export class SmartCouponsGenerator {
    */
   async updateCoupon(couponId: string, updates: Partial<CouponData>): Promise<boolean> {
     try {
-      const { error } = await supabaseServer
+      const { error } = await supabase
         .from('coupons')
         .update({
           ...updates,
@@ -877,7 +877,7 @@ export class SmartCouponsGenerator {
    */
   async deleteCoupon(couponId: string): Promise<boolean> {
     try {
-      const { error } = await supabaseServer
+      const { error } = await supabase
         .from('coupons')
         .update({ is_active: false })
         .eq('id', couponId);
@@ -899,7 +899,7 @@ export class SmartCouponsGenerator {
    */
   async getUserCoupons(userId: string): Promise<CouponData[]> {
     try {
-      const { data, error } = await supabaseServer
+      const { data, error } = await supabase
         .from('coupons')
         .select('*')
         .eq('created_by', userId)
@@ -923,16 +923,16 @@ export class SmartCouponsGenerator {
   async trackCouponClick(couponId: string, context: CouponPlacementContext): Promise<void> {
     try {
       // Update coupon clicks
-      await supabaseServer
+      await supabase
         .from('coupons')
         .update({ 
-          clicks: supabaseServer.sql`clicks + 1`,
+          clicks: supabase.sql`clicks + 1`,
           updated_at: new Date().toISOString()
         })
         .eq('id', couponId);
 
       // Track click event
-      await supabaseServer
+      await supabase
         .from('coupon_events')
         .insert({
           coupon_id: couponId,
@@ -953,17 +953,17 @@ export class SmartCouponsGenerator {
   async trackCouponConversion(couponId: string, context: CouponPlacementContext): Promise<void> {
     try {
       // Update coupon conversions
-      await supabaseServer
+      await supabase
         .from('coupons')
         .update({ 
-          conversions: supabaseServer.sql`conversions + 1`,
-          current_usage: supabaseServer.sql`current_usage + 1`,
+          conversions: supabase.sql`conversions + 1`,
+          current_usage: supabase.sql`current_usage + 1`,
           updated_at: new Date().toISOString()
         })
         .eq('id', couponId);
 
       // Track conversion event
-      await supabaseServer
+      await supabase
         .from('coupon_events')
         .insert({
           coupon_id: couponId,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if settings exist
-    const { data: existingSettings, error: fetchError } = await supabaseServer
+    const { data: existingSettings, error: fetchError } = await supabase
       .from('automation_settings')
       .select('*')
       .eq('organization_id', 'default')
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Update or insert settings
     if (existingSettings) {
-      const { error: updateError } = await supabaseServer
+      const { error: updateError } = await supabase
         .from('automation_settings')
         .update({ 
           full_automation_enabled: enabled,
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
     } else {
-      const { error: insertError } = await supabaseServer
+      const { error: insertError } = await supabase
         .from('automation_settings')
         .insert([
           {

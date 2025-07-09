@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { smartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
 import { smartPushEngine } from '@/lib/content/smart-push-engine';
-import { supabaseServer } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Step 1: Get available channels if not specified
     let targetChannels = channel_ids;
     if (!targetChannels) {
-      const { data: channels } = await supabaseServer
+      const { data: channels } = await supabase
         .from('channels')
         .select('id, language')
         .eq('is_active', true);
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       // Schedule delayed sending
       const scheduledAt = new Date(Date.now() + delay_minutes * 60 * 1000);
       
-      const { data: queueItem, error } = await supabaseServer
+      const { data: queueItem, error } = await supabase
         .from('smart_push_queue')
         .insert({
           primary_content_id: content_id,
@@ -166,13 +166,13 @@ export async function GET(request: NextRequest) {
 
     if (action === 'status') {
       // Get current queue status
-      const { data: queueItems } = await supabaseServer
+      const { data: queueItems } = await supabase
         .from('smart_push_queue')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
 
-      const { data: todayDeliveries } = await supabaseServer
+      const { data: todayDeliveries } = await supabase
         .from('smart_push_deliveries')
         .select('*')
         .gte('sent_at', new Date().toISOString().split('T')[0]);
@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
 
     if (action === 'settings') {
       // Get smart push settings for all channels
-      const { data: settings } = await supabaseServer
+      const { data: settings } = await supabase
         .from('smart_push_settings')
         .select(`
           *,
@@ -288,7 +288,7 @@ async function sendCouponToChannels(generatedCoupon: any, channelIds: string[]) 
   for (const channelId of channelIds) {
     try {
       // Get channel info
-      const { data: channel } = await supabaseServer
+      const { data: channel } = await supabase
         .from('channels')
         .select('*')
         .eq('id', channelId)
@@ -307,7 +307,7 @@ async function sendCouponToChannels(generatedCoupon: any, channelIds: string[]) 
       console.log(`📤 Sending coupon to channel ${channel.name}: ${generatedCoupon.title}`);
       
       // Track the delivery
-      await supabaseServer
+      await supabase
         .from('smart_push_deliveries')
         .insert({
           channel_id: channelId,
