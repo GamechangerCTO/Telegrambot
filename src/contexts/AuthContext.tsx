@@ -86,11 +86,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log('🔍 AuthContext: Loading manager data for user:', userId);
       
-      const { data: managerData, error: managerError } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database query timeout')), 10000);
+      });
+      
+      const queryPromise = supabase
         .from('managers')
         .select('*')
         .eq('user_id', userId)
         .single();
+      
+      const { data: managerData, error: managerError } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]);
 
       if (managerError) {
         console.warn('Manager not found in database:', managerError);
@@ -169,7 +179,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    getInitialSession();
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('⚠️ AuthContext: Session check timeout, forcing loading to false');
+      setLoading(false);
+    }, 5000);
+
+    getInitialSession().finally(() => {
+      clearTimeout(timeout);
+    });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
