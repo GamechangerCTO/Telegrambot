@@ -461,8 +461,55 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return NextResponse.json({ 
-    message: 'Use GET method with query parameters',
-    example: '/api/api-football-showcase?feature=overview'
-  }, { status: 405 });
+  try {
+    const body = await request.json();
+    const action = body.action;
+    
+    if (action === 'get_fixtures_date_range') {
+      const api = new APIFootballAPI();
+      const fromDate = body.from_date;
+      const toDate = body.to_date;
+      const limit = body.limit || 100;
+      
+      console.log(`🔍 POST: Getting fixtures from ${fromDate} to ${toDate}`);
+      
+      // Get fixtures for the date range
+      const matches = [];
+      const startDate = new Date(fromDate);
+      const endDate = new Date(toDate);
+      
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        try {
+          const dayFixtures = await api.getFixturesForDate(dateStr);
+          if (dayFixtures && dayFixtures.length > 0) {
+            matches.push(...dayFixtures);
+          }
+        } catch (error) {
+          console.error(`Error fetching fixtures for ${dateStr}:`, error);
+        }
+      }
+      
+      console.log(`✅ Found ${matches.length} total fixtures`);
+      
+      return NextResponse.json({
+        success: true,
+        matches: matches.slice(0, limit),
+        total: matches.length,
+        dateRange: { from: fromDate, to: toDate }
+      });
+    }
+    
+    return NextResponse.json({ 
+      error: 'Unsupported action',
+      supportedActions: ['get_fixtures_date_range']
+    }, { status: 400 });
+    
+  } catch (error) {
+    console.error('Error in POST /api/api-football-showcase:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
 } 

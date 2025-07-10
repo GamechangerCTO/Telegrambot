@@ -86,16 +86,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log('🔍 AuthContext: Loading manager data for user:', userId);
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased for production
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timeout')), 5000);
+        setTimeout(() => reject(new Error('Database query timeout')), 10000);
       });
       
       const queryPromise = supabase
         .from('managers')
-        .select('*')
+        .select('id, user_id, name, email, role, organization_id, created_at, updated_at')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no record
       
       const { data: managerData, error: managerError } = await Promise.race([
         queryPromise,
@@ -103,25 +103,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
       ]);
 
       if (managerError) {
-        console.warn('Manager not found in database:', managerError);
+        console.warn('Database error loading manager:', managerError);
         
-        // Check if this is a table access issue vs missing record
-        if (managerError.code === 'PGRST116') {
-          console.log('📝 AuthContext: No manager record found - attempting to create one');
-          
-          // Try to create manager record for existing auth user
-          if (user) {
-            const newManager = await createManagerRecord(user);
-            if (newManager) {
-              return newManager;
-            }
-          }
-        } else if (managerError.code === '42P01') {
+        // Check if this is a table access issue
+        if (managerError.code === '42P01') {
           console.error('❌ AuthContext: managers table does not exist!');
         } else {
           console.error('❌ AuthContext: Database access error:', managerError.code, managerError.message);
         }
         
+        return null;
+      }
+      
+      // If no manager data found (maybeSingle returns null, not error)
+      if (!managerData) {
+        console.log('📝 AuthContext: No manager record found - attempting to create one');
+        
+        // Try to create manager record for existing auth user
+        if (user) {
+          const newManager = await createManagerRecord(user);
+          if (newManager) {
+            return newManager;
+          }
+        }
         return null;
       }
 
