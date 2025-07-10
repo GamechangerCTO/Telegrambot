@@ -58,6 +58,9 @@ export default function AutomationPage() {
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [executingRule, setExecutingRule] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [loadingFixtures, setLoadingFixtures] = useState(false);
 
   // Smart Content Configuration
   const SMART_CONTENT_CONFIG = {
@@ -139,6 +142,7 @@ export default function AutomationPage() {
     fetchRules();
     checkFullAutomationStatus();
     fetchSystemStatus();
+    fetchFixtures();
   }, []);
 
   // Timer effect
@@ -153,6 +157,14 @@ export default function AutomationPage() {
     }
     return () => clearInterval(interval);
   }, [isRunningCycle]);
+
+  // Current time updater
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -429,6 +441,50 @@ export default function AutomationPage() {
     }
   };
 
+  const fetchFixtures = async () => {
+    setLoadingFixtures(true);
+    try {
+      const response = await fetch('/api/debug-football');
+      if (response.ok) {
+        const data = await response.json();
+        // Get fixtures for next 7 days
+        const now = new Date();
+        const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        
+        const allFixtures = [];
+        if (data.fixtures) {
+          for (const [date, dayFixtures] of Object.entries(data.fixtures)) {
+            const fixtureDate = new Date(date);
+            if (fixtureDate >= now && fixtureDate <= nextWeek) {
+              allFixtures.push({
+                date,
+                fixtures: Array.isArray(dayFixtures) ? dayFixtures : []
+              });
+            }
+          }
+        }
+        
+        // Sort by date and limit to important leagues
+        const sortedFixtures = allFixtures
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .map(day => ({
+            ...day,
+            fixtures: day.fixtures
+              .filter((f: any) => f.league?.name && f.teams?.home?.name && f.teams?.away?.name)
+              .slice(0, 10) // Max 10 fixtures per day
+          }))
+          .slice(0, 7); // Max 7 days
+        
+        setFixtures(sortedFixtures);
+      }
+    } catch (error) {
+      console.error('Error fetching fixtures:', error);
+      setFixtures([]);
+    } finally {
+      setLoadingFixtures(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -459,8 +515,32 @@ export default function AutomationPage() {
           )}
         </div>
         
-        {/* Full Automation Toggle */}
-        <div className="flex items-center gap-4">
+        {/* Current Time and Full Automation Toggle */}
+        <div className="flex items-center gap-6">
+          {/* Current Time Display */}
+          <div className="text-center">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+              <Clock className="w-4 h-4" />
+              <span>Automation Time</span>
+            </div>
+            <div className="text-lg font-mono font-bold text-blue-600">
+              {currentTime.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+              })}
+            </div>
+            <div className="text-xs text-gray-400">
+              {currentTime.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+            </div>
+          </div>
+          
+          {/* Full Automation Toggle */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Full Automation</span>
             <Button
@@ -551,6 +631,77 @@ export default function AutomationPage() {
           </div>
         </div>
       )}
+
+      {/* Fixture Timetable */}
+      <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            ⚽ Next Week's Fixtures
+          </h2>
+          <Button 
+            onClick={fetchFixtures} 
+            disabled={loadingFixtures}
+            size="sm"
+            variant="outline"
+          >
+            {loadingFixtures ? 'Loading...' : 'Refresh'}
+          </Button>
+        </div>
+        
+        {loadingFixtures ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : fixtures.length > 0 ? (
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {fixtures.map((day, dayIndex) => (
+              <div key={dayIndex} className="border-l-4 border-blue-500 pl-4">
+                <h3 className="font-medium text-gray-900 mb-2">
+                  {new Date(day.date).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                  <span className="text-sm text-gray-500 ml-2">({day.fixtures.length} matches)</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {day.fixtures.slice(0, 6).map((fixture: any, fixtureIndex: number) => (
+                    <div key={fixtureIndex} className="bg-gray-50 rounded p-3 text-sm">
+                      <div className="font-medium text-gray-800 mb-1">
+                        {fixture.teams?.home?.name} vs {fixture.teams?.away?.name}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {fixture.league?.name} • {
+                          fixture.fixture?.date ? 
+                          new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          }) : 
+                          'TBD'
+                        }
+                      </div>
+                    </div>
+                  ))}
+                  {day.fixtures.length > 6 && (
+                    <div className="bg-gray-100 rounded p-3 text-sm text-center text-gray-500">
+                      +{day.fixtures.length - 6} more matches
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+            <p>No fixtures found for the next week</p>
+            <Button onClick={fetchFixtures} className="mt-2" size="sm">
+              Load Fixtures
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Quick Actions */}
       <Card className="mb-8">

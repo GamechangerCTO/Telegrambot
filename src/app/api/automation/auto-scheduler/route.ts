@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('✅ Full automation is enabled');
+    console.log('🔧 Automation Engine Version: 2.0 - Production Logic Fixed');
 
     const results = {
       timestamp: new Date().toISOString(),
@@ -283,7 +284,7 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
     const isActiveHours = currentHour >= 6 && currentHour <= 23; // 6 AM to 11 PM
     
     if (isActiveHours) {
-      console.log(`✅ Event conditions met for ${rule.content_type} during active hours`);
+      console.log(`✅ Event conditions met for ${rule.content_type} during active hours (v2.0)`);
       return await triggerRealContentGeneration(rule.content_type, channels);
     }
     
