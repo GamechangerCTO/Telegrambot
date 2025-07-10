@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         console.log(`⚙️ Processing rule: ${rule.name} (${rule.content_type})`);
         
         // Find matching channels for this rule
-        const matchingChannels = activeChannels.filter(channel => {
+        const matchingChannels = activeChannels.filter((channel: any) => {
           // Check if rule applies to this channel's language
           const ruleLanguages = Array.isArray(rule.languages) ? rule.languages : ['en'];
           const channelLanguage = channel.language || 'en';
@@ -163,8 +163,8 @@ async function processAutomationRule(rule: any, channels: any[]) {
 }
 
 async function processScheduledRule(rule: any, channels: any[], now: Date) {
-  // Always trigger in development for immediate feedback
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Always trigger in development or test mode for immediate feedback
+  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
   
   if (isDevelopment) {
     console.log(`🎯 Development mode: triggering ${rule.content_type} content for ${channels.length} channels`);
@@ -189,11 +189,11 @@ async function processScheduledRule(rule: any, channels: any[], now: Date) {
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   
-  // Check if it's time to run
+  // Check if it's time to run - wider window for testing
   if (schedule.times && schedule.times.length > 0) {
     const shouldRun = schedule.times.some((time: string) => {
       const [hour, minute] = time.split(':').map(Number);
-      return currentHour === hour && currentMinute <= minute + 5; // 5 minute window
+      return currentHour === hour && currentMinute <= minute + 15; // 15 minute window
     });
     
     if (shouldRun) {
@@ -220,10 +220,10 @@ async function processScheduledRule(rule: any, channels: any[], now: Date) {
 }
 
 async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
-  // In development, trigger for immediate feedback
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // In development or test mode, trigger for immediate feedback
+  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
   
-  if (isDevelopment && Math.random() > 0.3) { // 70% chance for demo
+  if (isDevelopment) {
     console.log(`🎯 Development event: triggering ${rule.content_type} for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
     
@@ -250,9 +250,9 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
 
 async function processContextAwareRule(rule: any, channels: any[], now: Date) {
   // Context-aware rules (like smart coupons) trigger based on recent content
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
   
-  if (isDevelopment && Math.random() > 0.6) { // 40% chance for demo
+  if (isDevelopment) {
     console.log(`🎯 Development context: triggering ${rule.content_type} for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
     
