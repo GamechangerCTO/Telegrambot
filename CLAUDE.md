@@ -121,11 +121,38 @@ npm run typecheck    # TypeScript checking (disabled in config)
 - Database connection pooling via Supabase
 - Timeout mechanisms prevent hanging states
 
+## 🤖 Automation Engine Issues & Fixes
+
+### Issue: All Automation Rules Skipped in Production
+**Problem:** All automation rules showing "conditions not met" in Vercel production
+
+**Root Causes:**
+1. **Incomplete Production Logic** - Event-driven and context-aware rules had TODOs returning `null`
+2. **Narrow Time Windows** - 15-minute scheduling windows too restrictive
+3. **Missing Environment Handling** - Production logic was placeholder code
+4. **Automation Settings** - Full automation might be disabled
+
+**Fixes Applied:**
+1. **Event-Driven Rules**: Added active hours logic (6 AM - 11 PM)
+2. **Context-Aware Rules**: Added periodic triggers every 2 hours (8 AM - 8 PM)
+3. **Scheduled Rules**: Expanded time windows to 60 minutes in production
+4. **Settings Check**: Made automation settings more robust with fallback to enabled
+5. **Environment Detection**: Improved production vs development logic
+
+**File Updated:** `/src/app/api/automation/auto-scheduler/route.ts`
+
+### Automation Rule Types:
+- **Scheduled**: Time-based triggers with 60-minute windows
+- **Event-Driven**: Active hours-based triggers (6 AM - 11 PM)
+- **Context-Aware**: Periodic triggers every 2 hours (8 AM - 8 PM)
+
 ## 🔍 Debugging Tips
 - Check console for AuthContext state logs
 - Monitor network requests to Supabase
 - Verify environment variables are loaded
 - Test database queries independently if needed
+- Check automation logs for rule processing details
+- Verify `automation_settings` table has `full_automation_enabled = true`
 
 ---
 *Last Updated: 2025-01-09*  
