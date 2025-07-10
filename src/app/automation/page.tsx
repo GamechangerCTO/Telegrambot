@@ -166,6 +166,28 @@ export default function AutomationPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-refresh fixtures every 2 minutes if there are live matches
+  useEffect(() => {
+    const hasLiveMatches = fixtures.some(day => 
+      day.fixtures.some((fixture: any) => {
+        const status = fixture.fixture?.status?.short;
+        return status === 'LIVE' || status === '1H' || status === '2H';
+      })
+    );
+
+    let interval: NodeJS.Timeout;
+    if (hasLiveMatches) {
+      interval = setInterval(() => {
+        console.log('🔄 Auto-refreshing live scores...');
+        fetchFixtures();
+      }, 120000); // 2 minutes
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [fixtures]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -444,6 +466,73 @@ export default function AutomationPage() {
   const fetchFixtures = async () => {
     setLoadingFixtures(true);
     try {
+      // Get fixtures with match scoring
+      const response = await fetch('/api/unified-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_smart_matches',
+          content_type: 'live_update',
+          days_ahead: 7,
+          limit: 50,
+          min_score_threshold: 10
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.matches) {
+          // Group matches by date
+          const groupedByDate: { [key: string]: any[] } = {};
+          
+          data.matches.forEach((match: any) => {
+            const matchDate = match.fixture?.date ? 
+              new Date(match.fixture.date).toISOString().split('T')[0] : 
+              new Date().toISOString().split('T')[0];
+            
+            if (!groupedByDate[matchDate]) {
+              groupedByDate[matchDate] = [];
+            }
+            groupedByDate[matchDate].push(match);
+          });
+          
+          // Convert to array format and sort by date
+          const sortedFixtures = Object.entries(groupedByDate)
+            .map(([date, dayFixtures]) => ({
+              date,
+              fixtures: dayFixtures
+                .sort((a, b) => {
+                  // Sort by relevance score (highest first)
+                  const scoreA = a.content_suitability?.live_update || 0;
+                  const scoreB = b.content_suitability?.live_update || 0;
+                  return scoreB - scoreA;
+                })
+                .slice(0, 8) // Max 8 fixtures per day
+            }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 7); // Max 7 days
+          
+          setFixtures(sortedFixtures);
+        } else {
+          // Fallback to debug endpoint if unified content fails
+          await fetchFixturesDebug();
+        }
+      } else {
+        // Fallback to debug endpoint
+        await fetchFixturesDebug();
+      }
+    } catch (error) {
+      console.error('Error fetching fixtures:', error);
+      // Fallback to debug endpoint
+      await fetchFixturesDebug();
+    } finally {
+      setLoadingFixtures(false);
+    }
+  };
+
+  const fetchFixturesDebug = async () => {
+    try {
       const response = await fetch('/api/debug-football');
       if (response.ok) {
         const data = await response.json();
@@ -471,17 +560,15 @@ export default function AutomationPage() {
             ...day,
             fixtures: day.fixtures
               .filter((f: any) => f.league?.name && f.teams?.home?.name && f.teams?.away?.name)
-              .slice(0, 10) // Max 10 fixtures per day
+              .slice(0, 8) // Max 8 fixtures per day
           }))
           .slice(0, 7); // Max 7 days
         
         setFixtures(sortedFixtures);
       }
     } catch (error) {
-      console.error('Error fetching fixtures:', error);
+      console.error('Error fetching debug fixtures:', error);
       setFixtures([]);
-    } finally {
-      setLoadingFixtures(false);
     }
   };
 
@@ -635,18 +722,41 @@ export default function AutomationPage() {
       {/* Fixture Timetable */}
       <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            ⚽ Next Week's Fixtures
-          </h2>
-          <Button 
-            onClick={fetchFixtures} 
-            disabled={loadingFixtures}
-            size="sm"
-            variant="outline"
-          >
-            {loadingFixtures ? 'Loading...' : 'Refresh'}
-          </Button>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              ⚽ Next Week's Fixtures with Scores
+            </h2>
+            <p className="text-xs text-gray-500 mt-1">
+              Powered by AI Match Scorer • Live scores and relevance rankings
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-500">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded"></div>
+                  Live
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded"></div>
+                  Finished
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-gray-300 rounded"></div>
+                  Scheduled
+                </span>
+              </div>
+            </div>
+            <Button 
+              onClick={fetchFixtures} 
+              disabled={loadingFixtures}
+              size="sm"
+              variant="outline"
+            >
+              {loadingFixtures ? 'Loading...' : 'Refresh Scores'}
+            </Button>
+          </div>
         </div>
         
         {loadingFixtures ? (
@@ -666,23 +776,78 @@ export default function AutomationPage() {
                   <span className="text-sm text-gray-500 ml-2">({day.fixtures.length} matches)</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {day.fixtures.slice(0, 6).map((fixture: any, fixtureIndex: number) => (
-                    <div key={fixtureIndex} className="bg-gray-50 rounded p-3 text-sm">
-                      <div className="font-medium text-gray-800 mb-1">
-                        {fixture.teams?.home?.name} vs {fixture.teams?.away?.name}
+                  {day.fixtures.slice(0, 6).map((fixture: any, fixtureIndex: number) => {
+                    const relevanceScore = fixture.content_suitability?.live_update || 0;
+                    const isLive = fixture.fixture?.status?.short === 'LIVE' || fixture.fixture?.status?.short === '1H' || fixture.fixture?.status?.short === '2H';
+                    const isFinished = fixture.fixture?.status?.short === 'FT';
+                    const homeScore = fixture.goals?.home ?? null;
+                    const awayScore = fixture.goals?.away ?? null;
+                    const hasScore = homeScore !== null && awayScore !== null;
+                    
+                    return (
+                      <div key={fixtureIndex} className={`rounded p-3 text-sm border-l-4 ${
+                        isLive ? 'bg-green-50 border-green-500' : 
+                        isFinished ? 'bg-blue-50 border-blue-500' : 
+                        'bg-gray-50 border-gray-300'
+                      }`}>
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="font-medium text-gray-800 flex-1">
+                            {fixture.teams?.home?.name} vs {fixture.teams?.away?.name}
+                          </div>
+                          {relevanceScore > 0 && (
+                            <div className={`text-xs px-2 py-1 rounded ml-2 ${
+                              relevanceScore >= 70 ? 'bg-green-100 text-green-800' :
+                              relevanceScore >= 40 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {relevanceScore}%
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Score Display */}
+                        {hasScore && (
+                          <div className={`text-lg font-bold mb-1 ${
+                            isLive ? 'text-green-700' : 
+                            isFinished ? 'text-blue-700' : 
+                            'text-gray-700'
+                          }`}>
+                            {homeScore} - {awayScore}
+                            {isLive && (
+                              <span className="text-xs ml-2 bg-red-500 text-white px-1 rounded animate-pulse">
+                                LIVE
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="text-xs text-gray-600 flex items-center justify-between">
+                          <span>{fixture.league?.name}</span>
+                          <span>
+                            {fixture.fixture?.date ? 
+                              new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              }) : 
+                              'TBD'
+                            }
+                          </span>
+                        </div>
+                        
+                        {/* Match Status */}
+                        {fixture.fixture?.status?.long && (
+                          <div className={`text-xs mt-1 ${
+                            isLive ? 'text-green-600 font-medium' :
+                            isFinished ? 'text-blue-600' :
+                            'text-gray-500'
+                          }`}>
+                            {fixture.fixture.status.long}
+                            {fixture.fixture.status.elapsed && ` (${fixture.fixture.status.elapsed}')`}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-600">
-                        {fixture.league?.name} • {
-                          fixture.fixture?.date ? 
-                          new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          }) : 
-                          'TBD'
-                        }
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {day.fixtures.length > 6 && (
                     <div className="bg-gray-100 rounded p-3 text-sm text-center text-gray-500">
                       +{day.fixtures.length - 6} more matches

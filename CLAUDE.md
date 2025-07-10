@@ -146,6 +146,38 @@ npm run typecheck    # TypeScript checking (disabled in config)
 - **Event-Driven**: Active hours-based triggers (6 AM - 11 PM)
 - **Context-Aware**: Periodic triggers every 2 hours (8 AM - 8 PM)
 
+## ⚽ Automation Frontend Enhancements
+
+### Current Time Display
+**Location:** `/automation` page header
+**Features:**
+- Real-time clock (HH:MM:SS format)
+- Current date with day of week
+- Updates every second
+- Shows "Automation Time" used by engine
+
+### Fixture Timetable with Match Scorer
+**Location:** `/automation` page - between System Status and Quick Actions
+**Features:**
+- **AI-Powered Match Scoring**: Uses `/api/unified-content` with match scorer
+- **Live Score Integration**: Real-time scores and match status
+- **Relevance Scoring**: 0-100% content suitability scores
+- **Visual Status Indicators**:
+  - 🟢 Green: Live matches (with pulsing LIVE badge)
+  - 🔵 Blue: Finished matches
+  - ⚪ Gray: Scheduled matches
+- **Smart Sorting**: Matches sorted by relevance score (highest first)
+- **Auto-Refresh**: Live matches auto-refresh every 2 minutes
+- **Fallback System**: Uses debug endpoint if main API fails
+- **Responsive Design**: 2 columns on desktop, 1 on mobile
+
+### Match Data Integration
+- **Primary API**: `/api/unified-content` with FootballMatchScorer
+- **Fallback API**: `/api/debug-football` for basic fixture data
+- **Score Display**: Home-Away scores with match time elapsed
+- **Match Status**: Full status text (e.g., "First Half", "Full Time")
+- **League Information**: Competition names and kick-off times
+
 ## 🔍 Debugging Tips
 - Check console for AuthContext state logs
 - Monitor network requests to Supabase
