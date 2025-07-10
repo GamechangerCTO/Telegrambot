@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { POST as unifiedContentAPI } from '@/app/api/unified-content/route';
 
 export async function POST(request: NextRequest) {
   try {
@@ -431,22 +432,7 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
         // Build target channels list for unified-content API
         const targetChannels = languageChannels.map((channel: any) => channel.telegram_channel_id).join(',');
         
-        // Build request URL - use full URL with domain for production
-        const baseUrl = process.env.VERCEL_URL 
-          ? `https://${process.env.VERCEL_URL}` 
-          : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const apiUrl = `${baseUrl}/api/unified-content`;
-        
-        console.log(`🔍 DEBUG: Environment variables:`);
-        console.log(`🔍 DEBUG: VERCEL_URL = ${process.env.VERCEL_URL}`);
-        console.log(`🔍 DEBUG: NEXT_PUBLIC_APP_URL = ${process.env.NEXT_PUBLIC_APP_URL}`);
-        console.log(`🔍 DEBUG: Base URL = ${baseUrl}`);
-        console.log(`🔍 DEBUG: Final API URL = ${apiUrl}`);
-        
-        const requestHeaders = {
-          'Content-Type': 'application/json',
-          'x-internal-automation': 'true'  // Allow internal server calls
-        };
+        console.log(`🔍 DEBUG: Calling unified-content API directly (no HTTP)`);
         
         const requestBody = {
           contentType: contentType,
@@ -455,26 +441,32 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
           isAutomated: true // Mark as automated content
         };
         
-        console.log(`🔍 DEBUG: Request headers:`, requestHeaders);
         console.log(`🔍 DEBUG: Request body:`, requestBody);
         
-        // Call the unified-content API to generate and send content
-        const response = await fetch(apiUrl, {
+        // Create a mock request object for the unified-content API
+        const mockRequest = new NextRequest('http://localhost:3000/api/unified-content', {
           method: 'POST',
-          headers: requestHeaders,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-automation': 'true'
+          },
           body: JSON.stringify(requestBody)
         });
+        
+        // Call the unified-content API directly (no HTTP request needed)
+        const response = await unifiedContentAPI(mockRequest);
 
         console.log(`🔍 DEBUG: API Response status: ${response.status}`);
 
-        if (!response.ok) {
-          console.error(`❌ Failed to generate ${contentType} content in ${language}:`, response.statusText);
+        if (response.status !== 200) {
+          const errorText = await response.text();
+          console.error(`❌ Failed to generate ${contentType} content in ${language}:`, errorText);
           totalSuccess = false;
           continue;
         }
 
         const result = await response.json();
-        console.log(`✅ Successfully generated ${contentType} content in ${language}:`, result.message);
+        console.log(`✅ Successfully generated ${contentType} content in ${language}:`, result.message || 'Success');
         console.log(`🔍 DEBUG: API Response:`, result);
 
       } catch (error) {
