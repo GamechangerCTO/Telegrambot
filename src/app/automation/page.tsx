@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Play, Settings, Clock, Zap, Calendar, Users, Globe, ToggleLeft, ToggleRight, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { footballMatchScorer } from '@/lib/content/football-match-scorer';
 
 interface AutomationRule {
   id: string;
@@ -464,6 +463,31 @@ export default function AutomationPage() {
     }
   };
 
+  // Simple relevance scoring function
+  const calculateMatchRelevanceScore = (match: any): number => {
+    let score = 30; // Base score for all matches
+    
+    // League bonuses
+    const leagueName = match.league?.name?.toLowerCase() || '';
+    if (leagueName.includes('champions league')) score += 50;
+    else if (leagueName.includes('premier league') || leagueName.includes('primera')) score += 40;
+    else if (leagueName.includes('serie a') || leagueName.includes('bundesliga') || leagueName.includes('ligue 1')) score += 35;
+    else if (leagueName.includes('europa league')) score += 30;
+    else if (leagueName.includes('championship') || leagueName.includes('segunda')) score += 20;
+    
+    // Team popularity bonuses
+    const homeTeam = match.teams?.home?.name?.toLowerCase() || '';
+    const awayTeam = match.teams?.away?.name?.toLowerCase() || '';
+    const popularTeams = ['real madrid', 'barcelona', 'manchester united', 'manchester city', 'liverpool', 'arsenal', 'chelsea', 'tottenham', 'juventus', 'ac milan', 'inter milan', 'bayern munich', 'borussia dortmund', 'psg', 'atletico madrid'];
+    
+    if (popularTeams.some(team => homeTeam.includes(team) || awayTeam.includes(team))) {
+      score += 20;
+    }
+    
+    // Cap at 100%
+    return Math.min(score, 100);
+  };
+
   const fetchFixtures = async () => {
     setLoadingFixtures(true);
     try {
@@ -499,75 +523,28 @@ export default function AutomationPage() {
         const data = await response.json();
         
         if (data.success && data.matches) {
-          // Transform API-Football data to MatchData format for scorer
-          const matchDataArray = data.matches.map((match: any) => ({
-            id: match.fixture?.id?.toString() || Math.random().toString(),
-            homeTeam: {
-              id: match.teams?.home?.id?.toString() || '',
-              name: match.teams?.home?.name || 'Unknown',
-              logo: match.teams?.home?.logo || ''
-            },
-            awayTeam: {
-              id: match.teams?.away?.id?.toString() || '',
-              name: match.teams?.away?.name || 'Unknown', 
-              logo: match.teams?.away?.logo || ''
-            },
-            competition: {
-              id: match.league?.id?.toString() || '',
-              name: match.league?.name || 'Unknown League',
-              logo: match.league?.logo || ''
-            },
-            kickoff: new Date(match.fixture?.date || new Date()),
-            status: match.fixture?.status?.short || 'SCHEDULED',
-            score: {
-              home: match.goals?.home || null,
-              away: match.goals?.away || null
-            }
-          }));
-
-          // Use FootballMatchScorer to score matches
-          const scoredMatches = await footballMatchScorer.scoreMatches(matchDataArray, {
-            content_type: 'live_update',
-            min_score_threshold: 15,
-            max_future_days: 7
-          });
-
-          // Group scored matches by date
+          // Apply simple scoring and group matches by date
           const groupedByDate: { [key: string]: any[] } = {};
           
-          scoredMatches.forEach((match: any) => {
-            const matchDate = match.kickoff ? 
-              new Date(match.kickoff).toISOString().split('T')[0] : 
+          data.matches.forEach((match: any) => {
+            const matchDate = match.fixture?.date ? 
+              new Date(match.fixture.date).toISOString().split('T')[0] : 
               new Date().toISOString().split('T')[0];
             
             if (!groupedByDate[matchDate]) {
               groupedByDate[matchDate] = [];
             }
-
-            // Convert back to display format with scoring data
-            const displayMatch = {
-              fixture: {
-                id: match.id,
-                date: match.kickoff,
-                status: {
-                  short: match.status,
-                  long: match.status === 'LIVE' ? 'Match In Play' : 
-                        match.status === 'FT' ? 'Match Finished' : 'Not Started'
-                }
-              },
-              teams: {
-                home: match.homeTeam,
-                away: match.awayTeam
-              },
-              league: match.competition,
-              goals: match.score,
-              // Add scoring data
-              content_suitability: match.content_suitability,
-              relevance_score: match.relevance_score,
-              reasons: match.reasons
+            
+            // Apply basic intelligence scoring
+            const relevanceScore = calculateMatchRelevanceScore(match);
+            match.content_suitability = {
+              live_update: relevanceScore
+            };
+            match.relevance_score = {
+              total: relevanceScore
             };
             
-            groupedByDate[matchDate].push(displayMatch);
+            groupedByDate[matchDate].push(match);
           });
           
           // Convert to array format and sort by relevance score
