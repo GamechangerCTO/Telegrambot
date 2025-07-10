@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSportsApiKeys } from '@/lib/api-keys';
 import { APIFootballAPI } from '@/lib/content/football-intelligence/api/api-football-api';
 import { UnifiedFootballService } from '@/lib/content/unified-football-service';
+import { footballMatchScorer } from '@/lib/content/football-match-scorer';
 
 export async function GET(request: NextRequest) {
   try {
@@ -108,6 +109,157 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       error: 'שגיאה בבדיקת משחקים',
       details: error instanceof Error ? error.message : 'שגיאה לא ידועה'
+    }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { action, start_date, end_date, apply_smart_scoring, content_type } = body;
+
+    if (action === 'get_weekly_fixtures') {
+      console.log('🏟️ Getting weekly fixtures with smart scoring...');
+      
+      // Get API key from environment
+      const apiKey = process.env.API_FOOTBALL_KEY;
+      if (!apiKey) {
+        return NextResponse.json({ 
+          success: false,
+          error: 'API_FOOTBALL_KEY not found in environment' 
+        }, { status: 500 });
+      }
+
+      const apiFootball = new APIFootballAPI(apiKey);
+
+      // Get fixtures for the date range
+      const startDate = start_date || new Date().toISOString().split('T')[0];
+      const endDate = end_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      console.log(`📅 Fetching fixtures from ${startDate} to ${endDate}`);
+      
+      const matches = await apiFootball.getFixturesByDateRange(startDate, endDate, 100);
+      
+      if (matches.length === 0) {
+        return NextResponse.json({
+          success: true,
+          matches: [],
+          message: 'No matches found for the specified date range'
+        });
+      }
+
+      console.log(`⚽ Found ${matches.length} raw matches`);
+
+      // If smart scoring is requested, apply FootballMatchScorer
+      if (apply_smart_scoring) {
+        try {
+          // Convert to MatchData format for scorer
+          const matchData = matches.map(match => ({
+            id: match.match_id || `match_${Date.now()}_${Math.random()}`,
+            homeTeam: { 
+              id: match.match_hometeam_id || 'unknown_home', 
+              name: match.match_hometeam_name || 'Unknown Home'
+            },
+            awayTeam: { 
+              id: match.match_awayteam_id || 'unknown_away', 
+              name: match.match_awayteam_name || 'Unknown Away'
+            },
+            competition: { 
+              id: 'api_league', 
+              name: match.league_name || 'Unknown League'
+            },
+            kickoff: new Date(match.match_date + 'T' + (match.match_time || '15:00')),
+            status: (match.match_status === 'Finished' ? 'FINISHED' : 
+                   match.match_status === 'Live' ? 'LIVE' : 'SCHEDULED') as 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'IN_PLAY',
+            homeScore: match.match_hometeam_score || 0,
+            awayScore: match.match_awayteam_score || 0
+          }));
+
+          console.log('🧠 Applying smart scoring with FootballMatchScorer...');
+          
+          const scoredMatches = await footballMatchScorer.scoreMatches(matchData, {
+            content_type: content_type || 'daily_summary',
+            min_score_threshold: 15, // Only matches with decent relevance
+            max_future_days: 14
+          });
+
+          console.log(`✅ Smart scoring complete: ${scoredMatches.length} relevant matches`);
+
+          // Convert back to API format with scoring data
+          const enhancedMatches = scoredMatches.map(scored => {
+            const originalMatch = matches.find(m => m.match_id === scored.id);
+            return {
+              ...originalMatch,
+              relevance_score: scored.relevance_score,
+              reasons: scored.reasons,
+              content_suitability: scored.content_suitability,
+              // Add fixture format for compatibility
+              fixture: {
+                id: scored.id,
+                date: scored.kickoff.toISOString(),
+                status: {
+                  short: scored.status === 'FINISHED' ? 'FT' : 
+                        scored.status === 'LIVE' ? 'LIVE' : 'NS',
+                  long: scored.status === 'FINISHED' ? 'Finished' : 
+                       scored.status === 'LIVE' ? 'Live' : 'Not Started'
+                }
+              },
+              teams: {
+                home: { name: scored.homeTeam.name },
+                away: { name: scored.awayTeam.name }
+              },
+              league: { name: scored.competition.name },
+                             goals: {
+                 home: originalMatch?.match_hometeam_score || 0,
+                 away: originalMatch?.match_awayteam_score || 0
+               }
+            };
+          });
+
+          return NextResponse.json({
+            success: true,
+            matches: enhancedMatches,
+            scoring_applied: true,
+            total_raw_matches: matches.length,
+            total_scored_matches: enhancedMatches.length,
+            content_type: content_type || 'daily_summary',
+            date_range: { start_date: startDate, end_date: endDate }
+          });
+
+        } catch (scoringError) {
+          console.error('❌ Smart scoring failed:', scoringError);
+          // Fallback to basic matches without scoring
+          return NextResponse.json({
+            success: true,
+            matches: matches.slice(0, 50), // Limit without scoring
+            scoring_applied: false,
+            error: 'Smart scoring failed, showing basic matches',
+            total_matches: matches.length
+          });
+        }
+      } else {
+        // Return matches without smart scoring
+        return NextResponse.json({
+          success: true,
+          matches: matches.slice(0, 50),
+          scoring_applied: false,
+          total_matches: matches.length,
+          date_range: { start_date: startDate, end_date: endDate }
+        });
+      }
+    }
+
+    // Default response for unknown actions
+    return NextResponse.json({
+      success: false,
+      error: `Unknown action: ${action}. Available actions: get_weekly_fixtures`
+    }, { status: 400 });
+
+  } catch (error) {
+    console.error('❌ Error in POST /api/debug-football:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error'
     }, { status: 500 });
   }
 }

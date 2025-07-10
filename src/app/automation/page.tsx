@@ -491,12 +491,106 @@ export default function AutomationPage() {
   const fetchFixtures = async () => {
     setLoadingFixtures(true);
     try {
-      // Directly call API-Football and apply scoring
-      await fetchFixturesAPIFootball();
+      console.log('🏟️ Loading next week fixtures with smart scoring...');
+      
+      // Get today and next 7 days
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      // Call the unified football service to get matches for the next week
+      const response = await fetch('/api/debug-football', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_weekly_fixtures',
+          start_date: today.toISOString().split('T')[0],
+          end_date: nextWeek.toISOString().split('T')[0],
+          apply_smart_scoring: true,
+          content_type: 'daily_summary' // Use daily summary scoring for good match selection
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.matches && data.matches.length > 0) {
+          console.log(`✅ Got ${data.matches.length} matches from smart service`);
+          
+          // Group matches by date and apply smart scoring
+          const groupedByDate: { [key: string]: any[] } = {};
+          
+          data.matches.forEach((match: any) => {
+            const matchDate = match.fixture?.date ? 
+              new Date(match.fixture.date).toISOString().split('T')[0] : 
+              new Date().toISOString().split('T')[0];
+            
+            if (!groupedByDate[matchDate]) {
+              groupedByDate[matchDate] = [];
+            }
+            
+            // Enhanced match scoring with reasons
+            const relevanceScore = match.relevance_score?.total || calculateMatchRelevanceScore(match);
+            const scoringReasons = match.reasons || [];
+            
+            // Add enhanced data for display
+            match.content_suitability = {
+              live_update: relevanceScore,
+              news: relevanceScore * 0.9,
+              betting_tip: relevanceScore * 0.8,
+              poll: relevanceScore * 0.85
+            };
+            
+            match.relevance_score = {
+              total: relevanceScore,
+              competition: match.relevance_score?.competition || 5,
+              teams: match.relevance_score?.teams || 3,
+              timing: match.relevance_score?.timing || 6,
+              rivalry: match.relevance_score?.rivalry || 0
+            };
+            
+            match.reasons = scoringReasons.length > 0 ? scoringReasons : [
+              relevanceScore >= 25 ? '🔥 High interest match' : '⚽ Regular match',
+              `Competition: ${match.league?.name || 'Unknown'}`,
+              `Teams: ${match.teams?.home?.name} vs ${match.teams?.away?.name}`
+            ];
+            
+            groupedByDate[matchDate].push(match);
+          });
+          
+          // Sort matches within each day by relevance score
+          const sortedFixtures = Object.entries(groupedByDate)
+            .map(([date, dayFixtures]) => ({
+              date,
+              fixtures: dayFixtures
+                .sort((a, b) => {
+                  const scoreA = a.relevance_score?.total || 0;
+                  const scoreB = b.relevance_score?.total || 0;
+                  return scoreB - scoreA; // High to low
+                })
+                .slice(0, 12) // Show more matches per day for better coverage
+            }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 7); // Next 7 days
+          
+          setFixtures(sortedFixtures);
+          
+          // Log summary
+          const totalMatches = sortedFixtures.reduce((sum, day) => sum + day.fixtures.length, 0);
+          console.log(`📊 Displaying ${totalMatches} top matches across ${sortedFixtures.length} days`);
+          
+        } else {
+          console.log('⚠️ Smart service failed, trying API-Football fallback...');
+          await fetchFixturesAPIFootball();
+        }
+      } else {
+        console.log('⚠️ Smart service unavailable, trying API-Football fallback...');
+        await fetchFixturesAPIFootball();
+      }
+      
     } catch (error) {
-      console.error('Error fetching fixtures:', error);
-      // Final fallback to debug endpoint
-      await fetchFixturesDebug();
+      console.error('❌ Error fetching smart fixtures:', error);
+      // Fallback to API-Football
+      await fetchFixturesAPIFootball();
     } finally {
       setLoadingFixtures(false);
     }
