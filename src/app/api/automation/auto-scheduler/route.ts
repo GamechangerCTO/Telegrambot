@@ -375,8 +375,10 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
         // Build target channels list for unified-content API
         const targetChannels = languageChannels.map((channel: any) => channel.telegram_channel_id).join(',');
         
-        // Build the API URL - handle localhost properly
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+        // Build request URL - use full URL with domain for production
+        const baseUrl = process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}` 
+          : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const apiUrl = `${baseUrl}/api/unified-content`;
         
         console.log(`🔍 DEBUG: Calling API: ${apiUrl}`);

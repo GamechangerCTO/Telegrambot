@@ -131,6 +131,7 @@ npm run typecheck    # TypeScript checking (disabled in config)
 2. **Narrow Time Windows** - 15-minute scheduling windows too restrictive
 3. **Missing Environment Handling** - Production logic was placeholder code
 4. **Automation Settings** - Full automation might be disabled
+5. **Wrong API URL** - Automation was calling `localhost:3001` instead of proper Vercel URLs
 
 **Fixes Applied:**
 1. **Event-Driven Rules**: Added active hours logic (6 AM - 11 PM)
@@ -138,8 +139,20 @@ npm run typecheck    # TypeScript checking (disabled in config)
 3. **Scheduled Rules**: Expanded time windows to 60 minutes in production
 4. **Settings Check**: Made automation settings more robust with fallback to enabled
 5. **Environment Detection**: Improved production vs development logic
+6. **API URL Fix**: Fixed automation to use `process.env.VERCEL_URL` for production calls
 
-**File Updated:** `/src/app/api/automation/auto-scheduler/route.ts`
+**Files Updated:** 
+- `/src/app/api/automation/auto-scheduler/route.ts` - Fixed API URL logic
+- `/src/app/automation/page.tsx` - Improved fixtures display without unified-content dependency
+
+### Latest Fix (2025-01-10): API URL Resolution
+**Problem:** Automation calling wrong localhost:3001 URL in production
+**Solution:** Updated to use `process.env.VERCEL_URL` with fallback to correct local URLs
+```typescript
+const baseUrl = process.env.VERCEL_URL 
+  ? `https://${process.env.VERCEL_URL}` 
+  : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+```
 
 ### Automation Rule Types:
 - **Scheduled**: Time-based triggers with 60-minute windows
@@ -159,8 +172,8 @@ npm run typecheck    # TypeScript checking (disabled in config)
 ### Fixture Timetable with Match Scorer
 **Location:** `/automation` page - between System Status and Quick Actions
 **Features:**
-- **AI-Powered Match Scoring**: Uses `/api/unified-content` with match scorer
-- **Live Score Integration**: Real-time scores and match status
+- **Smart Match Scoring**: Uses built-in scoring algorithm (simplified from FootballMatchScorer)
+- **Live Score Integration**: Real-time scores and match status via API-Football
 - **Relevance Scoring**: 0-100% content suitability scores
 - **Visual Status Indicators**:
   - 🟢 Green: Live matches (with pulsing LIVE badge)
@@ -172,12 +185,13 @@ npm run typecheck    # TypeScript checking (disabled in config)
 - **Responsive Design**: 2 columns on desktop, 1 on mobile
 
 ### Match Data Integration
-- **Primary API**: `/api/api-football-showcase` with API-Football v3
+- **Primary API**: `/api/api-football-showcase` with API-Football v3 (direct call)
 - **Endpoint**: `get_fixtures_date_range` for 7-day fixture range
 - **Fallback API**: `/api/debug-football` for basic fixture data
 - **Score Display**: Real-time home-away scores with match time elapsed
 - **Match Status**: Live status from API-Football (LIVE, 1H, 2H, FT, etc.)
 - **League Information**: Official competition names and kick-off times
+- **Scoring**: Built-in relevance scoring without external dependencies
 
 ### Intelligence Scoring System
 - **Base Score**: 30% for all matches
@@ -199,6 +213,7 @@ npm run typecheck    # TypeScript checking (disabled in config)
 - Verify `automation_settings` table has `full_automation_enabled = true`
 
 ---
-*Last Updated: 2025-01-09*  
+*Last Updated: 2025-01-10*  
 *System Status: Operational*  
 *Known Issues: None*
+*Latest Fixes: Automation API URL resolution for Vercel production*
