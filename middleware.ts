@@ -62,6 +62,10 @@ export async function middleware(request: NextRequest) {
   // Get the pathname from the request URL
   const pathname = request.nextUrl.pathname
 
+  // Check for internal server-to-server calls
+  const isInternalCall = request.headers.get('x-internal-automation') === 'true' ||
+                        request.headers.get('x-server-call') === 'true';
+
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -84,11 +88,25 @@ export async function middleware(request: NextRequest) {
     '/api/public'
   ]
 
+  // Define internal API routes that can be called server-to-server
+  const internalApiRoutes = [
+    '/api/unified-content',
+    '/api/automation',
+    '/api/smart-push'
+  ]
+
   const isPublicRoute = publicRoutes.includes(pathname)
   const isPublicApiRoute = publicApiRoutes.some(route => pathname.startsWith(route))
+  const isInternalApiRoute = internalApiRoutes.some(route => pathname.startsWith(route))
 
   // If it's a public route or public API, allow access
   if (isPublicRoute || isPublicApiRoute) {
+    return response
+  }
+
+  // If it's an internal API call with proper headers, allow access
+  if (isInternalApiRoute && isInternalCall) {
+    console.log(`🔧 Internal API call allowed: ${pathname}`);
     return response
   }
 
@@ -205,8 +223,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
+     * - public files (public folder)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 } 

@@ -285,7 +285,21 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
     
     if (isActiveHours) {
       console.log(`✅ Event conditions met for ${rule.content_type} during active hours (v2.0)`);
-      return await triggerRealContentGeneration(rule.content_type, channels);
+      const success = await triggerRealContentGeneration(rule.content_type, channels);
+      
+      return {
+        action: {
+          rule_id: rule.id,
+          rule_name: rule.name,
+          type: 'event_driven',
+          content_type: rule.content_type,
+          status: success ? 'triggered' : 'failed',
+          trigger_reason: 'event_driven_active_hours',
+          channels_targeted: channels.map((c: any) => c.telegram_channel_id),
+          timestamp: now.toISOString()
+        },
+        content_generated: success ? channels.length : 0
+      };
     }
     
     console.log(`⏰ Event conditions not met for ${rule.content_type} - outside active hours`);
@@ -338,7 +352,21 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
     
     if (isActiveTime && isContextTrigger) {
       console.log(`✅ Context conditions met for ${rule.content_type}`);
-      return await triggerRealContentGeneration(rule.content_type, channels);
+      const success = await triggerRealContentGeneration(rule.content_type, channels);
+      
+      return {
+        action: {
+          rule_id: rule.id,
+          rule_name: rule.name,
+          type: 'context_aware',
+          content_type: rule.content_type,
+          status: success ? 'triggered' : 'failed',
+          trigger_reason: 'context_aware_active_window',
+          channels_targeted: channels.map((c: any) => c.telegram_channel_id),
+          timestamp: now.toISOString()
+        },
+        content_generated: success ? channels.length : 0
+      };
     }
     
     console.log(`⏰ Context conditions not met for ${rule.content_type} - waiting for trigger window`);
@@ -394,6 +422,7 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-internal-automation': 'true'  // Allow internal server calls
           },
           body: JSON.stringify({
             contentType: contentType,
