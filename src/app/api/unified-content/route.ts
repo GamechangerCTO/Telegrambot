@@ -125,8 +125,9 @@ export async function POST(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Get parameters from body first, fallback to searchParams
+    // 🔧 Fix: Support both 'type' and 'contentType' for backward compatibility
     const action = (body.action || searchParams.get('action') || 'send_now') as ActionType;
-    const type = (body.type || searchParams.get('type') || 'news') as ContentType;
+    const type = (body.type || body.contentType || searchParams.get('type') || 'news') as ContentType;
     const mode = (body.mode || searchParams.get('mode') || 'ai_enhanced') as ModeType;
     let language = (body.language || searchParams.get('language')) as Language;
     
