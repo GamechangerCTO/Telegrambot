@@ -66,6 +66,13 @@ export async function middleware(request: NextRequest) {
   const isInternalCall = request.headers.get('x-internal-automation') === 'true' ||
                         request.headers.get('x-server-call') === 'true';
 
+  // Debug logging for API calls
+  if (pathname.startsWith('/api/')) {
+    console.log(`🔍 MIDDLEWARE: ${pathname}`);
+    console.log(`🔍 Headers check: x-internal-automation = ${request.headers.get('x-internal-automation')}`);
+    console.log(`🔍 Is internal call: ${isInternalCall}`);
+  }
+
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -114,6 +121,7 @@ export async function middleware(request: NextRequest) {
   if (!user && !isPublicRoute) {
     // For API routes, return 401
     if (pathname.startsWith('/api/')) {
+      console.log(`❌ MIDDLEWARE: 401 Unauthorized for ${pathname} - user: ${!!user}, internal: ${isInternalCall}`);
       return new NextResponse(
         JSON.stringify({ error: 'Unauthorized' }),
         { 

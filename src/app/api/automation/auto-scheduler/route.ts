@@ -437,27 +437,32 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
           : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const apiUrl = `${baseUrl}/api/unified-content`;
         
-        console.log(`🔍 DEBUG: Calling API: ${apiUrl}`);
-        console.log(`🔍 DEBUG: Request body:`, {
+        console.log(`🔍 DEBUG: Environment variables:`);
+        console.log(`🔍 DEBUG: VERCEL_URL = ${process.env.VERCEL_URL}`);
+        console.log(`🔍 DEBUG: NEXT_PUBLIC_APP_URL = ${process.env.NEXT_PUBLIC_APP_URL}`);
+        console.log(`🔍 DEBUG: Base URL = ${baseUrl}`);
+        console.log(`🔍 DEBUG: Final API URL = ${apiUrl}`);
+        
+        const requestHeaders = {
+          'Content-Type': 'application/json',
+          'x-internal-automation': 'true'  // Allow internal server calls
+        };
+        
+        const requestBody = {
           contentType: contentType,
           language: language,
           target_channels: targetChannels,
-          isAutomated: true
-        });
+          isAutomated: true // Mark as automated content
+        };
+        
+        console.log(`🔍 DEBUG: Request headers:`, requestHeaders);
+        console.log(`🔍 DEBUG: Request body:`, requestBody);
         
         // Call the unified-content API to generate and send content
         const response = await fetch(apiUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-internal-automation': 'true'  // Allow internal server calls
-          },
-          body: JSON.stringify({
-            contentType: contentType,
-            language: language,
-            target_channels: targetChannels,
-            isAutomated: true // Mark as automated content
-          })
+          headers: requestHeaders,
+          body: JSON.stringify(requestBody)
         });
 
         console.log(`🔍 DEBUG: API Response status: ${response.status}`);
