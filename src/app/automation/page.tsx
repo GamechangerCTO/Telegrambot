@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Play, Settings, Clock, Zap, Calendar, Users, Globe, ToggleLeft, ToggleRight, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { footballMatchScorer } from '@/lib/content/football-match-scorer';
 
 interface AutomationRule {
   id: string;
@@ -466,66 +467,12 @@ export default function AutomationPage() {
   const fetchFixtures = async () => {
     setLoadingFixtures(true);
     try {
-      // Use the proper unified football service with match scorer
-      const response = await fetch('/api/unified-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'get_smart_matches_with_scoring',
-          content_type: 'live_update',
-          days_ahead: 7,
-          limit: 60,
-          min_score_threshold: 15 // Lower threshold for more matches
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success && data.matches) {
-          // Group matches by date (already scored by FootballMatchScorer)
-          const groupedByDate: { [key: string]: any[] } = {};
-          
-          data.matches.forEach((match: any) => {
-            const matchDate = match.fixture?.date ? 
-              new Date(match.fixture.date).toISOString().split('T')[0] : 
-              new Date().toISOString().split('T')[0];
-            
-            if (!groupedByDate[matchDate]) {
-              groupedByDate[matchDate] = [];
-            }
-            groupedByDate[matchDate].push(match);
-          });
-          
-          // Convert to array format and sort by date
-          const sortedFixtures = Object.entries(groupedByDate)
-            .map(([date, dayFixtures]) => ({
-              date,
-              fixtures: dayFixtures
-                .sort((a, b) => {
-                  // Sort by FootballMatchScorer relevance score (highest first)
-                  const scoreA = a.content_suitability?.live_update || a.relevance_score?.total || 0;
-                  const scoreB = b.content_suitability?.live_update || b.relevance_score?.total || 0;
-                  return scoreB - scoreA;
-                })
-                .slice(0, 8) // Max 8 fixtures per day
-            }))
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .slice(0, 7); // Max 7 days
-          
-          setFixtures(sortedFixtures);
-        } else {
-          // Fallback to API-Football showcase
-          await fetchFixturesAPIFootball();
-        }
-      } else {
-        // Fallback to API-Football showcase
-        await fetchFixturesAPIFootball();
-      }
-    } catch (error) {
-      console.error('Error fetching smart fixtures:', error);
-      // Fallback to API-Football showcase
+      // Directly call API-Football and apply scoring
       await fetchFixturesAPIFootball();
+    } catch (error) {
+      console.error('Error fetching fixtures:', error);
+      // Final fallback to debug endpoint
+      await fetchFixturesDebug();
     } finally {
       setLoadingFixtures(false);
     }
@@ -552,31 +499,88 @@ export default function AutomationPage() {
         const data = await response.json();
         
         if (data.success && data.matches) {
-          // Group matches by date (no scoring, just basic sorting)
+          // Transform API-Football data to MatchData format for scorer
+          const matchDataArray = data.matches.map((match: any) => ({
+            id: match.fixture?.id?.toString() || Math.random().toString(),
+            homeTeam: {
+              id: match.teams?.home?.id?.toString() || '',
+              name: match.teams?.home?.name || 'Unknown',
+              logo: match.teams?.home?.logo || ''
+            },
+            awayTeam: {
+              id: match.teams?.away?.id?.toString() || '',
+              name: match.teams?.away?.name || 'Unknown', 
+              logo: match.teams?.away?.logo || ''
+            },
+            competition: {
+              id: match.league?.id?.toString() || '',
+              name: match.league?.name || 'Unknown League',
+              logo: match.league?.logo || ''
+            },
+            kickoff: new Date(match.fixture?.date || new Date()),
+            status: match.fixture?.status?.short || 'SCHEDULED',
+            score: {
+              home: match.goals?.home || null,
+              away: match.goals?.away || null
+            }
+          }));
+
+          // Use FootballMatchScorer to score matches
+          const scoredMatches = await footballMatchScorer.scoreMatches(matchDataArray, {
+            content_type: 'live_update',
+            min_score_threshold: 15,
+            max_future_days: 7
+          });
+
+          // Group scored matches by date
           const groupedByDate: { [key: string]: any[] } = {};
           
-          data.matches.forEach((match: any) => {
-            const matchDate = match.fixture?.date ? 
-              new Date(match.fixture.date).toISOString().split('T')[0] : 
+          scoredMatches.forEach((match: any) => {
+            const matchDate = match.kickoff ? 
+              new Date(match.kickoff).toISOString().split('T')[0] : 
               new Date().toISOString().split('T')[0];
             
             if (!groupedByDate[matchDate]) {
               groupedByDate[matchDate] = [];
             }
-            
-            // Add basic content suitability for display
-            match.content_suitability = {
-              live_update: 50 // Default score for API-Football fallback
+
+            // Convert back to display format with scoring data
+            const displayMatch = {
+              fixture: {
+                id: match.id,
+                date: match.kickoff,
+                status: {
+                  short: match.status,
+                  long: match.status === 'LIVE' ? 'Match In Play' : 
+                        match.status === 'FT' ? 'Match Finished' : 'Not Started'
+                }
+              },
+              teams: {
+                home: match.homeTeam,
+                away: match.awayTeam
+              },
+              league: match.competition,
+              goals: match.score,
+              // Add scoring data
+              content_suitability: match.content_suitability,
+              relevance_score: match.relevance_score,
+              reasons: match.reasons
             };
             
-            groupedByDate[matchDate].push(match);
+            groupedByDate[matchDate].push(displayMatch);
           });
           
-          // Convert to array format and sort by date
+          // Convert to array format and sort by relevance score
           const sortedFixtures = Object.entries(groupedByDate)
             .map(([date, dayFixtures]) => ({
               date,
-              fixtures: dayFixtures.slice(0, 8) // Max 8 fixtures per day
+              fixtures: dayFixtures
+                .sort((a, b) => {
+                  const scoreA = a.content_suitability?.live_update || 0;
+                  const scoreB = b.content_suitability?.live_update || 0;
+                  return scoreB - scoreA;
+                })
+                .slice(0, 8) // Max 8 fixtures per day
             }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .slice(0, 7); // Max 7 days
