@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         }
 
         const cycleResult = await processAutomationRule(rule, matchingChannels);
-        if (cycleResult) {
+        if (cycleResult && typeof cycleResult === 'object' && 'content_generated' in cycleResult) {
           results.cycles_run++;
           results.content_generated += cycleResult.content_generated || 0;
           results.actions_taken.push(cycleResult.action);
@@ -308,7 +308,21 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
 
   // Development fallback - more permissive
   console.log(`🔧 Development Mode: triggering ${rule.content_type} for testing`);
-  return await triggerRealContentGeneration(rule.content_type, channels);
+  const success = await triggerRealContentGeneration(rule.content_type, channels);
+  
+  return {
+    action: {
+      rule_id: rule.id,
+      rule_name: rule.name,
+      type: 'event_driven',
+      content_type: rule.content_type,
+      status: success ? 'triggered' : 'failed',
+      trigger_reason: 'development_fallback',
+      channels_targeted: channels.map((c: any) => c.telegram_channel_id),
+      timestamp: now.toISOString()
+    },
+    content_generated: success ? channels.length : 0
+  };
 }
 
 async function processContextAwareRule(rule: any, channels: any[], now: Date) {
@@ -375,7 +389,21 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
 
   // Development fallback - more permissive
   console.log(`🔧 Development Mode: triggering ${rule.content_type} for testing`);
-  return await triggerRealContentGeneration(rule.content_type, channels);
+  const success = await triggerRealContentGeneration(rule.content_type, channels);
+  
+  return {
+    action: {
+      rule_id: rule.id,
+      rule_name: rule.name,
+      type: 'context_aware',
+      content_type: rule.content_type,
+      status: success ? 'triggered' : 'failed',
+      trigger_reason: 'development_fallback',
+      channels_targeted: channels.map((c: any) => c.telegram_channel_id),
+      timestamp: now.toISOString()
+    },
+    content_generated: success ? channels.length : 0
+  };
 }
 
 async function triggerRealContentGeneration(contentType: string, channels: any[]) {
