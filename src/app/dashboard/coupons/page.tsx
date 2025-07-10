@@ -13,8 +13,8 @@ import Link from 'next/link';
 
 const languages = {
   en: 'English',
-  am: 'አማርኛ',
-  sw: 'Kiswahili'
+  am: 'Amharic',
+  sw: 'Swahili'
 };
 
 const translations = {
@@ -243,27 +243,54 @@ const translations = {
 };
 
 interface Coupon {
-  id: number;
+  id: string; // UUID in database
   title: string;
-  code: string;
-  discount_percentage: number;
+  affiliate_code: string; // Changed from 'code'
+  bonus_amount: string; // Changed from 'discount_percentage'
   description: string;
-  url: string;
+  affiliate_url: string; // Changed from 'url'
   is_active: boolean;
   impressions: number;
   clicks: number;
   conversions: number;
-  revenue: number;
   created_at: string;
   updated_at: string;
+  // Additional fields from the database
+  bot_id?: string;
+  betting_site?: string;
+  currency?: string;
+  language?: string;
+  expiry_date?: string;
+  usage_count?: number;
+  max_usage?: number;
+  valid_until?: string;
+  valid_from?: string;
+  offer_text?: string;
+  target_audience?: string[];
+  languages?: string[];
+  brand_name?: string;
+  brand_logo?: string;
+  brand_colors?: object;
+  terms_url?: string;
+  type?: string;
+  priority?: string;
+  current_usage?: number;
+  trigger_contexts?: string[];
+  trigger_conditions?: object;
+  created_by?: string;
+  affiliate_link?: string;
 }
 
 interface CouponFormData {
   title: string;
-  code: string;
-  discount_percentage: number;
+  affiliate_code: string; // Changed from 'code'
+  bonus_amount: string; // Changed from 'discount_percentage'
   description: string;
-  url: string;
+  affiliate_url: string; // Changed from 'url'
+  betting_site?: string;
+  currency?: string;
+  language?: string;
+  offer_text?: string;
 }
 
 export default function CouponsPage() {
@@ -282,10 +309,10 @@ export default function CouponsPage() {
 
   const [formData, setFormData] = useState<CouponFormData>({
     title: '',
-    code: '',
-    discount_percentage: 0,
+    affiliate_code: '',
+    bonus_amount: '',
     description: '',
-    url: ''
+    affiliate_url: ''
   });
 
   // Auto-redirect if not authenticated
@@ -413,10 +440,10 @@ export default function CouponsPage() {
   const resetForm = () => {
     setFormData({
       title: '',
-      code: '',
-      discount_percentage: 0,
+      affiliate_code: '',
+      bonus_amount: '',
       description: '',
-      url: ''
+      affiliate_url: ''
     });
     setShowForm(false);
     setEditingCoupon(null);
@@ -426,15 +453,15 @@ export default function CouponsPage() {
     setEditingCoupon(coupon);
     setFormData({
       title: coupon.title,
-      code: coupon.code,
-      discount_percentage: coupon.discount_percentage,
+      affiliate_code: coupon.affiliate_code,
+      bonus_amount: coupon.bonus_amount,
       description: coupon.description,
-      url: coupon.url
+      affiliate_url: coupon.affiliate_url
     });
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm(t.confirmDelete)) {
       try {
         const { error } = await supabase
@@ -455,7 +482,7 @@ export default function CouponsPage() {
     }
   };
 
-  const handleToggleStatus = async (id: number, currentStatus: boolean) => {
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('coupons')
@@ -509,7 +536,7 @@ export default function CouponsPage() {
   const stats = {
     total: coupons.length,
     active: coupons.filter(c => c.is_active).length,
-    revenue: coupons.reduce((sum, c) => sum + c.revenue, 0),
+    revenue: 0, // TODO: Calculate revenue from conversions when available
     performance: coupons.length > 0 ? 
       (coupons.filter(c => c.clicks > 0).length / coupons.length * 100).toFixed(1) + '%' : 
       '0%'
@@ -669,8 +696,8 @@ export default function CouponsPage() {
                   </label>
                     <input
                       type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData({...formData, code: e.target.value})}
+                    value={formData.affiliate_code}
+                    onChange={(e) => setFormData({...formData, affiliate_code: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t.form.codePlaceholder}
                       required
@@ -682,13 +709,11 @@ export default function CouponsPage() {
                     {t.form.discount}
                   </label>
                       <input
-                        type="number"
-                    value={formData.discount_percentage}
-                    onChange={(e) => setFormData({...formData, discount_percentage: Number(e.target.value)})}
+                        type="text"
+                    value={formData.bonus_amount}
+                    onChange={(e) => setFormData({...formData, bonus_amount: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t.form.discountPlaceholder}
-                        min="0"
-                        max="100"
                     required
                     />
                   </div>
@@ -699,8 +724,8 @@ export default function CouponsPage() {
                   </label>
                     <input
                     type="url"
-                    value={formData.url}
-                    onChange={(e) => setFormData({...formData, url: e.target.value})}
+                    value={formData.affiliate_url}
+                    onChange={(e) => setFormData({...formData, affiliate_url: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t.form.urlPlaceholder}
                       required
@@ -776,8 +801,8 @@ export default function CouponsPage() {
                     <tr key={coupon.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">#{coupon.id}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{coupon.title}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{coupon.code}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{coupon.discount_percentage}%</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{coupon.affiliate_code}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{coupon.bonus_amount}%</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                           coupon.is_active 
@@ -789,7 +814,7 @@ export default function CouponsPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{coupon.clicks}</td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{calculateCTR(coupon.clicks, coupon.impressions)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">${coupon.revenue}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">${coupon.conversions}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <button
