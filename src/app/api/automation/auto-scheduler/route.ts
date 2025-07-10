@@ -173,13 +173,15 @@ async function processAutomationRule(rule: any, channels: any[]) {
 }
 
 async function processScheduledRule(rule: any, channels: any[], now: Date) {
-  // Always trigger in development or test mode for immediate feedback
-  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+  // Check if this is a local development environment or production deployment
+  const isLocalDevelopment = !process.env.VERCEL && process.env.NODE_ENV === 'development';
+  const isProductionDeployment = process.env.VERCEL && process.env.NODE_ENV === 'production';
   
-  console.log(`🔍 DEBUG: processScheduledRule - NODE_ENV: ${process.env.NODE_ENV}, isDevelopment: ${isDevelopment}`);
+  console.log(`🔍 DEBUG: processScheduledRule - NODE_ENV: ${process.env.NODE_ENV}, VERCEL: ${!!process.env.VERCEL}, isLocal: ${isLocalDevelopment}, isProd: ${isProductionDeployment}`);
   
-  if (isDevelopment) {
-    console.log(`🎯 Development mode: triggering ${rule.content_type} content for ${channels.length} channels`);
+  // In local development, always trigger for testing
+  if (isLocalDevelopment) {
+    console.log(`🎯 Local Development: triggering ${rule.content_type} content for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
     
     return {
@@ -189,12 +191,18 @@ async function processScheduledRule(rule: any, channels: any[], now: Date) {
         type: 'scheduled',
         content_type: rule.content_type,
         status: success ? 'triggered' : 'failed',
-        trigger_reason: 'development_mode_immediate',
+        trigger_reason: 'local_development_immediate',
         channels_targeted: channels.map((c: any) => c.telegram_channel_id),
         timestamp: now.toISOString()
       },
       content_generated: success ? channels.length : 0
     };
+  }
+
+  // In production deployment, use proper scheduling logic
+  if (isProductionDeployment) {
+    console.log(`🏭 Production Mode: checking schedule conditions for ${rule.content_type}`);
+    // Fall through to normal scheduling logic below
   }
 
   const schedule = rule.schedule || {};
@@ -232,13 +240,15 @@ async function processScheduledRule(rule: any, channels: any[], now: Date) {
 }
 
 async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
-  // In development or test mode, trigger for immediate feedback
-  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+  // Check environment for proper automation logic
+  const isLocalDevelopment = !process.env.VERCEL && process.env.NODE_ENV === 'development';
+  const isProductionDeployment = process.env.VERCEL && process.env.NODE_ENV === 'production';
   
-  console.log(`🔍 DEBUG: processEventDrivenRule - NODE_ENV: ${process.env.NODE_ENV}, isDevelopment: ${isDevelopment}`);
+  console.log(`🔍 DEBUG: processEventDrivenRule - NODE_ENV: ${process.env.NODE_ENV}, VERCEL: ${!!process.env.VERCEL}, isLocal: ${isLocalDevelopment}, isProd: ${isProductionDeployment}`);
   
-  if (isDevelopment) {
-    console.log(`🎯 Development event: triggering ${rule.content_type} for ${channels.length} channels`);
+  // In local development, trigger for immediate feedback
+  if (isLocalDevelopment) {
+    console.log(`🎯 Local Development: triggering ${rule.content_type} for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
     
     return {
@@ -248,12 +258,20 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
         type: 'event_driven',
         content_type: rule.content_type,
         status: success ? 'triggered' : 'failed',
-        trigger_reason: 'development_simulated_event',
+        trigger_reason: 'local_development_simulated_event',
         channels_targeted: channels.map((c: any) => c.telegram_channel_id),
         timestamp: now.toISOString()
       },
       content_generated: success ? channels.length : 0
     };
+  }
+
+  // In production deployment, use real event-driven logic
+  if (isProductionDeployment) {
+    console.log(`🏭 Production Mode: checking event conditions for ${rule.content_type}`);
+    // TODO: Implement real event detection logic here
+    // For now, return null to skip until proper event system is implemented
+    return null;
   }
 
   // Real event-driven logic would check for actual upcoming matches
@@ -264,12 +282,14 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
 
 async function processContextAwareRule(rule: any, channels: any[], now: Date) {
   // Context-aware rules (like smart coupons) trigger based on recent content
-  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+  const isLocalDevelopment = !process.env.VERCEL && process.env.NODE_ENV === 'development';
+  const isProductionDeployment = process.env.VERCEL && process.env.NODE_ENV === 'production';
   
-  console.log(`🔍 DEBUG: processContextAwareRule - NODE_ENV: ${process.env.NODE_ENV}, isDevelopment: ${isDevelopment}`);
+  console.log(`🔍 DEBUG: processContextAwareRule - NODE_ENV: ${process.env.NODE_ENV}, VERCEL: ${!!process.env.VERCEL}, isLocal: ${isLocalDevelopment}, isProd: ${isProductionDeployment}`);
   
-  if (isDevelopment) {
-    console.log(`🎯 Development context: triggering ${rule.content_type} for ${channels.length} channels`);
+  // In local development, trigger for immediate feedback
+  if (isLocalDevelopment) {
+    console.log(`🎯 Local Development: triggering ${rule.content_type} for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
     
     return {
@@ -279,12 +299,20 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
         type: 'context_aware',
         content_type: rule.content_type,
         status: success ? 'triggered' : 'failed',
-        trigger_reason: 'development_context_simulation',
+        trigger_reason: 'local_development_context_simulation',
         channels_targeted: channels.map((c: any) => c.telegram_channel_id),
         timestamp: now.toISOString()
       },
       content_generated: success ? channels.length : 0
     };
+  }
+
+  // In production deployment, use real context-aware logic
+  if (isProductionDeployment) {
+    console.log(`🏭 Production Mode: checking context conditions for ${rule.content_type}`);
+    // TODO: Implement real context detection logic here
+    // For now, return null to skip until proper context system is implemented
+    return null;
   }
 
   // Real context-aware logic would check recent content delivery
