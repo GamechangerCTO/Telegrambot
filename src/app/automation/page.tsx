@@ -466,16 +466,16 @@ export default function AutomationPage() {
   const fetchFixtures = async () => {
     setLoadingFixtures(true);
     try {
-      // Get fixtures with match scoring
+      // Use the proper unified football service with match scorer
       const response = await fetch('/api/unified-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'get_smart_matches',
+          action: 'get_smart_matches_with_scoring',
           content_type: 'live_update',
           days_ahead: 7,
-          limit: 50,
-          min_score_threshold: 10
+          limit: 60,
+          min_score_threshold: 15 // Lower threshold for more matches
         })
       });
       
@@ -483,7 +483,7 @@ export default function AutomationPage() {
         const data = await response.json();
         
         if (data.success && data.matches) {
-          // Group matches by date
+          // Group matches by date (already scored by FootballMatchScorer)
           const groupedByDate: { [key: string]: any[] } = {};
           
           data.matches.forEach((match: any) => {
@@ -503,9 +503,9 @@ export default function AutomationPage() {
               date,
               fixtures: dayFixtures
                 .sort((a, b) => {
-                  // Sort by relevance score (highest first)
-                  const scoreA = a.content_suitability?.live_update || 0;
-                  const scoreB = b.content_suitability?.live_update || 0;
+                  // Sort by FootballMatchScorer relevance score (highest first)
+                  const scoreA = a.content_suitability?.live_update || a.relevance_score?.total || 0;
+                  const scoreB = b.content_suitability?.live_update || b.relevance_score?.total || 0;
                   return scoreB - scoreA;
                 })
                 .slice(0, 8) // Max 8 fixtures per day
@@ -515,19 +515,85 @@ export default function AutomationPage() {
           
           setFixtures(sortedFixtures);
         } else {
-          // Fallback to debug endpoint if unified content fails
+          // Fallback to API-Football showcase
+          await fetchFixturesAPIFootball();
+        }
+      } else {
+        // Fallback to API-Football showcase
+        await fetchFixturesAPIFootball();
+      }
+    } catch (error) {
+      console.error('Error fetching smart fixtures:', error);
+      // Fallback to API-Football showcase
+      await fetchFixturesAPIFootball();
+    } finally {
+      setLoadingFixtures(false);
+    }
+  };
+
+  const fetchFixturesAPIFootball = async () => {
+    try {
+      // Get fixtures for next 7 days using API-Football v3
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      const response = await fetch('/api/api-football-showcase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_fixtures_date_range',
+          from_date: today.toISOString().split('T')[0],
+          to_date: nextWeek.toISOString().split('T')[0],
+          limit: 100
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.matches) {
+          // Group matches by date (no scoring, just basic sorting)
+          const groupedByDate: { [key: string]: any[] } = {};
+          
+          data.matches.forEach((match: any) => {
+            const matchDate = match.fixture?.date ? 
+              new Date(match.fixture.date).toISOString().split('T')[0] : 
+              new Date().toISOString().split('T')[0];
+            
+            if (!groupedByDate[matchDate]) {
+              groupedByDate[matchDate] = [];
+            }
+            
+            // Add basic content suitability for display
+            match.content_suitability = {
+              live_update: 50 // Default score for API-Football fallback
+            };
+            
+            groupedByDate[matchDate].push(match);
+          });
+          
+          // Convert to array format and sort by date
+          const sortedFixtures = Object.entries(groupedByDate)
+            .map(([date, dayFixtures]) => ({
+              date,
+              fixtures: dayFixtures.slice(0, 8) // Max 8 fixtures per day
+            }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 7); // Max 7 days
+          
+          setFixtures(sortedFixtures);
+        } else {
+          // Final fallback to debug endpoint
           await fetchFixturesDebug();
         }
       } else {
-        // Fallback to debug endpoint
+        // Final fallback to debug endpoint
         await fetchFixturesDebug();
       }
     } catch (error) {
-      console.error('Error fetching fixtures:', error);
-      // Fallback to debug endpoint
+      console.error('Error fetching API-Football fixtures:', error);
+      // Final fallback to debug endpoint
       await fetchFixturesDebug();
-    } finally {
-      setLoadingFixtures(false);
     }
   };
 
@@ -725,10 +791,10 @@ export default function AutomationPage() {
           <div>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              ⚽ Next Week's Fixtures with Scores
+              ⚽ Next Week's Fixtures with Smart Scoring
             </h2>
             <p className="text-xs text-gray-500 mt-1">
-              Powered by AI Match Scorer • Live scores and relevance rankings
+              Powered by FootballMatchScorer • Live scores and AI relevance rankings
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -777,12 +843,16 @@ export default function AutomationPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {day.fixtures.slice(0, 6).map((fixture: any, fixtureIndex: number) => {
-                    const relevanceScore = fixture.content_suitability?.live_update || 0;
+                    const relevanceScore = fixture.content_suitability?.live_update || fixture.relevance_score?.total || 0;
                     const isLive = fixture.fixture?.status?.short === 'LIVE' || fixture.fixture?.status?.short === '1H' || fixture.fixture?.status?.short === '2H';
                     const isFinished = fixture.fixture?.status?.short === 'FT';
                     const homeScore = fixture.goals?.home ?? null;
                     const awayScore = fixture.goals?.away ?? null;
                     const hasScore = homeScore !== null && awayScore !== null;
+                    
+                    // Get scoring breakdown from FootballMatchScorer
+                    const scoringBreakdown = fixture.relevance_score;
+                    const scoringReasons = fixture.reasons || [];
                     
                     return (
                       <div key={fixtureIndex} className={`rounded p-3 text-sm border-l-4 ${
@@ -795,12 +865,23 @@ export default function AutomationPage() {
                             {fixture.teams?.home?.name} vs {fixture.teams?.away?.name}
                           </div>
                           {relevanceScore > 0 && (
-                            <div className={`text-xs px-2 py-1 rounded ml-2 ${
-                              relevanceScore >= 70 ? 'bg-green-100 text-green-800' :
-                              relevanceScore >= 40 ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {relevanceScore}%
+                            <div 
+                              className={`text-xs px-2 py-1 rounded ml-2 cursor-help ${
+                                relevanceScore >= 70 ? 'bg-green-100 text-green-800' :
+                                relevanceScore >= 40 ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-600'
+                              }`}
+                              title={scoringReasons.length > 0 ? 
+                                `Scoring breakdown:\n${scoringReasons.slice(0, 3).join('\n')}${scoringReasons.length > 3 ? '\n...' : ''}` :
+                                `Relevance Score: ${Math.round(relevanceScore)}%`
+                              }
+                            >
+                              {Math.round(relevanceScore)}%
+                              {scoringBreakdown && (
+                                <span className="ml-1 text-xs opacity-60">
+                                  ⓘ
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

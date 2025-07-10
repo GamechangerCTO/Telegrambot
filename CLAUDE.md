@@ -172,11 +172,23 @@ npm run typecheck    # TypeScript checking (disabled in config)
 - **Responsive Design**: 2 columns on desktop, 1 on mobile
 
 ### Match Data Integration
-- **Primary API**: `/api/unified-content` with FootballMatchScorer
+- **Primary API**: `/api/api-football-showcase` with API-Football v3
+- **Endpoint**: `get_fixtures_date_range` for 7-day fixture range
 - **Fallback API**: `/api/debug-football` for basic fixture data
-- **Score Display**: Home-Away scores with match time elapsed
-- **Match Status**: Full status text (e.g., "First Half", "Full Time")
-- **League Information**: Competition names and kick-off times
+- **Score Display**: Real-time home-away scores with match time elapsed
+- **Match Status**: Live status from API-Football (LIVE, 1H, 2H, FT, etc.)
+- **League Information**: Official competition names and kick-off times
+
+### Intelligence Scoring System
+- **Base Score**: 30% for all matches
+- **League Bonuses**:
+  - Champions League: +50%
+  - Premier League/Primera División: +40%
+  - Serie A/Bundesliga/Ligue 1: +35%
+  - Europa League: +30%
+  - Championship/Segunda: +20%
+- **Team Popularity**: +20% for popular teams (Real Madrid, Barcelona, Man United, etc.)
+- **Score Cap**: Maximum 100% relevance
 
 ## 🔍 Debugging Tips
 - Check console for AuthContext state logs
