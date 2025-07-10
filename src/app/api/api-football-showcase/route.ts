@@ -481,7 +481,7 @@ export async function POST(request: NextRequest) {
       for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
         const dateStr = date.toISOString().split('T')[0];
         try {
-          const dayFixtures = await api.getFixturesForDate(dateStr);
+          const dayFixtures = await api.getFixturesByDate(dateStr);
           if (dayFixtures && dayFixtures.length > 0) {
             matches.push(...dayFixtures);
           }

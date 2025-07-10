@@ -93,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       const queryPromise = supabase
         .from('managers')
-        .select('id, user_id, name, email, role, organization_id, created_at, updated_at')
+        .select('id, user_id, name, email, role, created_at, updated_at')
         .eq('user_id', userId)
         .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no record
       

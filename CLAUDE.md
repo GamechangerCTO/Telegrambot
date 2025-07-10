@@ -145,7 +145,9 @@ npm run typecheck    # TypeScript checking (disabled in config)
 - `/src/app/api/automation/auto-scheduler/route.ts` - Fixed API URL logic
 - `/src/app/automation/page.tsx` - Improved fixtures display without unified-content dependency
 
-### Latest Fix (2025-01-10): API URL Resolution
+### Latest Fixes (2025-01-10):
+
+#### 1. API URL Resolution
 **Problem:** Automation calling wrong localhost:3001 URL in production
 **Solution:** Updated to use `process.env.VERCEL_URL` with fallback to correct local URLs
 ```typescript
@@ -153,6 +155,18 @@ const baseUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}` 
   : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 ```
+
+#### 2. API Football POST Method 405 Error
+**Problem:** `getFixturesForDate is not a function` - wrong function name and missing POST support
+**Solution:** Fixed function name and implemented proper POST endpoint
+- Changed `getFixturesForDate` → `getFixturesByDate`
+- Added full POST implementation for `get_fixtures_date_range` action
+
+#### 3. Database Schema Issue
+**Problem:** `column managers.organization_id does not exist`
+**Solution:** Removed non-existent column from queries
+- Updated AuthContext to only select existing columns
+- Fixed Manager interface to match actual database schema
 
 ### Automation Rule Types:
 - **Scheduled**: Time-based triggers with 60-minute windows
