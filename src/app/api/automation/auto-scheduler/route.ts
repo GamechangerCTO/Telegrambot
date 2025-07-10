@@ -147,24 +147,36 @@ export async function POST(request: NextRequest) {
 async function processAutomationRule(rule: any, channels: any[]) {
   const now = new Date();
   
+  console.log(`🔍 DEBUG: processAutomationRule - Rule: ${rule.name}, Type: ${rule.automation_type}`);
+  
+  let result;
   switch (rule.automation_type) {
     case 'scheduled':
-      return await processScheduledRule(rule, channels, now);
+      result = await processScheduledRule(rule, channels, now);
+      break;
     
     case 'event_driven':
-      return await processEventDrivenRule(rule, channels, now);
+      result = await processEventDrivenRule(rule, channels, now);
+      break;
     
     case 'context_aware':
-      return await processContextAwareRule(rule, channels, now);
+      result = await processContextAwareRule(rule, channels, now);
+      break;
     
     default:
-      return null;
+      console.log(`🔍 DEBUG: Unknown automation_type: ${rule.automation_type}`);
+      result = null;
   }
+  
+  console.log(`🔍 DEBUG: processAutomationRule result:`, result ? 'SUCCESS' : 'NULL');
+  return result;
 }
 
 async function processScheduledRule(rule: any, channels: any[], now: Date) {
   // Always trigger in development or test mode for immediate feedback
   const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+  
+  console.log(`🔍 DEBUG: processScheduledRule - NODE_ENV: ${process.env.NODE_ENV}, isDevelopment: ${isDevelopment}`);
   
   if (isDevelopment) {
     console.log(`🎯 Development mode: triggering ${rule.content_type} content for ${channels.length} channels`);
@@ -178,7 +190,7 @@ async function processScheduledRule(rule: any, channels: any[], now: Date) {
         content_type: rule.content_type,
         status: success ? 'triggered' : 'failed',
         trigger_reason: 'development_mode_immediate',
-        channels_targeted: channels.map(c => c.telegram_channel_id),
+        channels_targeted: channels.map((c: any) => c.telegram_channel_id),
         timestamp: now.toISOString()
       },
       content_generated: success ? channels.length : 0
@@ -223,6 +235,8 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
   // In development or test mode, trigger for immediate feedback
   const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
   
+  console.log(`🔍 DEBUG: processEventDrivenRule - NODE_ENV: ${process.env.NODE_ENV}, isDevelopment: ${isDevelopment}`);
+  
   if (isDevelopment) {
     console.log(`🎯 Development event: triggering ${rule.content_type} for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
@@ -235,7 +249,7 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
         content_type: rule.content_type,
         status: success ? 'triggered' : 'failed',
         trigger_reason: 'development_simulated_event',
-        channels_targeted: channels.map(c => c.telegram_channel_id),
+        channels_targeted: channels.map((c: any) => c.telegram_channel_id),
         timestamp: now.toISOString()
       },
       content_generated: success ? channels.length : 0
@@ -252,6 +266,8 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
   // Context-aware rules (like smart coupons) trigger based on recent content
   const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
   
+  console.log(`🔍 DEBUG: processContextAwareRule - NODE_ENV: ${process.env.NODE_ENV}, isDevelopment: ${isDevelopment}`);
+  
   if (isDevelopment) {
     console.log(`🎯 Development context: triggering ${rule.content_type} for ${channels.length} channels`);
     const success = await triggerRealContentGeneration(rule.content_type, channels);
@@ -264,7 +280,7 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
         content_type: rule.content_type,
         status: success ? 'triggered' : 'failed',
         trigger_reason: 'development_context_simulation',
-        channels_targeted: channels.map(c => c.telegram_channel_id),
+        channels_targeted: channels.map((c: any) => c.telegram_channel_id),
         timestamp: now.toISOString()
       },
       content_generated: success ? channels.length : 0
@@ -280,6 +296,7 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
 async function triggerRealContentGeneration(contentType: string, channels: any[]) {
   try {
     console.log(`📤 Triggering real content generation: ${contentType} for ${channels.length} channels`);
+    console.log(`🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: ${contentType}`);
     
     // Group channels by language for efficient generation
     const channelsByLanguage = channels.reduce((acc, channel) => {
@@ -301,8 +318,20 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
         // Build target channels list for unified-content API
         const targetChannels = languageChannels.map((channel: any) => channel.telegram_channel_id).join(',');
         
+        // Build the API URL - handle localhost properly
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+        const apiUrl = `${baseUrl}/api/unified-content`;
+        
+        console.log(`🔍 DEBUG: Calling API: ${apiUrl}`);
+        console.log(`🔍 DEBUG: Request body:`, {
+          contentType: contentType,
+          language: language,
+          target_channels: targetChannels,
+          isAutomated: true
+        });
+        
         // Call the unified-content API to generate and send content
-        const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/api/unified-content', {
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -315,6 +344,8 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
           })
         });
 
+        console.log(`🔍 DEBUG: API Response status: ${response.status}`);
+
         if (!response.ok) {
           console.error(`❌ Failed to generate ${contentType} content in ${language}:`, response.statusText);
           totalSuccess = false;
@@ -323,6 +354,7 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
 
         const result = await response.json();
         console.log(`✅ Successfully generated ${contentType} content in ${language}:`, result.message);
+        console.log(`🔍 DEBUG: API Response:`, result);
 
       } catch (error) {
         console.error(`❌ Error generating ${contentType} content in ${language}:`, error);
@@ -330,10 +362,12 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
       }
     }
 
+    console.log(`🔍 DEBUG: triggerRealContentGeneration - Final result: ${totalSuccess}`);
     return totalSuccess;
 
   } catch (error) {
     console.error(`❌ Error in triggerRealContentGeneration:`, error);
+    console.log(`🔍 DEBUG: triggerRealContentGeneration - ERROR:`, error);
     return false;
   }
 } 
