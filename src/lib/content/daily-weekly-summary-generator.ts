@@ -196,7 +196,7 @@ export class DailyWeeklySummaryGenerator {
     }
 
     // Step 2: Find and score interesting matches
-    const interestingMatches = await this.findInterestingMatches(todaysMatches);
+    const interestingMatches = await this.findInterestingMatches(todaysMatches, 4, request.language);
     
     // Step 3: Get standout performances and statistics
     const standoutPerformances = await this.analyzeStandoutPerformances(todaysMatches);
@@ -256,7 +256,7 @@ export class DailyWeeklySummaryGenerator {
     }
 
     // Step 2: Find top 10 interesting matches from the week
-    const topWeeklyMatches = await this.findInterestingMatches(weeklyMatches, 10);
+    const topWeeklyMatches = await this.findInterestingMatches(weeklyMatches, 10, request.language);
     const topWeeklyMatchesRaw = topWeeklyMatches.map(m => m.match);
 
     // Step 3: Analyze weekly results by league
@@ -305,13 +305,13 @@ export class DailyWeeklySummaryGenerator {
   /**
    * 🔍 Step 2: Find and score interesting matches from today
    */
-  private async findInterestingMatches(matches: MatchResult[], maxMatches: number = 4): Promise<DailyInterestingMatch[]> {
+  private async findInterestingMatches(matches: MatchResult[], maxMatches: number = 4, language: 'en' | 'am' | 'sw' = 'en'): Promise<DailyInterestingMatch[]> {
     console.log(`🔍 Analyzing ${matches.length} matches for interest level (top ${maxMatches})`);
 
     const scoredMatches = matches.map(match => {
       const interestScore = this.calculateMatchInterestScore(match);
       const interestFactors = this.getMatchInterestFactors(match);
-      const highlightReason = this.getMatchHighlightReason(match, interestFactors, matches[0]?.competition?.includes('Premier League') ? 'am' : 'en'); // Pass language hint
+      const highlightReason = this.getMatchHighlightReason(match, interestFactors, language);
       const audienceAppeal = this.determineAudienceAppeal(interestScore);
 
       // Update the match object with the calculated interest score

@@ -184,11 +184,11 @@ export default function AutomationPage() {
     // Define all scheduled content times
     const scheduledTimes = [
       { time: '00:30', type: 'daily_summary', name: 'Daily Summary', emoji: '📋' },
-      { time: '09:00', type: 'news', name: 'Football News', emoji: '📰' },
-      { time: '12:00', type: 'news', name: 'Football News', emoji: '📰' },
-      { time: '15:00', type: 'news', name: 'Football News', emoji: '📰' },
-      { time: '18:00', type: 'news', name: 'Football News', emoji: '📰' },
-      { time: '21:00', type: 'news', name: 'Football News', emoji: '📰' }
+      { time: '09:00', type: 'news', name: 'Morning News', emoji: '📰' },
+      { time: '12:00', type: 'news', name: 'Midday News', emoji: '📰' },
+      { time: '15:00', type: 'news', name: 'Afternoon News', emoji: '📰' },
+      { time: '18:00', type: 'news', name: 'Evening News', emoji: '📰' },
+      { time: '21:00', type: 'news', name: 'Night News', emoji: '📰' }
     ];
 
     // Find next scheduled time
@@ -211,7 +211,7 @@ export default function AutomationPage() {
         minTimeDiff = timeDiff;
         nextScheduled = {
           ...scheduled,
-          scheduledTime: scheduledTime.toLocaleTimeString('he-IL', { 
+          scheduledTime: scheduledTime.toLocaleTimeString('en-US', { 
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false 
@@ -243,11 +243,11 @@ export default function AutomationPage() {
     const today = new Date();
     const schedule = [
       { time: '00:30', type: 'daily_summary', name: 'Daily Summary', emoji: '📋', description: 'End of day summary (after all matches)' },
-      { time: '09:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Morning news update' },
-      { time: '12:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Midday news update' },
-      { time: '15:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Afternoon news update' },
-      { time: '18:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Evening news update' },
-      { time: '21:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Night news update' }
+      { time: '09:00', type: 'news', name: 'Morning News', emoji: '📰', description: 'Morning news update' },
+      { time: '12:00', type: 'news', name: 'Midday News', emoji: '📰', description: 'Midday news update' },
+      { time: '15:00', type: 'news', name: 'Afternoon News', emoji: '📰', description: 'Afternoon news update' },
+      { time: '18:00', type: 'news', name: 'Evening News', emoji: '📰', description: 'Evening news update' },
+      { time: '21:00', type: 'news', name: 'Night News', emoji: '📰', description: 'Night news update' }
     ];
 
     return schedule.map(item => {
@@ -262,7 +262,7 @@ export default function AutomationPage() {
         ...item,
         isPast,
         isNext,
-        scheduledTime: scheduledTime.toLocaleTimeString('he-IL', { 
+        scheduledTime: scheduledTime.toLocaleTimeString('en-US', { 
           hour: '2-digit', 
           minute: '2-digit',
           hour12: false 
@@ -914,115 +914,100 @@ export default function AutomationPage() {
         </div>
       )}
       
-      {/* 🕐 Real-Time Schedule Dashboard */}
-      <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Next Scheduled Content */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold flex items-center">
-              <Clock className="mr-2 h-5 w-5 text-blue-600" />
-              הזמן הנוכחי ושליחה הבאה
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="text-center">
-                <div className="text-3xl font-mono font-bold text-blue-800">
-                  {currentTime.toLocaleTimeString('he-IL', { 
+      {/* 🕐 Compact Schedule Monitor */}
+      <div className="mb-6 grid grid-cols-1 xl:grid-cols-4 gap-4">
+        {/* Current Time Widget */}
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Clock className="h-8 w-8 text-blue-600" />
+              <div>
+                <div className="text-xl font-mono font-bold text-blue-800">
+                  {currentTime.toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
                     minute: '2-digit', 
                     second: '2-digit',
                     hour12: false 
                   })}
                 </div>
-                <div className="text-sm text-gray-600">
-                  {currentTime.toLocaleDateString('he-IL', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
+                <div className="text-xs text-gray-600">
+                  {currentTime.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
                     day: 'numeric' 
                   })}
                 </div>
               </div>
-              
-              {nextScheduledContent && (
-                <div className="bg-white/70 rounded-lg p-3 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl">{nextScheduledContent.emoji}</span>
-                      <div>
-                        <div className="font-semibold text-blue-900">{nextScheduledContent.name}</div>
-                        <div className="text-sm text-gray-600">בזמן: {nextScheduledContent.scheduledTime}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">זמן עד השליחה:</div>
-                      <div className="text-xl font-mono font-bold text-green-600">
-                        {nextScheduledContent.timeUntil}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Today's Schedule */}
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold flex items-center">
-              <Calendar className="mr-2 h-5 w-5 text-green-600" />
-              לוח זמנים יומי
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {getTodaysSchedule().map((item, index) => (
-                <div 
-                  key={index} 
-                  className={`flex items-center justify-between p-2 rounded-lg border ${
-                    item.isNext 
-                      ? 'bg-yellow-100 border-yellow-300 ring-2 ring-yellow-200' 
-                      : item.isPast 
-                        ? 'bg-gray-100 border-gray-200 opacity-60' 
-                        : 'bg-white border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-xl ${item.isPast ? 'opacity-50' : ''}`}>
-                      {item.emoji}
-                    </span>
+        {/* Next Scheduled */}
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {nextScheduledContent && (
+                  <>
+                    <span className="text-2xl">{nextScheduledContent.emoji}</span>
                     <div>
-                      <div className={`font-medium ${item.isPast ? 'text-gray-500' : 'text-gray-900'}`}>
-                        {item.name}
-                      </div>
-                      <div className={`text-xs ${item.isPast ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {item.description}
-                      </div>
+                      <div className="font-semibold text-green-800 text-sm">{nextScheduledContent.name}</div>
+                      <div className="text-xs text-gray-600">at {nextScheduledContent.scheduledTime}</div>
                     </div>
+                  </>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-gray-500">Next in:</div>
+                <div className="text-lg font-mono font-bold text-green-600">
+                  {nextScheduledContent?.timeUntil || '--:--'}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Daily Progress */}
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-6 w-6 text-orange-600" />
+                <div>
+                  <div className="font-semibold text-orange-800 text-sm">Today's Progress</div>
+                  <div className="text-xs text-gray-600">
+                    {getTodaysSchedule().filter(item => item.isPast).length} / {getTodaysSchedule().length} completed
                   </div>
-                  <div className="text-right">
-                    <div className={`font-mono font-bold ${
-                      item.isNext 
-                        ? 'text-orange-600' 
-                        : item.isPast 
-                          ? 'text-gray-400' 
-                          : 'text-blue-600'
-                    }`}>
-                      {item.time}
-                    </div>
-                    {item.isNext && (
-                      <div className="text-xs text-orange-500 font-medium">
-                        הבא בתור
-                      </div>
-                    )}
-                    {item.isPast && (
-                      <div className="text-xs text-gray-400">
-                        הושלם
-                      </div>
-                    )}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-orange-600">
+                  {Math.round((getTodaysSchedule().filter(item => item.isPast).length / getTodaysSchedule().length) * 100)}%
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Schedule View */}
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardContent className="p-4">
+            <div className="space-y-1">
+              <div className="font-semibold text-purple-800 text-sm mb-2 flex items-center">
+                <Zap className="h-4 w-4 mr-1" />
+                Quick Schedule
+              </div>
+              {getTodaysSchedule().slice(0, 3).map((item, index) => (
+                <div key={index} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-1">
+                    <span className={`${item.isPast ? 'opacity-50' : ''}`}>{item.emoji}</span>
+                    <span className={`${item.isPast ? 'text-gray-500' : item.isNext ? 'text-purple-700 font-medium' : 'text-gray-700'}`}>
+                      {item.name}
+                    </span>
                   </div>
+                  <span className={`font-mono ${item.isNext ? 'text-purple-600 font-bold' : item.isPast ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {item.time}
+                  </span>
                 </div>
               ))}
             </div>
