@@ -87,6 +87,8 @@ export default function AutomationPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'settings' | 'logs'>('overview');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   
   // Content Types Configuration
   const [contentTypes, setContentTypes] = useState<ContentType[]>([
@@ -111,13 +113,70 @@ export default function AutomationPage() {
     }
   }, [isAuthenticated, isManager, isSuperAdmin]);
 
+  // Load content types from API
+  const loadContentTypes = async () => {
+    try {
+      const response = await fetch('/api/automation/content-types');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.contentTypes) {
+          setContentTypes(data.contentTypes);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading content types:', error);
+    }
+  };
+
+  // Save content types to API
+  const saveContentTypes = async (updatedContentTypes: ContentType[]) => {
+    try {
+      const response = await fetch('/api/automation/content-types', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentTypes: updatedContentTypes })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          showNotification('Content types updated successfully!', 'success');
+          await fetchAutomationStats(); // Refresh stats
+        }
+      }
+    } catch (error) {
+      console.error('Error saving content types:', error);
+      showNotification('Error saving content types', 'error');
+    }
+  };
+
+  // Load activity logs
+  const loadActivityLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const response = await fetch('/api/automation/logs?limit=50&days=7');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setActivityLogs(data.logs || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading activity logs:', error);
+      showNotification('Could not load activity logs', 'error');
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
   const initializeAutomation = async () => {
     setLoading(true);
     try {
       await Promise.all([
         checkSystemHealth(),
         fetchAutomationStats(),
-        checkFullAutomationStatus()
+        checkFullAutomationStatus(),
+        loadContentTypes()
       ]);
       setSystemHealth({ status: 'healthy', message: 'Automation system ready' });
     } catch (error) {
@@ -156,10 +215,21 @@ export default function AutomationPage() {
       const response = await fetch('/api/automation/stats');
       if (response.ok) {
         const data = await response.json();
-        setAutomationStats(data);
+        if (data.success) {
+          setAutomationStats({
+            totalRules: data.totalRules || 0,
+            activeRules: data.activeRules || 0,
+            contentGenerated24h: data.contentGenerated24h || 0,
+            successRate: data.successRate || 0,
+            lastRun: data.lastRun
+          });
+        }
+      } else {
+        console.warn('Stats API returned non-OK status, using fallback data');
       }
     } catch (error) {
       console.error('Error fetching automation stats:', error);
+      showNotification('Could not load stats - using default values', 'info');
     }
   };
 
@@ -168,10 +238,15 @@ export default function AutomationPage() {
       const response = await fetch('/api/automation/settings');
       if (response.ok) {
         const data = await response.json();
-        setIsFullAutomationEnabled(data.full_automation_enabled || false);
+        if (data.success) {
+          setIsFullAutomationEnabled(data.full_automation_enabled || false);
+        }
+      } else {
+        console.warn('Settings API returned non-OK status');
       }
     } catch (error) {
       console.error('Error checking automation status:', error);
+      showNotification('Could not load settings - using defaults', 'info');
     }
   };
 
@@ -182,21 +257,32 @@ export default function AutomationPage() {
 
   const toggleFullAutomation = async () => {
     try {
+      const newStatus = !isFullAutomationEnabled;
       const response = await fetch('/api/automation/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_automation_enabled: !isFullAutomationEnabled })
+        body: JSON.stringify({ full_automation_enabled: newStatus })
       });
       
       if (response.ok) {
-        setIsFullAutomationEnabled(!isFullAutomationEnabled);
-        showNotification(
-          `Full automation ${!isFullAutomationEnabled ? 'enabled' : 'disabled'} successfully!`,
-          'success'
-        );
+        const data = await response.json();
+        if (data.success) {
+          setIsFullAutomationEnabled(newStatus);
+          showNotification(
+            `Full automation ${newStatus ? 'enabled' : 'disabled'} successfully!`,
+            'success'
+          );
+          // Refresh stats after toggle
+          await fetchAutomationStats();
+        } else {
+          throw new Error(data.error || 'Failed to update settings');
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      showNotification('Error toggling automation', 'error');
+      console.error('Error toggling automation:', error);
+      showNotification(`Error toggling automation: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     }
   };
 
@@ -444,7 +530,12 @@ export default function AutomationPage() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => {
+              setActiveTab(tab.id as any);
+              if (tab.id === 'logs' && activityLogs.length === 0) {
+                loadActivityLogs();
+              }
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-white text-blue-600 shadow-sm'
@@ -556,14 +647,14 @@ export default function AutomationPage() {
                       <Button
                         size="sm"
                         variant={contentType.enabled ? "default" : "outline"}
-                        onClick={() => {
-                          setContentTypes(prev => 
-                            prev.map(ct => 
-                              ct.id === contentType.id 
-                                ? { ...ct, enabled: !ct.enabled }
-                                : ct
-                            )
+                        onClick={async () => {
+                          const updatedContentTypes = contentTypes.map(ct => 
+                            ct.id === contentType.id 
+                              ? { ...ct, enabled: !ct.enabled }
+                              : ct
                           );
+                          setContentTypes(updatedContentTypes);
+                          await saveContentTypes(updatedContentTypes);
                         }}
                       >
                         {contentType.enabled ? 'Enabled' : 'Enable'}
@@ -619,19 +710,79 @@ export default function AutomationPage() {
       {activeTab === 'logs' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              Activity Logs
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Activity Logs
+              </div>
+              <Button
+                onClick={loadActivityLogs}
+                disabled={logsLoading}
+                size="sm"
+                variant="outline"
+              >
+                {logsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Refresh
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
-              <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p>Activity logs will appear here as automation runs</p>
-              <Button onClick={runAutomationCycle} className="mt-4" size="sm">
-                Run Automation to Generate Logs
-              </Button>
-            </div>
+            {logsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                <span>Loading activity logs...</span>
+              </div>
+            ) : activityLogs.length > 0 ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {activityLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg border ${
+                      log.status === 'success' || log.type === 'content_generated'
+                        ? 'bg-green-50 border-green-200'
+                        : log.status === 'error'
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex-shrink-0">
+                      {log.status === 'success' || log.type === 'content_generated' ? (
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      ) : log.status === 'error' ? (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      ) : (
+                        <Info className="w-5 h-5 text-blue-500" />
+                      )}
+                    </div>
+                    <div className="flex-grow">
+                      <div className="font-medium text-sm">{log.message}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {new Date(log.timestamp).toLocaleString()} 
+                        {log.rule && ` • ${log.rule.name}`}
+                        {log.contentGenerated > 0 && ` • Generated ${log.contentGenerated} items`}
+                        {log.executionTime && ` • ${log.executionTime}ms`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p className="mb-2">No activity logs found</p>
+                <p className="text-sm text-gray-400 mb-4">
+                  Activity will appear here as automation rules run and content is generated
+                </p>
+                <div className="flex justify-center gap-2">
+                  <Button onClick={runAutomationCycle} size="sm">
+                    Run Automation Cycle
+                  </Button>
+                  <Button onClick={loadActivityLogs} variant="outline" size="sm">
+                    Refresh Logs
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
