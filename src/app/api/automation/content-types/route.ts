@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 // PUT - Update content types configuration
 export async function PUT(request: NextRequest) {
   try {
-    console.log('🔄 Updating content types configuration...');
+    console.log('🔄 Updating content types configuration... [Version 2.0]');
     
     const body = await request.json();
     const { contentTypes } = body;
