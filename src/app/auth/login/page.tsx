@@ -90,6 +90,17 @@ export default function LoginPage() {
   // Handle redirect after successful login when manager data is loaded
   useEffect(() => {
     if (shouldRedirect && manager && success) {
+      // Check if user needs to set up password
+      if (manager.password_reset_required) {
+        console.log('🔄 Login: User needs to set up password, redirecting to setup page');
+        setSuccess('Login successful! Please set up your password for security.');
+        setTimeout(() => {
+          router.push('/auth/setup-password');
+        }, 2000);
+        setShouldRedirect(false);
+        return;
+      }
+      
       const isAdmin = manager.role === 'super_admin';
       const redirectPath = isAdmin ? '/super-admin' : '/dashboard';
       

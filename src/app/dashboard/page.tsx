@@ -190,8 +190,35 @@ const translations = {
 interface DashboardStats {
   activeBots: number;
   totalChannels: number;
+  activeChannels: number;
+  totalPosts: number;
+  totalMembers: number;
   monthlyRevenue: string;
   performance: string;
+  averageResponseTime: number;
+  growth: {
+    botsThisMonth: number;
+    channelsThisMonth: number;
+    revenueGrowth: string;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    timestamp: string;
+    status: string;
+    time: number;
+  }>;
+  systemHealth: {
+    status: string;
+    score: number;
+    lastCheck: string;
+  };
+  quickStats: {
+    contentGenerated24h: number;
+    successRate: string;
+    avgGenerationTime: string;
+    activeNow: number;
+  };
 }
 
 export default function DashboardPage() {
@@ -203,8 +230,29 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     activeBots: 0,
     totalChannels: 0,
+    activeChannels: 0,
+    totalPosts: 0,
+    totalMembers: 0,
     monthlyRevenue: '$0',
-    performance: '0%'
+    performance: '0%',
+    averageResponseTime: 0,
+    growth: {
+      botsThisMonth: 0,
+      channelsThisMonth: 0,
+      revenueGrowth: '0%'
+    },
+    recentActivity: [],
+    systemHealth: {
+      status: 'loading',
+      score: 0,
+      lastCheck: new Date().toISOString()
+    },
+    quickStats: {
+      contentGenerated24h: 0,
+      successRate: '0%',
+      avgGenerationTime: '0s',
+      activeNow: 0
+    }
   });
 
   // Auto-redirect if not authenticated
@@ -217,18 +265,28 @@ export default function DashboardPage() {
   // Load dashboard stats
   useEffect(() => {
     const loadStats = async () => {
-      // Simulate API call
-      setTimeout(() => {
-        setStats({
-          activeBots: 12,
-          totalChannels: 45,
-          monthlyRevenue: '$8,420',
-          performance: '94%'
-        });
-      }, 1000);
+      try {
+        console.log('📊 Loading dashboard stats...');
+        const response = await fetch('/api/dashboard/stats');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard stats');
+        }
+        
+        const data = await response.json();
+        setStats(data);
+        console.log('✅ Dashboard stats loaded successfully');
+      } catch (error) {
+        console.error('❌ Error loading dashboard stats:', error);
+        // Keep default values on error
+      }
     };
 
     loadStats();
+    
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(loadStats, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   if (!isAuthenticated) {
@@ -292,12 +350,17 @@ export default function DashboardPage() {
     t.ai.recommendation4
   ];
 
-  const recentActivity = [
-    t.activity.item1,
-    t.activity.item2,
-    t.activity.item3,
-    t.activity.item4
-  ];
+  const recentActivityItems = stats.recentActivity.length > 0 
+    ? stats.recentActivity.map((activity: any) => {
+        const timeAgo = new Date(activity.timestamp).toLocaleTimeString();
+        return `${activity.type} - ${activity.status} (${timeAgo})`;
+      })
+    : [
+        t.activity.item1,
+        t.activity.item2,
+        t.activity.item3,
+        t.activity.item4
+      ];
 
   return (
     <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'} px-4 sm:px-6 lg:px-8 py-4`}>
@@ -346,6 +409,17 @@ export default function DashboardPage() {
                 <option value="analyst">{t.roles.analyst}</option>
               </select>
             </div>
+            
+            {/* Super Admin Navigation - Show only for super_admin */}
+            {user?.role === 'super_admin' && (
+              <Link 
+                href="/super-admin"
+                className="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
+              >
+                <span className="text-sm">⚡</span>
+                <span className="text-sm font-medium">Super Admin</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -390,18 +464,53 @@ export default function DashboardPage() {
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">{stats.activeBots}</div>
                 <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{t.stats.bots}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">+{stats.growth.botsThisMonth} this month</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">{stats.totalChannels}</div>
                 <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{t.stats.channels}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{stats.activeChannels} active</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">{stats.monthlyRevenue}</div>
                 <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{t.stats.revenue}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{stats.growth.revenueGrowth}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">{stats.performance}</div>
                 <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{t.stats.performance}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{stats.quickStats.avgGenerationTime} avg</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Stats */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
+              System Performance
+            </h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-indigo-600 mb-2">{stats.totalPosts.toLocaleString()}</div>
+                <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Total Posts</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-2">{stats.totalMembers.toLocaleString()}</div>
+                <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Total Members</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-pink-600 mb-2">{stats.quickStats.contentGenerated24h}</div>
+                <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Content Today</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-2xl sm:text-3xl font-bold mb-2 ${
+                  stats.systemHealth.score >= 90 ? 'text-green-600' : 
+                  stats.systemHealth.score >= 70 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {stats.systemHealth.score}%
+                </div>
+                <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">System Health</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{stats.systemHealth.status}</div>
               </div>
             </div>
           </div>
@@ -458,7 +567,7 @@ export default function DashboardPage() {
               {t.activity.title}
             </h3>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
+              {recentActivityItems.map((activity: any, index: number) => (
                 <div key={index} className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">

@@ -1,6 +1,6 @@
 /**
  * TELEGRAM BOT MANAGER 2025 - Super Admin Dashboard
- * Revolutionary system-wide management interface
+ * Revolutionary system-wide management interface with REAL DATA
  */
 
 'use client';
@@ -16,6 +16,74 @@ const languages = {
   sw: 'Kiswahili'
 };
 
+interface SystemStats {
+  organizations: {
+    total: number;
+    active: number;
+    pending: number;
+  };
+  users: {
+    total: number;
+    admins: number;
+    managers: number;
+    botManagers: number;
+  };
+  system: {
+    uptime: string;
+    performance: string;
+    apiCalls: number;
+    errors: number;
+    healthScore: number;
+  };
+  revenue: {
+    total: string;
+    monthlyGrowth: string;
+    activeSubscriptions: number;
+    conversionRate: string;
+  };
+  security: {
+    activeThreats: number;
+    blockedAttempts: number;
+    securityScore: string;
+    compliance: string;
+  };
+  analytics: {
+    totalBots: number;
+    totalChannels: number;
+    messagesSent: number;
+    engagement: string;
+  };
+  systemHealth: {
+    status: string;
+    score: number;
+    issues: any[];
+  };
+  recentActivity: any[];
+}
+
+interface OpenAICosts {
+  currentMonth: {
+    cost: number;
+    tokens: number;
+    requests: number;
+    averageDailyCost: number;
+  };
+  growth: {
+    cost: number;
+    usage: number;
+  };
+  projections: {
+    monthlyCost: number;
+    dailyAverage: number;
+    daysRemaining: number;
+  };
+  summary: {
+    status: string;
+    budgetUsed: number;
+    efficiency: number;
+  };
+}
+
 const translations = {
   en: {
     title: 'System Administrator Dashboard',
@@ -26,6 +94,13 @@ const translations = {
       evening: 'Good evening'
     },
     welcome: 'Welcome to the central control center',
+    systemAdmin: 'System Administrator',
+    lastUpdated: 'Last updated',
+    refreshData: 'Refresh Data',
+    systemStatus: 'System Status',
+    healthy: 'Healthy',
+    warning: 'Warning',
+    critical: 'Critical',
     sections: {
       organizations: {
         title: 'Organizations',
@@ -47,8 +122,17 @@ const translations = {
         description: 'Platform performance monitoring',
         uptime: 'System Uptime',
         performance: 'Performance',
-        apiCalls: 'API Calls/Hour',
-        errors: 'Error Rate'
+        apiCalls: 'API Calls/Day',
+        errors: 'Error Rate',
+        health: 'Health Score'
+      },
+      openai: {
+        title: 'OpenAI Costs',
+        description: 'AI usage and cost monitoring',
+        currentCost: 'Current Month',
+        projectedCost: 'Projected Cost',
+        efficiency: 'Efficiency',
+        status: 'Budget Status'
       },
       revenue: {
         title: 'Revenue Management',
@@ -75,12 +159,19 @@ const translations = {
         engagement: 'Engagement Rate'
       }
     },
+    navigation: {
+      switchToBotManager: 'Switch to Bot Manager',
+      superAdminMode: 'Super Admin Mode',
+      botManagerMode: 'Bot Manager Mode'
+    },
     actions: {
       title: 'Quick Actions',
       createOrg: 'Create Organization',
       createOrgDesc: 'Add new organization to platform',
+      createBotManager: 'Create Bot Manager',
+      createBotManagerDesc: 'Add new bot manager to system',
       manageUsers: 'Manage Users',
-      manageUsersDesc: 'User administration and permissions',
+      manageUsersDesc: 'User management and permissions',
       systemSettings: 'System Settings',
       systemSettingsDesc: 'Global platform configuration',
       viewLogs: 'View Logs',
@@ -90,23 +181,9 @@ const translations = {
       maintenance: 'Maintenance Mode',
       maintenanceDesc: 'Enable/disable maintenance mode'
     },
-    alerts: {
-      title: 'System Alerts',
-      warning: 'Warning',
-      info: 'Info',
-      error: 'Error',
-      success: 'Success'
-    },
-    nav: {
-      dashboard: 'Dashboard',
-      organizations: 'Organizations',
-      users: 'Users',
-      system: 'System',
-      revenue: 'Revenue',
-      security: 'Security',
-      analytics: 'Analytics',
-      settings: 'Settings'
-    }
+    loading: 'Loading system data...',
+    error: 'Error loading data',
+    refresh: 'Refresh Data'
   },
   am: {
     title: 'የስርዓት አስተዳዳሪ ዳሽቦርድ',
@@ -117,6 +194,13 @@ const translations = {
       evening: 'እንደምን አመሸሽ'
     },
     welcome: 'ወደ ማእከላዊ ቁጥጥር ማዕከል እንኳን ደህና መጡ',
+    systemAdmin: 'የስርዓት አስተዳዳሪ',
+    lastUpdated: 'በመጨረሻ',
+    refreshData: 'አርዝ አስተዳደር',
+    systemStatus: 'የስርዓት ሁኔታ',
+    healthy: 'ንቁ',
+    warning: 'ማስጠንቀቂያ',
+    critical: 'ስህተት',
     sections: {
       organizations: {
         title: 'ድርጅቶች',
@@ -139,7 +223,16 @@ const translations = {
         uptime: 'የስርዓት ሰዓታዊ ሁኔታ',
         performance: 'አፈጻጸም',
         apiCalls: 'API ጥሪዎች/ሰዓት',
-        errors: 'የስህተት መጠን'
+        errors: 'የስህተት መጠን',
+        health: 'የስርዓት ጤንነት'
+      },
+      openai: {
+        title: 'የኦፕአይ ኮስቶች',
+        description: 'AI የመደበኛ እና ኮስቶች መመለስ',
+        currentCost: 'የመሰረት ወር',
+        projectedCost: 'መረዳት ኮስቶች',
+        efficiency: 'አመልካች',
+        status: 'መጠን ሁኔታ'
       },
       revenue: {
         title: 'የገቢ አስተዳደር',
@@ -166,10 +259,17 @@ const translations = {
         engagement: 'የተሳትፎ መጠን'
       }
     },
+    navigation: {
+      switchToBotManager: 'የቦት ማናጀሮ መረዳት',
+      superAdminMode: 'የስርዓት አስተዳዳሪ መረዳት',
+      botManagerMode: 'የቦት ማናጀሮ መረዳት'
+    },
     actions: {
       title: 'ቀልጣፋ ድርጊቶች',
       createOrg: 'ድርጅት ፍጠር',
       createOrgDesc: 'ወደ መድረኩ አዲስ ድርጅት ጨምር',
+      createBotManager: 'የቦት ማናጀሮ ፍጠር',
+      createBotManagerDesc: 'ወደ መድረኩ አዲስ የቦት ማናጀሮ ጨምር',
       manageUsers: 'ተጠቃሚዎችን አስተዳድር',
       manageUsersDesc: 'የተጠቃሚ አስተዳደር እና ፈቃዶች',
       systemSettings: 'የስርዓት ቅንጅቶች',
@@ -197,7 +297,10 @@ const translations = {
       security: 'ደህንነት',
       analytics: 'ትንታኔ',
       settings: 'ቅንጅቶች'
-    }
+    },
+    loading: 'Loading system data...',
+    error: 'Error loading data',
+    refresh: 'Refresh Data'
   },
   sw: {
     title: 'Dashibodi ya Msimamizi wa Mfumo',
@@ -208,6 +311,13 @@ const translations = {
       evening: 'Habari za jioni'
     },
     welcome: 'Karibu kwenye kituo cha udhibiti wa kati',
+    systemAdmin: 'Msimamizi wa Mfumo',
+    lastUpdated: 'Imefanyika mwisho',
+    refreshData: 'Kufanya kazi tena',
+    systemStatus: 'Hali ya Mfumo',
+    healthy: 'Tayari',
+    warning: 'Ujumbe',
+    critical: 'Kosa',
     sections: {
       organizations: {
         title: 'Mashirika',
@@ -230,7 +340,16 @@ const translations = {
         uptime: 'Muda wa Kufanya Kazi wa Mfumo',
         performance: 'Utendaji',
         apiCalls: 'Simu za API/Saa',
-        errors: 'Kiwango cha Makosa'
+        errors: 'Kiwango cha Makosa',
+        health: 'Afya ya Mfumo'
+      },
+      openai: {
+        title: 'Maombi ya OpenAI',
+        description: 'Ufuatiliaji wa maombi na maombi ya OpenAI',
+        currentCost: 'Mwezi wa sasa',
+        projectedCost: 'Maombi yafuatayo',
+        efficiency: 'Ufuatiliaji',
+        status: 'Hali ya Budjet'
       },
       revenue: {
         title: 'Usimamizi wa Mapato',
@@ -257,10 +376,17 @@ const translations = {
         engagement: 'Kiwango cha Kushiriki'
       }
     },
+    navigation: {
+      switchToBotManager: 'Tumia Msimamizi wa Bot',
+      superAdminMode: 'Hali ya Msimamizi wa Super',
+      botManagerMode: 'Hali ya Msimamizi wa Bot'
+    },
     actions: {
       title: 'Vitendo vya Haraka',
       createOrg: 'Unda Shirika',
       createOrgDesc: 'Ongeza shirika jipya kwenye jukwaa',
+      createBotManager: 'Unda Msimamizi wa Bot',
+      createBotManagerDesc: 'Ongeza msimamizi wa bot jipya kwenye jukwaa',
       manageUsers: 'Simamia Watumiaji',
       manageUsersDesc: 'Usimamizi wa watumiaji na ruhusa',
       systemSettings: 'Mipangilio ya Mfumo',
@@ -288,153 +414,76 @@ const translations = {
       security: 'Usalama',
       analytics: 'Uchambuzi',
       settings: 'Mipangilio'
-    }
+    },
+    loading: 'Loading system data...',
+    error: 'Error loading data',
+    refresh: 'Refresh Data'
   }
 };
 
-interface SystemStats {
-  organizations: {
-    total: number;
-    active: number;
-    pending: number;
-  };
-  users: {
-    total: number;
-    admins: number;
-    managers: number;
-    botManagers: number;
-  };
-  system: {
-    uptime: string;
-    performance: string;
-    apiCalls: number;
-    errors: string;
-  };
-  revenue: {
-    total: string;
-    monthlyGrowth: string;
-    activeSubscriptions: number;
-    conversionRate: string;
-  };
-  security: {
-    activeThreats: number;
-    blockedAttempts: number;
-    securityScore: string;
-    compliance: string;
-  };
-  analytics: {
-    totalBots: number;
-    totalChannels: number;
-    messagesSent: number;
-    engagement: string;
-  };
-}
-
 export default function SuperAdminPage() {
-  const { user, isAuthenticated, isSuperAdmin } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
-  const [currentLang, setCurrentLang] = useState('en');
-  const [darkMode, setDarkMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<SystemStats>({
-    organizations: {
-      total: 0,
-      active: 0,
-      pending: 0
-    },
-    users: {
-      total: 0,
-      admins: 0,
-      managers: 0,
-      botManagers: 0
-    },
-    system: {
-      uptime: '0%',
-      performance: '0%',
-      apiCalls: 0,
-      errors: '0%'
-    },
-    revenue: {
-      total: '$0',
-      monthlyGrowth: '0%',
-      activeSubscriptions: 0,
-      conversionRate: '0%'
-    },
-    security: {
-      activeThreats: 0,
-      blockedAttempts: 0,
-      securityScore: '0%',
-      compliance: 'Unknown'
-    },
-    analytics: {
-      totalBots: 0,
-      totalChannels: 0,
-      messagesSent: 0,
-      engagement: '0%'
-    }
+    organizations: { total: 0, active: 0, pending: 0 },
+    users: { total: 0, admins: 0, managers: 0, botManagers: 0 },
+    system: { uptime: '0h 0m', performance: 'Good', apiCalls: 0, errors: 0, healthScore: 100 },
+    revenue: { total: '$0', monthlyGrowth: '0%', activeSubscriptions: 0, conversionRate: '0%' },
+    security: { activeThreats: 0, blockedAttempts: 0, securityScore: 'A', compliance: 'Compliant' },
+    analytics: { totalBots: 0, totalChannels: 0, messagesSent: 0, engagement: '0%' },
+    systemHealth: { status: 'healthy', score: 100, issues: [] },
+    recentActivity: []
   });
+  const [openaiCosts, setOpenaiCosts] = useState<OpenAICosts>({
+    currentMonth: { cost: 0, tokens: 0, requests: 0, averageDailyCost: 0 },
+    growth: { cost: 0, usage: 0 },
+    projections: { monthlyCost: 0, dailyAverage: 0, daysRemaining: 0 },
+    summary: { status: 'within_budget', budgetUsed: 0, efficiency: 0 }
+  });
+  const [language, setLanguage] = useState<'en' | 'am' | 'sw'>('en');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  // Auto-redirect if not authenticated or not super admin
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-    } else if (!isSuperAdmin) {
-      router.push('/dashboard');
+  const t = translations[language];
+
+  // Load real data from APIs
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch both APIs in parallel
+      const [statsResponse, openaiResponse] = await Promise.all([
+        fetch('/api/super-admin/stats'),
+        fetch('/api/super-admin/openai-costs')
+      ]);
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
+
+      if (openaiResponse.ok) {
+        const openaiData = await openaiResponse.json();
+        setOpenaiCosts(openaiData);
+      }
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
     }
-  }, [isAuthenticated, isSuperAdmin, router]);
+  };
 
-  // Load system stats
   useEffect(() => {
-    const loadStats = async () => {
-      // Simulate API call
-      setTimeout(() => {
-        setStats({
-          organizations: {
-            total: 156,
-            active: 142,
-            pending: 14
-          },
-          users: {
-            total: 1847,
-            admins: 12,
-            managers: 234,
-            botManagers: 1601
-          },
-          system: {
-            uptime: '99.9%',
-            performance: '94%',
-            apiCalls: 15420,
-            errors: '0.1%'
-          },
-          revenue: {
-            total: '$284,520',
-            monthlyGrowth: '+18.5%',
-            activeSubscriptions: 1234,
-            conversionRate: '12.3%'
-          },
-          security: {
-            activeThreats: 0,
-            blockedAttempts: 47,
-            securityScore: '98%',
-            compliance: 'Excellent'
-          },
-          analytics: {
-            totalBots: 3421,
-            totalChannels: 8934,
-            messagesSent: 124567,
-            engagement: '87.3%'
-          }
-        });
-      }, 1000);
-    };
-
     loadStats();
   }, []);
 
-  if (!isAuthenticated || !isSuperAdmin) {
-    return null;
-  }
-
-  const t = translations[currentLang as keyof typeof translations];
+  const refreshData = () => {
+    setLastUpdated(new Date());
+    loadStats();
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -443,346 +492,375 @@ export default function SuperAdminPage() {
     return t.greeting.evening;
   };
 
-  const quickActions = [
-    {
-      title: t.actions.createOrg,
-      description: t.actions.createOrgDesc,
-      color: 'from-blue-500 to-indigo-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20'
-    },
-    {
-      title: t.actions.manageUsers,
-      description: t.actions.manageUsersDesc,
-      color: 'from-green-500 to-emerald-600',
-      bgColor: 'bg-green-50 dark:bg-green-900/20'
-    },
-    {
-      title: t.actions.systemSettings,
-      description: t.actions.systemSettingsDesc,
-      color: 'from-purple-500 to-pink-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20'
-    },
-    {
-      title: t.actions.viewLogs,
-      description: t.actions.viewLogsDesc,
-      color: 'from-orange-500 to-red-600',
-      bgColor: 'bg-orange-50 dark:bg-orange-900/20'
-    },
-    {
-      title: t.actions.backup,
-      description: t.actions.backupDesc,
-      color: 'from-teal-500 to-cyan-600',
-      bgColor: 'bg-teal-50 dark:bg-teal-900/20'
-    },
-    {
-      title: t.actions.maintenance,
-      description: t.actions.maintenanceDesc,
-      color: 'from-red-500 to-pink-600',
-      bgColor: 'bg-red-50 dark:bg-red-900/20'
+  const getHealthColor = (score: number) => {
+    if (score >= 90) return 'text-green-400';
+    if (score >= 70) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy':
+      case 'within_budget':
+        return 'bg-green-100 text-green-800';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-  ];
+  };
 
-  const navigationItems = [
-    { name: t.nav.dashboard, active: true },
-    { name: t.nav.organizations, active: false },
-    { name: t.nav.users, active: false },
-    { name: t.nav.system, active: false },
-    { name: t.nav.revenue, active: false },
-    { name: t.nav.security, active: false },
-    { name: t.nav.analytics, active: false },
-    { name: t.nav.settings, active: false }
-  ];
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return t.healthy;
+      case 'warning':
+        return t.warning;
+      case 'critical':
+        return t.critical;
+      default:
+        return status;
+    }
+  };
 
-  const systemAlerts = [
-    { type: 'success', message: 'All systems operating normally' },
-    { type: 'info', message: 'Scheduled maintenance in 3 days' },
-    { type: 'warning', message: 'High API usage detected' },
-    { type: 'error', message: 'No critical errors' }
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mb-4"></div>
+          <p className="text-white text-lg">{t.loading}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">⚠️</div>
+          <p className="text-white text-lg">{error}</p>
+          <button 
+            onClick={refreshData}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            {t.refresh}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
-      
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-6">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl">
-                SA
-              </div>
+              <div className="text-6xl">👑</div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {t.title}
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {getGreeting()}, {user?.email}
-                </p>
+                <h1 className="text-3xl font-bold text-white">{t.title}</h1>
+                <p className="text-gray-300">{t.subtitle}</p>
               </div>
             </div>
-            
             <div className="flex items-center space-x-4">
-              {/* Language Switcher */}
-              <select 
-                value={currentLang} 
-                onChange={(e) => setCurrentLang(e.target.value)}
-                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {Object.entries(languages).map(([code, name]) => (
-                  <option key={code} value={code}>{name}</option>
-                ))}
-              </select>
-              
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200"
-              >
-                {darkMode ? '☀️' : '🌙'}
-              </button>
-              
               <Link 
-                href="/dashboard"
-                className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all duration-200 font-medium"
+                href="/dashboard" 
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
               >
-                Bot Manager
+                {t.navigation.switchToBotManager}
               </Link>
-              
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center text-white font-bold">
-                {user?.email?.[0]?.toUpperCase() || 'S'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-red-500 to-pink-600 rounded-3xl p-8 mb-8 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">
-                {getGreeting()}, Super Admin!
-              </h2>
-              <p className="text-red-100">
-                {t.welcome}
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">System Status</div>
-              <div className="text-red-100">All Systems Operational</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 mb-8 shadow-lg border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4">
-            {navigationItems.map((item, index) => (
-              <button
-                key={index}
-                className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                  item.active
-                    ? 'bg-red-500 text-white shadow-lg'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
+              <select 
+                value={language} 
+                onChange={(e) => setLanguage(e.target.value as 'en' | 'am' | 'sw')}
+                className="px-3 py-2 bg-black/20 text-white border border-white/20 rounded-lg"
               >
-                {item.name}
+                <option value="en">English</option>
+                <option value="am">አማርኛ</option>
+                <option value="sw">Kiswahili</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <div>
+              <span className="text-gray-300">{getGreeting()}, </span>
+              <span className="text-white font-semibold">{t.systemAdmin}</span>
+            </div>
+            <div className="flex items-center space-x-4 text-sm text-gray-400">
+              <span>{t.lastUpdated}: {lastUpdated.toLocaleTimeString()}</span>
+              <button
+                onClick={refreshData}
+                className="p-2 text-gray-300 hover:text-white transition-colors"
+                title={t.refreshData}
+              >
+                🔄
               </button>
-            ))}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* Quick Actions */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                {t.actions.title}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {quickActions.map((action, index) => (
-                  <div
-                    key={index}
-                    className={`${action.bgColor} rounded-2xl p-6 border-2 border-transparent hover:border-red-200 dark:hover:border-red-700 transition-all duration-300 group cursor-pointer`}
-                  >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${action.color} flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <span className="text-xl">⚡</span>
-                    </div>
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                      {action.title}
-                    </h4>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm">
-                      {action.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
+        {/* System Status */}
+        <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-white">{t.systemStatus}</h2>
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(stats.systemHealth.status)}`}>
+              {getStatusText(stats.systemHealth.status)}
             </div>
-
-            {/* System Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              
-              {/* Organizations */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  {t.sections.organizations.title}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.organizations.total}</span>
-                    <span className="text-2xl font-bold text-blue-600">{stats.organizations.total}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.organizations.active}</span>
-                    <span className="text-lg font-semibold text-green-600">{stats.organizations.active}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.organizations.pending}</span>
-                    <span className="text-lg font-semibold text-orange-600">{stats.organizations.pending}</span>
-                  </div>
-                </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className={`text-3xl font-bold ${getHealthColor(stats.systemHealth.score)}`}>
+                {stats.systemHealth.score}%
               </div>
-
-              {/* Users */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  {t.sections.users.title}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.users.total}</span>
-                    <span className="text-2xl font-bold text-purple-600">{stats.users.total}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.users.admins}</span>
-                    <span className="text-lg font-semibold text-red-600">{stats.users.admins}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.users.managers}</span>
-                    <span className="text-lg font-semibold text-blue-600">{stats.users.managers}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.users.botManagers}</span>
-                    <span className="text-lg font-semibold text-green-600">{stats.users.botManagers}</span>
-                  </div>
-                </div>
+              <div className="text-gray-400">Health Score</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-400">
+                {stats.system.apiCalls}
               </div>
+              <div className="text-gray-400">API Calls Today</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-400">
+                {stats.system.uptime}
+              </div>
+              <div className="text-gray-400">System Uptime</div>
+            </div>
+          </div>
+        </div>
 
-              {/* System Health */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                  {t.sections.system.title}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.system.uptime}</span>
-                    <span className="text-2xl font-bold text-green-600">{stats.system.uptime}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.system.performance}</span>
-                    <span className="text-lg font-semibold text-blue-600">{stats.system.performance}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.system.apiCalls}</span>
-                    <span className="text-lg font-semibold text-purple-600">{stats.system.apiCalls}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">{t.sections.system.errors}</span>
-                    <span className="text-lg font-semibold text-green-600">{stats.system.errors}</span>
-                  </div>
-                </div>
+        {/* Main Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Organizations */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">{t.sections.organizations.title}</h3>
+              <span className="text-2xl">🏢</span>
+          </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.organizations.total}:</span>
+                <span className="text-white font-bold">{stats.organizations.total}</span>
+        </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.organizations.active}:</span>
+                <span className="text-green-400 font-bold">{stats.organizations.active}</span>
+                    </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.organizations.pending}:</span>
+                <span className="text-yellow-400 font-bold">{stats.organizations.pending}</span>
               </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-8">
-            
-            {/* System Alerts */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                {t.alerts.title}
-              </h3>
-              <div className="space-y-4">
-                {systemAlerts.map((alert, index) => (
-                  <div key={index} className={`p-4 rounded-xl border-l-4 ${
-                    alert.type === 'success' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' :
-                    alert.type === 'info' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' :
-                    alert.type === 'warning' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' :
-                    'border-red-500 bg-red-50 dark:bg-red-900/20'
-                  }`}>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-sm font-medium ${
-                        alert.type === 'success' ? 'text-green-700 dark:text-green-300' :
-                        alert.type === 'info' ? 'text-blue-700 dark:text-blue-300' :
-                        alert.type === 'warning' ? 'text-yellow-700 dark:text-yellow-300' :
-                        'text-red-700 dark:text-red-300'
-                      }`}>
-                        {alert.type === 'success' ? t.alerts.success :
-                         alert.type === 'info' ? t.alerts.info :
-                         alert.type === 'warning' ? t.alerts.warning :
-                         t.alerts.error}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      {alert.message}
-                    </p>
+          {/* Users */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">{t.sections.users.title}</h3>
+              <span className="text-2xl">👥</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.users.total}:</span>
+                <span className="text-white font-bold">{stats.users.total}</span>
                   </div>
-                ))}
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.users.admins}:</span>
+                <span className="text-purple-400 font-bold">{stats.users.admins}</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.users.botManagers}:</span>
+                <span className="text-blue-400 font-bold">{stats.users.botManagers}</span>
+                  </div>
+                </div>
+              </div>
+
+          {/* OpenAI Costs */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">{t.sections.openai.title}</h3>
+              <span className="text-2xl">🤖</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.openai.currentCost}:</span>
+                <span className="text-white font-bold">${openaiCosts.currentMonth.cost}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.openai.projectedCost}:</span>
+                <span className="text-yellow-400 font-bold">${openaiCosts.projections.monthlyCost}</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.openai.efficiency}:</span>
+                <span className="text-green-400 font-bold">{openaiCosts.summary.efficiency}%</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.openai.status}:</span>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(openaiCosts.summary.status)}`}>
+                  {openaiCosts.summary.status.replace('_', ' ').toUpperCase()}
+                </span>
+                  </div>
+                  </div>
+                </div>
+              </div>
+
+        {/* Revenue and Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Revenue */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">{t.sections.revenue.title}</h3>
+              <span className="text-2xl">💰</span>
+                  </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.revenue.totalRevenue}:</span>
+                <span className="text-green-400 font-bold">{stats.revenue.total}</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.revenue.monthlyGrowth}:</span>
+                <span className="text-green-400 font-bold">{stats.revenue.monthlyGrowth}</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.revenue.activeSubscriptions}:</span>
+                <span className="text-blue-400 font-bold">{stats.revenue.activeSubscriptions}</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.revenue.conversionRate}:</span>
+                <span className="text-white font-bold">{stats.revenue.conversionRate}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Analytics */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">{t.sections.analytics.title}</h3>
+              <span className="text-2xl">📊</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.analytics.totalBots}:</span>
+                <span className="text-white font-bold">{stats.analytics.totalBots}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.analytics.totalChannels}:</span>
+                <span className="text-blue-400 font-bold">{stats.analytics.totalChannels}</span>
+                    </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.analytics.messagesSent}:</span>
+                <span className="text-green-400 font-bold">{stats.analytics.messagesSent}</span>
+                  </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">{t.sections.analytics.engagement}:</span>
+                <span className="text-purple-400 font-bold">{stats.analytics.engagement}</span>
+              </div>
+            </div>
               </div>
             </div>
 
-            {/* Revenue Overview */}
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-6 text-white">
-              <h3 className="text-xl font-bold mb-4">{t.sections.revenue.title}</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span>{t.sections.revenue.totalRevenue}</span>
-                  <span className="text-2xl font-bold">{stats.revenue.total}</span>
+        {/* Quick Actions */}
+        <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10 mb-8">
+          <h3 className="text-lg font-semibold text-white mb-4">{t.actions.title}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link href="/super-admin/create-bot-manager">
+              <button className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg transition-colors text-left w-full">
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">👤</span>
+                  <div>
+                    <h4 className="font-medium">{t.actions.createBotManager}</h4>
+                    <p className="text-sm text-purple-200">{t.actions.createBotManagerDesc}</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span>{t.sections.revenue.monthlyGrowth}</span>
-                  <span className="text-green-200">{stats.revenue.monthlyGrowth}</span>
+              </button>
+            </Link>
+            
+            <Link href="/super-admin/users">
+              <button className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg transition-colors text-left w-full">
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">👥</span>
+                  <div>
+                    <h4 className="font-medium">{t.actions.manageUsers}</h4>
+                    <p className="text-sm text-purple-200">{t.actions.manageUsersDesc}</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span>{t.sections.revenue.activeSubscriptions}</span>
-                  <span className="text-green-200">{stats.revenue.activeSubscriptions}</span>
+              </button>
+            </Link>
+            
+            <Link href="/dashboard/settings">
+              <button className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg transition-colors text-left w-full">
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">⚙️</span>
+                  <div>
+                    <h4 className="font-medium">{t.actions.systemSettings}</h4>
+                    <p className="text-sm text-green-200">{t.actions.systemSettingsDesc}</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span>{t.sections.revenue.conversionRate}</span>
-                  <span className="text-green-200">{stats.revenue.conversionRate}</span>
+              </button>
+            </Link>
+            
+            <button className="bg-yellow-600 hover:bg-yellow-700 text-white p-4 rounded-lg transition-colors text-left">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">📋</span>
+                <div>
+                  <h4 className="font-medium">{t.actions.viewLogs}</h4>
+                  <p className="text-sm text-yellow-200">{t.actions.viewLogsDesc}</p>
                 </div>
               </div>
-            </div>
+            </button>
+            
+            <button className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-lg transition-colors text-left">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">💾</span>
+                <div>
+                  <h4 className="font-medium">{t.actions.backup}</h4>
+                  <p className="text-sm text-red-200">{t.actions.backupDesc}</p>
+                </div>
+              </div>
+            </button>
+            
+            <button className="bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-lg transition-colors text-left">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">🔧</span>
+                <div>
+                  <h4 className="font-medium">{t.actions.maintenance}</h4>
+                  <p className="text-sm text-orange-200">{t.actions.maintenanceDesc}</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
 
-            {/* Analytics Overview */}
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                {t.sections.analytics.title}
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-300">{t.sections.analytics.totalBots}</span>
-                  <span className="text-2xl font-bold text-blue-600">{stats.analytics.totalBots}</span>
+        {/* Recent Activity */}
+        <div className="bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+          <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+          <div className="space-y-3">
+            {stats.recentActivity.map((activity, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">
+                    {activity.type === 'user_login' ? '👤' : 
+                     activity.type === 'content_generated' ? '📝' : 
+                     activity.type === 'revenue_generated' ? '💰' : 
+                     activity.type === 'system_alert' ? '⚠️' : '📊'}
+                  </span>
+                  <div>
+                    <p className="text-white font-medium">{activity.description || activity.message || 'System activity'}</p>
+                    <p className="text-gray-400 text-sm">{new Date(activity.timestamp).toLocaleString()}</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-300">{t.sections.analytics.totalChannels}</span>
-                  <span className="text-lg font-semibold text-green-600">{stats.analytics.totalChannels}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-300">{t.sections.analytics.messagesSent}</span>
-                  <span className="text-lg font-semibold text-purple-600">{stats.analytics.messagesSent}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-300">{t.sections.analytics.engagement}</span>
-                  <span className="text-lg font-semibold text-orange-600">{stats.analytics.engagement}</span>
-                </div>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  activity.status === 'success' ? 'bg-green-100 text-green-800' : 
+                  activity.status === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {(activity.status || 'info').toUpperCase()}
+                </span>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

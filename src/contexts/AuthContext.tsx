@@ -18,6 +18,7 @@ interface Manager {
   role: string | null;
   preferred_language: string | null;
   is_active: boolean | null;
+  password_reset_required?: boolean | null;
   created_at: string | null;
   updated_at: string | null;
 }
