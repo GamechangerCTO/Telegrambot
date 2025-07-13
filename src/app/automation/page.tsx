@@ -209,16 +209,24 @@ export default function AutomationPage() {
             const isSignificant = relevanceScore > 60;
             
             // Try multiple ways to get team names
-            const homeTeam = fixture.home_team || 
+            const homeTeam = fixture.home_team?.name || 
+                           fixture.home_team || 
                            fixture.teams?.home?.name || 
-                           fixture.homeTeam || 
+                           fixture.homeTeam?.name ||
+                           fixture.homeTeam ||
                            fixture.home?.name ||
                            'Home';
-            const awayTeam = fixture.away_team || 
+            const awayTeam = fixture.away_team?.name || 
+                           fixture.away_team || 
                            fixture.teams?.away?.name || 
-                           fixture.awayTeam || 
+                           fixture.awayTeam?.name ||
+                           fixture.awayTeam ||
                            fixture.away?.name ||
                            'Away';
+            
+            // Ensure we always have strings
+            const homeTeamStr = typeof homeTeam === 'string' ? homeTeam : homeTeam?.name || 'Home';
+            const awayTeamStr = typeof awayTeam === 'string' ? awayTeam : awayTeam?.name || 'Away';
             
             // Add betting tips opportunity (2-3 hours before)
             if (hoursUntilMatch <= 3 && hoursUntilMatch > 1) {
@@ -229,7 +237,7 @@ export default function AutomationPage() {
                   type: 'betting',
                   name: `Betting Tips`,
                   emoji: '🎯',
-                  match: `${homeTeam} vs ${awayTeam}`,
+                  match: `${homeTeamStr} vs ${awayTeamStr}`,
                   scheduledTime: bettingTime.toLocaleString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit',
@@ -250,7 +258,7 @@ export default function AutomationPage() {
                   type: 'analysis',
                   name: `Match Analysis`,
                   emoji: '📈',
-                  match: `${homeTeam} vs ${awayTeam}`,
+                  match: `${homeTeamStr} vs ${awayTeamStr}`,
                   scheduledTime: analysisTime.toLocaleString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit',
@@ -269,7 +277,7 @@ export default function AutomationPage() {
                 type: 'live',
                 name: `Live Updates`,
                 emoji: '⚡',
-                match: `${homeTeam} vs ${awayTeam}`,
+                match: `${homeTeamStr} vs ${awayTeamStr}`,
                 scheduledTime: matchTime.toLocaleString('he-IL', { 
                   hour: '2-digit', 
                   minute: '2-digit',
@@ -375,23 +383,31 @@ export default function AutomationPage() {
               const bettingTime = new Date(matchTime.getTime() - (2.5 * 60 * 60 * 1000));
               if (bettingTime > today) {
                 // Try multiple ways to get team names
-                const homeTeam = fixture.home_team || 
+                const homeTeam = fixture.home_team?.name || 
+                               fixture.home_team || 
                                fixture.teams?.home?.name || 
-                               fixture.homeTeam || 
+                               fixture.homeTeam?.name ||
+                               fixture.homeTeam ||
                                fixture.home?.name ||
                                'Home';
-                const awayTeam = fixture.away_team || 
+                const awayTeam = fixture.away_team?.name || 
+                               fixture.away_team || 
                                fixture.teams?.away?.name || 
-                               fixture.awayTeam || 
+                               fixture.awayTeam?.name ||
+                               fixture.awayTeam ||
                                fixture.away?.name ||
                                'Away';
+                
+                // Ensure we always have strings
+                const homeTeamStr = typeof homeTeam === 'string' ? homeTeam : (homeTeam?.name || 'Home');
+                const awayTeamStr = typeof awayTeam === 'string' ? awayTeam : (awayTeam?.name || 'Away');
                 
                 todaysMatches.push({
                   time: bettingTime.toTimeString().slice(0, 5),
                   type: 'betting',
                   name: 'Betting Tips',
                   emoji: '🎯',
-                  description: `${homeTeam} vs ${awayTeam}`,
+                  description: `${homeTeamStr} vs ${awayTeamStr}`,
                   scheduledTime: bettingTime.toLocaleString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit',
@@ -407,23 +423,31 @@ export default function AutomationPage() {
                 const analysisTime = new Date(matchTime.getTime() - (2 * 60 * 60 * 1000));
                 if (analysisTime > today) {
                   // Try multiple ways to get team names
-                  const homeTeam = fixture.home_team || 
+                  const homeTeam = fixture.home_team?.name || 
+                                 fixture.home_team || 
                                  fixture.teams?.home?.name || 
-                                 fixture.homeTeam || 
+                                 fixture.homeTeam?.name ||
+                                 fixture.homeTeam ||
                                  fixture.home?.name ||
                                  'Home';
-                  const awayTeam = fixture.away_team || 
+                  const awayTeam = fixture.away_team?.name || 
+                                 fixture.away_team || 
                                  fixture.teams?.away?.name || 
-                                 fixture.awayTeam || 
+                                 fixture.awayTeam?.name ||
+                                 fixture.awayTeam ||
                                  fixture.away?.name ||
                                  'Away';
+                  
+                  // Ensure we always have strings
+                  const homeTeamStr = typeof homeTeam === 'string' ? homeTeam : (homeTeam?.name || 'Home');
+                  const awayTeamStr = typeof awayTeam === 'string' ? awayTeam : (awayTeam?.name || 'Away');
                   
                   todaysMatches.push({
                     time: analysisTime.toTimeString().slice(0, 5),
                     type: 'analysis',
                     name: 'Match Analysis',
                     emoji: '📈',
-                    description: `${homeTeam} vs ${awayTeam}`,
+                    description: `${homeTeamStr} vs ${awayTeamStr}`,
                     scheduledTime: analysisTime.toLocaleString('he-IL', { 
                       hour: '2-digit', 
                       minute: '2-digit',
@@ -437,23 +461,31 @@ export default function AutomationPage() {
               
               // Add live updates (at match time)
               // Try multiple ways to get team names
-              const homeTeam = fixture.home_team || 
+              const homeTeam = fixture.home_team?.name || 
+                             fixture.home_team || 
                              fixture.teams?.home?.name || 
-                             fixture.homeTeam || 
+                             fixture.homeTeam?.name ||
+                             fixture.homeTeam ||
                              fixture.home?.name ||
                              'Home';
-              const awayTeam = fixture.away_team || 
+              const awayTeam = fixture.away_team?.name || 
+                             fixture.away_team || 
                              fixture.teams?.away?.name || 
-                             fixture.awayTeam || 
+                             fixture.awayTeam?.name ||
+                             fixture.awayTeam ||
                              fixture.away?.name ||
                              'Away';
+              
+              // Ensure we always have strings
+              const homeTeamStr = typeof homeTeam === 'string' ? homeTeam : (homeTeam?.name || 'Home');
+              const awayTeamStr = typeof awayTeam === 'string' ? awayTeam : (awayTeam?.name || 'Away');
               
               todaysMatches.push({
                 time: matchTime.toTimeString().slice(0, 5),
                 type: 'live',
                 name: 'Live Updates',
                 emoji: '⚡',
-                description: `${homeTeam} vs ${awayTeam}`,
+                description: `${homeTeamStr} vs ${awayTeamStr}`,
                 scheduledTime: matchTime.toLocaleString('he-IL', { 
                   hour: '2-digit', 
                   minute: '2-digit',
@@ -1291,16 +1323,24 @@ export default function AutomationPage() {
                           console.log('🔍 Debug fixture:', fixture);
                           
                           // Try multiple ways to get team names
-                          const homeTeam = fixture.home_team || 
+                          const homeTeam = fixture.home_team?.name || 
+                                         fixture.home_team || 
                                          fixture.teams?.home?.name || 
-                                         fixture.homeTeam || 
+                                         fixture.homeTeam?.name ||
+                                         fixture.homeTeam ||
                                          fixture.home?.name ||
                                          'Home';
-                          const awayTeam = fixture.away_team || 
+                          const awayTeam = fixture.away_team?.name || 
+                                         fixture.away_team || 
                                          fixture.teams?.away?.name || 
-                                         fixture.awayTeam || 
+                                         fixture.awayTeam?.name ||
+                                         fixture.awayTeam ||
                                          fixture.away?.name ||
                                          'Away';
+                          
+                          // Ensure we always have strings
+                          const homeTeamStr = typeof homeTeam === 'string' ? homeTeam : (homeTeam?.name || 'Home');
+                          const awayTeamStr = typeof awayTeam === 'string' ? awayTeam : (awayTeam?.name || 'Away');
                           
                           // Try multiple ways to get match time
                           const matchTime = fixture.kickoff || 
@@ -1311,7 +1351,7 @@ export default function AutomationPage() {
                           return (
                             <div key={index} className="text-xs">
                               <div className="font-medium text-orange-900 truncate">
-                                {homeTeam} vs {awayTeam}
+                                {homeTeamStr} vs {awayTeamStr}
                               </div>
                               <div className="text-orange-600">
                                 {matchTime ? 
@@ -1338,16 +1378,24 @@ export default function AutomationPage() {
                   console.log('🔍 Debug today fixture:', fixture);
                   
                   // Try multiple ways to get team names
-                  const homeTeam = fixture.home_team || 
+                  const homeTeam = fixture.home_team?.name || 
+                                 fixture.home_team || 
                                  fixture.teams?.home?.name || 
-                                 fixture.homeTeam || 
+                                 fixture.homeTeam?.name ||
+                                 fixture.homeTeam ||
                                  fixture.home?.name ||
                                  'Home';
-                  const awayTeam = fixture.away_team || 
+                  const awayTeam = fixture.away_team?.name || 
+                                 fixture.away_team || 
                                  fixture.teams?.away?.name || 
-                                 fixture.awayTeam || 
+                                 fixture.awayTeam?.name ||
+                                 fixture.awayTeam ||
                                  fixture.away?.name ||
                                  'Away';
+                  
+                  // Ensure we always have strings
+                  const homeTeamStr = typeof homeTeam === 'string' ? homeTeam : (homeTeam?.name || 'Home');
+                  const awayTeamStr = typeof awayTeam === 'string' ? awayTeam : (awayTeam?.name || 'Away');
                   
                   // Try multiple ways to get match time
                   const matchTime = fixture.kickoff || 
@@ -1358,7 +1406,7 @@ export default function AutomationPage() {
                   return (
                     <div key={index} className="text-xs">
                       <div className="font-medium text-orange-900 truncate">
-                        {homeTeam} vs {awayTeam}
+                        {homeTeamStr} vs {awayTeamStr}
                       </div>
                       <div className="text-orange-600">
                         {matchTime ? 
@@ -1436,40 +1484,40 @@ export default function AutomationPage() {
       {/* Fixture Timetable */}
       <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              ⚽ Next Week's Fixtures with Smart Scoring
-            </h2>
-            <p className="text-xs text-gray-500 mt-1">
-              Powered by FootballMatchScorer • Live scores and AI relevance rankings
-            </p>
-          </div>
           <div className="flex items-center gap-2">
-            <div className="text-xs text-gray-500">
-              <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-500 rounded"></div>
-                  Live
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded"></div>
-                  Finished
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-gray-300 rounded"></div>
-                  Scheduled
-                </span>
-              </div>
-            </div>
-            <Button 
-              onClick={fetchFixtures} 
+            <Calendar className="h-5 w-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">⚽ Live Matches & Fixtures</h2>
+            <button
+              onClick={fetchFixtures}
               disabled={loadingFixtures}
-              size="sm"
-              variant="outline"
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                loadingFixtures 
+                  ? 'bg-gray-400 cursor-not-allowed text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
             >
-              {loadingFixtures ? 'Loading...' : 'Refresh Scores'}
-            </Button>
+              {loadingFixtures ? 'Loading...' : 'Load Fixtures'}
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={runAutomationCycle}
+              disabled={isRunningCycle}
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                isRunningCycle
+                  ? 'bg-gray-400 cursor-not-allowed text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {isRunningCycle ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  <span>Running Automation Cycle...</span>
+                </div>
+              ) : (
+                '🚀 Run Automation Cycle Now'
+              )}
+            </button>
           </div>
         </div>
         
