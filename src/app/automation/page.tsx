@@ -132,7 +132,7 @@ export default function AutomationPage() {
   const saveContentTypes = async (updatedContentTypes: ContentType[]) => {
     try {
       const response = await fetch('/api/automation/content-types', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contentTypes: updatedContentTypes })
       });
@@ -143,6 +143,8 @@ export default function AutomationPage() {
           showNotification('Content types updated successfully!', 'success');
           await fetchAutomationStats(); // Refresh stats
         }
+      } else {
+        showNotification('Error saving content types', 'error');
       }
     } catch (error) {
       console.error('Error saving content types:', error);
