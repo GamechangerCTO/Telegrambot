@@ -118,6 +118,85 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, start_date, end_date, apply_smart_scoring, content_type } = body;
 
+    if (action === 'get_upcoming_matches') {
+      console.log('📅 Getting upcoming matches for fixtures table...');
+      
+      // Get API key from environment
+      const apiKey = process.env.API_FOOTBALL_KEY;
+      if (!apiKey) {
+        return NextResponse.json({ 
+          success: false,
+          error: 'API_FOOTBALL_KEY not found in environment' 
+        }, { status: 500 });
+      }
+
+      const apiFootball = new APIFootballAPI(apiKey);
+
+      // Get fixtures by calling individual dates instead of range
+      const startDate = start_date ? new Date(start_date) : new Date();
+      const endDate = end_date ? new Date(end_date) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      // Generate array of dates
+      const dates = [];
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Fetch matches for each date
+      const allMatches: any[] = [];
+      for (const date of dates) {
+        console.log(`📅 Fetching matches for ${date}...`);
+        const dayMatches = await apiFootball.getFixturesByDate(date);
+        console.log(`✅ Found ${dayMatches.length} matches for ${date}`);
+        allMatches.push(...dayMatches);
+      }
+
+      console.log(`📊 Total raw matches found: ${allMatches.length}`);
+
+      if (apply_smart_scoring) {
+        // Convert Match[] to MatchData[] format for scoring
+        const matchDataArray = allMatches.map(match => ({
+          id: match.match_id,
+          homeTeam: { id: match.match_hometeam_id, name: match.match_hometeam_name },
+          awayTeam: { id: match.match_awayteam_id, name: match.match_awayteam_name },
+          competition: { id: 'unknown', name: match.league_name },
+          kickoff: new Date(`${match.match_date}T${match.match_time}:00`),
+          status: match.match_status === 'Scheduled' ? 'SCHEDULED' as const : 
+                  match.match_status === 'Live' ? 'LIVE' as const : 
+                  match.match_status === 'Finished' ? 'FINISHED' as const : 'SCHEDULED' as const,
+          score: match.match_hometeam_score !== null ? {
+            home: match.match_hometeam_score,
+            away: match.match_awayteam_score
+          } : undefined
+        }));
+
+        // Apply smart scoring specifically for upcoming matches display
+        const scoredMatches = await footballMatchScorer.scoreMatches(matchDataArray, {
+          content_type: 'news', // Use news scoring for upcoming matches (allows future matches)
+          min_score_threshold: 10 // Lower threshold to show more matches
+        });
+
+        console.log(`✅ Smart Scorer: ${scoredMatches.length} matches passed filtering`);
+        
+        return NextResponse.json({
+          success: true,
+          total_raw_matches: allMatches.length,
+          total_scored_matches: scoredMatches.length,
+          matches: scoredMatches,
+          scoring_applied: true
+        });
+      } else {
+        return NextResponse.json({
+          success: true,
+          total_matches: allMatches.length,
+          matches: allMatches,
+          scoring_applied: false
+        });
+      }
+    }
+
     if (action === 'get_weekly_fixtures') {
       console.log('🏟️ Getting weekly fixtures with smart scoring...');
       
@@ -132,15 +211,36 @@ export async function POST(request: NextRequest) {
 
       const apiFootball = new APIFootballAPI(apiKey);
 
-      // Get fixtures for the date range
+      // Get fixtures by calling individual dates instead of range
       const startDate = start_date || new Date().toISOString().split('T')[0];
       const endDate = end_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
       console.log(`📅 Fetching fixtures from ${startDate} to ${endDate}`);
       
-      const matches = await apiFootball.getFixturesByDateRange(startDate, endDate, 100);
+      // Create array of dates to fetch
+      const dates = [];
+      const currentDate = new Date(startDate);
+      const finalDate = new Date(endDate);
       
-      if (matches.length === 0) {
+      while (currentDate <= finalDate) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      console.log(`📅 Will fetch ${dates.length} dates: ${dates.join(', ')}`);
+      
+      // Fetch matches for each date
+      const allMatches: any[] = [];
+      for (const date of dates) {
+        console.log(`📅 Fetching matches for ${date}...`);
+        const dayMatches = await apiFootball.getFixturesByDate(date);
+        console.log(`✅ Found ${dayMatches.length} matches for ${date}`);
+        allMatches.push(...dayMatches);
+      }
+      
+      console.log(`⚽ Found ${allMatches.length} total matches`);
+      
+      if (allMatches.length === 0) {
         return NextResponse.json({
           success: true,
           matches: [],
@@ -148,13 +248,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      console.log(`⚽ Found ${matches.length} raw matches`);
-
       // If smart scoring is requested, apply FootballMatchScorer
       if (apply_smart_scoring) {
         try {
           // Convert to MatchData format for scorer
-          const matchData = matches.map(match => ({
+          const matchData = allMatches.map(match => ({
             id: match.match_id || `match_${Date.now()}_${Math.random()}`,
             homeTeam: { 
               id: match.match_hometeam_id || 'unknown_home', 
@@ -187,7 +285,7 @@ export async function POST(request: NextRequest) {
 
           // Convert back to API format with scoring data
           const enhancedMatches = scoredMatches.map(scored => {
-            const originalMatch = matches.find(m => m.match_id === scored.id);
+            const originalMatch = allMatches.find(m => m.match_id === scored.id);
             return {
               ...originalMatch,
               relevance_score: scored.relevance_score,
@@ -209,10 +307,10 @@ export async function POST(request: NextRequest) {
                 away: { name: scored.awayTeam.name }
               },
               league: { name: scored.competition.name },
-                             goals: {
-                 home: originalMatch?.match_hometeam_score || 0,
-                 away: originalMatch?.match_awayteam_score || 0
-               }
+              goals: {
+                home: originalMatch?.match_hometeam_score || 0,
+                away: originalMatch?.match_awayteam_score || 0
+              }
             };
           });
 
@@ -220,7 +318,7 @@ export async function POST(request: NextRequest) {
             success: true,
             matches: enhancedMatches,
             scoring_applied: true,
-            total_raw_matches: matches.length,
+            total_raw_matches: allMatches.length,
             total_scored_matches: enhancedMatches.length,
             content_type: content_type || 'daily_summary',
             date_range: { start_date: startDate, end_date: endDate }
@@ -231,19 +329,19 @@ export async function POST(request: NextRequest) {
           // Fallback to basic matches without scoring
           return NextResponse.json({
             success: true,
-            matches: matches.slice(0, 50), // Limit without scoring
+            matches: allMatches.slice(0, 50), // Limit without scoring
             scoring_applied: false,
             error: 'Smart scoring failed, showing basic matches',
-            total_matches: matches.length
+            total_matches: allMatches.length
           });
         }
       } else {
         // Return matches without smart scoring
         return NextResponse.json({
           success: true,
-          matches: matches.slice(0, 50),
+          matches: allMatches.slice(0, 50),
           scoring_applied: false,
-          total_matches: matches.length,
+          total_matches: allMatches.length,
           date_range: { start_date: startDate, end_date: endDate }
         });
       }

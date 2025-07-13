@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { BettingTipsGenerator } from '@/lib/content/betting-tips-generator'
-import { NewsContentGenerator } from '@/lib/content/news-content-generator'
+import { newsContentGenerator } from '@/lib/content/news-content-generator'
 import { matchAnalysisGenerator } from '@/lib/content/match-analysis-generator'
 // Using specialized content generators instead
 
@@ -14,11 +14,9 @@ export interface ExecutionResult {
 
 export class RuleExecutor {
   private bettingGenerator: BettingTipsGenerator
-  private newsGenerator: NewsContentGenerator
 
   constructor() {
     this.bettingGenerator = new BettingTipsGenerator()
-    this.newsGenerator = new NewsContentGenerator()
   }
 
   async executeRule(ruleId: string): Promise<ExecutionResult> {
@@ -184,7 +182,7 @@ export class RuleExecutor {
       // Fallback to news content
       console.log(`🔄 Falling back to news content for ${contentType}`);
       try {
-        const newsResult = await this.newsGenerator.generateNewsContent({
+        const newsResult = await newsContentGenerator.generateNewsContent({
           language,
           channelId: channelDetails.telegram_channel_id
         });

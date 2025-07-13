@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         .select('id, language')
         .eq('is_active', true);
       
-      targetChannels = channels?.map(c => c.id) || [];
+      targetChannels = channels?.map((c: any) => c.id) || [];
     }
 
     if (targetChannels.length === 0) {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 2: Determine if we should send a coupon
+    // Step 2: Determine if we should send a coupon - Always send after delay
     const shouldSendCoupon = await determineCouponSending(trigger_type, content_type, force_send);
     
     if (!shouldSendCoupon.send) {
@@ -181,14 +181,14 @@ export async function GET(request: NextRequest) {
         success: true,
         queue: {
           recent_items: queueItems || [],
-          pending: queueItems?.filter(item => item.status === 'pending').length || 0,
-          processing: queueItems?.filter(item => item.status === 'processing').length || 0,
-          completed: queueItems?.filter(item => item.status === 'completed').length || 0
+          pending: queueItems?.filter((item: any) => item.status === 'pending').length || 0,
+          processing: queueItems?.filter((item: any) => item.status === 'processing').length || 0,
+          completed: queueItems?.filter((item: any) => item.status === 'completed').length || 0
         },
         today_deliveries: {
           total: todayDeliveries?.length || 0,
-          successful: todayDeliveries?.filter(d => d.delivery_status === 'sent').length || 0,
-          failed: todayDeliveries?.filter(d => d.delivery_status === 'failed').length || 0
+          successful: todayDeliveries?.filter((d: any) => d.delivery_status === 'sent').length || 0,
+          failed: todayDeliveries?.filter((d: any) => d.delivery_status === 'failed').length || 0
         }
       });
     }
@@ -244,28 +244,10 @@ async function determineCouponSending(
     return { send: false, reason: 'Outside active hours (6 AM - 11 PM)' };
   }
 
-  // Content-based probability
-  const contentProbabilities = {
-    'betting_tips': 0.8,    // High probability after betting tips
-    'analysis': 0.6,        // Medium probability after analysis  
-    'news': 0.3,           // Lower probability after news
-    'polls': 0.4,          // Medium probability after polls
-    'live_updates': 0.2    // Low probability during live updates
-  };
-
-  // Random scheduling probability
-  if (triggerType === 'random_scheduled') {
-    return { send: true, reason: 'Scheduled random coupon delivery' };
-  }
-
-  const probability = contentProbabilities[contentType as keyof typeof contentProbabilities] || 0.3;
-  const shouldSend = Math.random() < probability;
-
+  // Always send coupons after content (no probability check)
   return {
-    send: shouldSend,
-    reason: shouldSend 
-      ? `Content-based trigger (${Math.round(probability * 100)}% chance)`
-      : `Random probability not met (${Math.round(probability * 100)}% chance)`
+    send: true,
+    reason: `Coupon scheduled for delivery after ${contentType} content`
   };
 }
 

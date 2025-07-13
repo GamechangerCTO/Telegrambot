@@ -304,7 +304,7 @@ async function processEventDrivenRule(rule: any, channels: any[], now: Date) {
     }
     
     console.log(`⏰ Event conditions not met for ${rule.content_type} - outside active hours`);
-    return null;
+  return null;
   }
 
   // Development fallback - more permissive
@@ -385,7 +385,7 @@ async function processContextAwareRule(rule: any, channels: any[], now: Date) {
     }
     
     console.log(`⏰ Context conditions not met for ${rule.content_type} - waiting for trigger window`);
-    return null;
+  return null;
   }
 
   // Development fallback - more permissive

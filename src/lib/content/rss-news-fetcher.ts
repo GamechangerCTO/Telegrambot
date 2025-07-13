@@ -42,34 +42,24 @@ export class RSSNewsFetcher {
   
   private readonly FOOTBALL_RSS_FEEDS = [
     {
-      name: 'BBC Sport Football',
       url: 'https://feeds.bbci.co.uk/sport/football/rss.xml',
-      priority: 10
+      name: 'BBC Sport Football'
     },
     {
-      name: 'Sky Sports Football',
-      url: 'https://www.skysports.com/rss/football',
-      priority: 9
-    },
-    {
-      name: 'ESPN Soccer',
-      url: 'https://www.espn.com/espn/rss/soccer/news',
-      priority: 8
-    },
-    {
-      name: 'The Guardian Football',
       url: 'https://www.theguardian.com/football/rss',
-      priority: 8
+      name: 'The Guardian Football'
     },
     {
-      name: 'Goal.com',
-      url: 'https://www.goal.com/feeds/en/news',
-      priority: 7
+      url: 'https://www.skysports.com/rss/football',
+      name: 'Sky Sports Football'
     },
     {
-      name: 'TalkSport',
+      url: 'http://feeds.feedburner.com/SoccerNews',
+      name: 'ESPN Soccer'
+    },
+    {
       url: 'https://talksport.com/football/feed/',
-      priority: 7
+      name: 'TalkSport'
     }
   ];
 
@@ -136,21 +126,9 @@ export class RSSNewsFetcher {
         
         xmlContent = await response.text();
       } catch (directError) {
-        // Fallback to CORS proxy
-        console.log(`🔄 Direct fetch failed, trying proxy for ${sourceName}`);
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`;
-        
-        const proxyController = new AbortController();
-        const proxyTimeoutId = setTimeout(() => proxyController.abort(), 10000);
-        
-        const proxyResponse = await fetch(proxyUrl, { signal: proxyController.signal });
-        clearTimeout(proxyTimeoutId);
-        if (!proxyResponse.ok) {
-          throw new Error(`Proxy HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`);
-        }
-        
-        const proxyData = await proxyResponse.json();
-        xmlContent = proxyData.contents;
+        // Try multiple proxy services
+        console.log(`🔄 Direct fetch failed, trying proxy services for ${sourceName}`);
+        xmlContent = await this.fetchViaProxy(feedUrl, sourceName);
       }
       
       // Parse XML content using fast-xml-parser
@@ -169,44 +147,96 @@ export class RSSNewsFetcher {
           : [parsedData.feed.entry];
       }
 
-      const rssItems: RSSItem[] = [];
+      // Convert to standardized RSS items
+      const rssItems: RSSItem[] = items.map(item => {
+        const id = item.guid?.['#text'] || item.guid || item.link || item.id || `${sourceName}_${Date.now()}_${Math.random()}`;
+        const title = this.extractText(item.title) || 'No title';
+        const description = this.extractText(item.description) || this.extractText(item.summary) || '';
+        const content = this.extractText(item['content:encoded']) || this.extractText(item.content) || description;
+        const link = item.link?.href || item.link || '';
+        const pubDate = item.pubDate || item.published || new Date().toISOString();
+        const author = this.extractText(item.author) || this.extractText(item['dc:creator']) || '';
+        const category = this.extractText(item.category) || 'Football';
+        const imageUrl = this.extractImageFromItem(item, description);
 
-      items.forEach((item, index) => {
-        try {
-          // Handle both RSS and Atom formats
-          const title = this.extractText(item.title);
-          const description = this.extractText(item.description || item.summary || item.content);
-          const link = this.extractText(item.link?.['@_href'] || item.link);
-          const pubDate = this.extractText(item.pubDate || item.published || item.updated);
-          const category = this.extractText(item.category?.['@_term'] || item.category);
-          
-          // Extract image from various sources
-          const imageUrl = this.extractImageFromItem(item, description);
-          
-          if (title && description && link) {
-            rssItems.push({
-              id: `${sourceName.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}_${index}`,
-              title: this.cleanText(title),
-              description: this.cleanText(description),
-              content: this.cleanText(description),
-              link,
-              pubDate: pubDate || new Date().toISOString(),
-              category: category || 'Football',
-              imageUrl,
-              source: sourceName
-            });
-          }
-        } catch (itemError) {
-          console.error(`❌ Error parsing RSS item from ${sourceName}:`, itemError);
-        }
+        return {
+          id,
+          title,
+          description,
+          content,
+          link,
+          pubDate,
+          author,
+          category,
+          imageUrl,
+          source: sourceName
+        };
       });
 
+      console.log(`✅ ${sourceName}: ${rssItems.length} items`);
       return rssItems;
 
     } catch (error) {
       console.error(`❌ Error fetching RSS feed ${feedUrl}:`, error);
+      // Return empty array instead of throwing to continue with other feeds
       return [];
     }
+  }
+
+  /**
+   * 🔄 Fetch via proxy with multiple fallbacks
+   */
+  private async fetchViaProxy(feedUrl: string, sourceName: string): Promise<string> {
+    const proxyServices = [
+      'https://api.allorigins.win/get?url=',
+      'https://cors-anywhere.herokuapp.com/',
+      'https://api.codetabs.com/v1/proxy?quest='
+    ];
+    
+    let lastError: any;
+    
+    for (let i = 0; i < proxyServices.length; i++) {
+      try {
+        const proxyUrl = proxyServices[i] + encodeURIComponent(feedUrl);
+        console.log(`🔄 Trying proxy ${i + 1}/${proxyServices.length} for ${sourceName}`);
+        
+        const proxyController = new AbortController();
+        const proxyTimeoutId = setTimeout(() => proxyController.abort(), 15000);
+        
+        const proxyResponse = await fetch(proxyUrl, { signal: proxyController.signal });
+        clearTimeout(proxyTimeoutId);
+        
+        if (!proxyResponse.ok) {
+          throw new Error(`Proxy HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`);
+        }
+        
+        let xmlContent: string;
+        if (proxyServices[i].includes('allorigins')) {
+          const proxyData = await proxyResponse.json();
+          xmlContent = proxyData.contents;
+        } else {
+          xmlContent = await proxyResponse.text();
+        }
+        
+        if (xmlContent && xmlContent.length > 100) {
+          console.log(`✅ Proxy ${i + 1} successful for ${sourceName}`);
+          return xmlContent;
+        }
+        
+        throw new Error('Empty or invalid response');
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`❌ Proxy ${i + 1} failed for ${sourceName}:`, error);
+        
+        // Wait before trying next proxy
+        if (i < proxyServices.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    
+    throw lastError || new Error('All proxy services failed');
   }
 
   /**

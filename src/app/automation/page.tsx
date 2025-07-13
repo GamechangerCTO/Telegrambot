@@ -118,9 +118,9 @@ export default function AutomationPage() {
       name: 'Daily Summary',
       emoji: '📋',
       automation_type: 'scheduled',
-      description: 'End of day summary',
+      description: 'End of day summary (after all matches)',
       schedule: 'daily',
-      times: ['23:00']
+      times: ['00:30']
     },
     
     // Context-Aware
@@ -502,11 +502,10 @@ export default function AutomationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'get_weekly_fixtures',
+          action: 'get_upcoming_matches',
           start_date: today.toISOString().split('T')[0],
           end_date: nextWeek.toISOString().split('T')[0],
-          apply_smart_scoring: true,
-          content_type: 'daily_summary' // Use daily summary scoring for good match selection
+          apply_smart_scoring: true
         })
       });
       
@@ -520,9 +519,11 @@ export default function AutomationPage() {
           const groupedByDate: { [key: string]: any[] } = {};
           
           data.matches.forEach((match: any) => {
-            const matchDate = match.fixture?.date ? 
-              new Date(match.fixture.date).toISOString().split('T')[0] : 
-              new Date().toISOString().split('T')[0];
+            const matchDate = match.kickoff ? 
+              new Date(match.kickoff).toISOString().split('T')[0] : 
+              match.fixture?.date ? 
+                new Date(match.fixture.date).toISOString().split('T')[0] : 
+                new Date().toISOString().split('T')[0];
             
             if (!groupedByDate[matchDate]) {
               groupedByDate[matchDate] = [];
@@ -567,7 +568,7 @@ export default function AutomationPage() {
                   const scoreB = b.relevance_score?.total || 0;
                   return scoreB - scoreA; // High to low
                 })
-                .slice(0, 12) // Show more matches per day for better coverage
+                .slice(0, 3) // Show only top 3 matches per day
             }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .slice(0, 7); // Next 7 days
@@ -576,11 +577,11 @@ export default function AutomationPage() {
           
           // Log summary
           const totalMatches = sortedFixtures.reduce((sum, day) => sum + day.fixtures.length, 0);
-          console.log(`📊 Displaying ${totalMatches} top matches across ${sortedFixtures.length} days`);
+          console.log(`📊 Displaying ${totalMatches} top matches across ${sortedFixtures.length} days (max 3 per day)`);
           
         } else {
           console.log('⚠️ Smart service failed, trying API-Football fallback...');
-          await fetchFixturesAPIFootball();
+      await fetchFixturesAPIFootball();
         }
       } else {
         console.log('⚠️ Smart service unavailable, trying API-Football fallback...');
@@ -621,9 +622,11 @@ export default function AutomationPage() {
           const groupedByDate: { [key: string]: any[] } = {};
           
           data.matches.forEach((match: any) => {
-            const matchDate = match.fixture?.date ? 
-              new Date(match.fixture.date).toISOString().split('T')[0] : 
-              new Date().toISOString().split('T')[0];
+            const matchDate = match.kickoff ? 
+              new Date(match.kickoff).toISOString().split('T')[0] : 
+              match.fixture?.date ? 
+                new Date(match.fixture.date).toISOString().split('T')[0] : 
+                new Date().toISOString().split('T')[0];
             
             if (!groupedByDate[matchDate]) {
               groupedByDate[matchDate] = [];
@@ -905,113 +908,124 @@ export default function AutomationPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : fixtures.length > 0 ? (
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {fixtures.map((day, dayIndex) => (
-              <div key={dayIndex} className="border-l-4 border-blue-500 pl-4">
-                <h3 className="font-medium text-gray-900 mb-2">
-                  {new Date(day.date).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                  <span className="text-sm text-gray-500 ml-2">({day.fixtures.length} matches)</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {day.fixtures.slice(0, 6).map((fixture: any, fixtureIndex: number) => {
-                    const relevanceScore = fixture.content_suitability?.live_update || fixture.relevance_score?.total || 0;
-                    const isLive = fixture.fixture?.status?.short === 'LIVE' || fixture.fixture?.status?.short === '1H' || fixture.fixture?.status?.short === '2H';
-                    const isFinished = fixture.fixture?.status?.short === 'FT';
-                    const homeScore = fixture.goals?.home ?? null;
-                    const awayScore = fixture.goals?.away ?? null;
-                    const hasScore = homeScore !== null && awayScore !== null;
-                    
-                    // Get scoring breakdown from FootballMatchScorer
-                    const scoringBreakdown = fixture.relevance_score;
-                    const scoringReasons = fixture.reasons || [];
-                    
-                    return (
-                      <div key={fixtureIndex} className={`rounded p-3 text-sm border-l-4 ${
-                        isLive ? 'bg-green-50 border-green-500' : 
-                        isFinished ? 'bg-blue-50 border-blue-500' : 
-                        'bg-gray-50 border-gray-300'
-                      }`}>
-                        <div className="flex justify-between items-start mb-1">
-                          <div className="font-medium text-gray-800 flex-1">
-                            {fixture.teams?.home?.name} vs {fixture.teams?.away?.name}
+          <div className="max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-2 text-sm">
+              {fixtures.map((day, dayIndex) => (
+                <div key={dayIndex} className="border border-gray-300 rounded">
+                  {/* Date Header */}
+                  <div className="bg-gray-100 px-3 py-2 border-b border-gray-300 text-center font-medium">
+                    <div className="text-xs text-gray-600">
+                      {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </div>
+                    <div className="font-bold">
+                      {new Date(day.date).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Top 3 Matches */}
+                  <div className="p-2 space-y-2">
+                    {day.fixtures.slice(0, 3).map((fixture: any, fixtureIndex: number) => {
+                      const relevanceScore = fixture.content_suitability?.live_update || fixture.relevance_score?.total || 0;
+                      const isLive = fixture.fixture?.status?.short === 'LIVE' || fixture.fixture?.status?.short === '1H' || fixture.fixture?.status?.short === '2H';
+                      const isFinished = fixture.fixture?.status?.short === 'FT' || fixture.fixture?.status?.short === 'AET' || fixture.fixture?.status?.short === 'PEN';
+                      // Try multiple score sources for better compatibility
+                      const homeScore = fixture.goals?.home ?? fixture.score?.home ?? fixture.score?.fulltime?.home ?? 
+                                       fixture.result?.home ?? null;
+                      const awayScore = fixture.goals?.away ?? fixture.score?.away ?? fixture.score?.fulltime?.away ?? 
+                                       fixture.result?.away ?? null;
+                      // Show score if we have valid scores (including 0-0)
+                      const hasScore = homeScore !== null && awayScore !== null && 
+                                      typeof homeScore === 'number' && typeof awayScore === 'number';
+                      
+                      return (
+                        <div key={fixtureIndex} className={`p-2 rounded text-xs border-l-2 ${
+                          isLive ? 'bg-green-50 border-green-500' : 
+                          isFinished ? 'bg-blue-50 border-blue-500' : 
+                          'bg-gray-50 border-gray-300'
+                        }`}>
+                          {/* Team Names - Compact horizontal layout */}
+                          <div className="font-medium text-gray-800 mb-1 flex items-center justify-center gap-1">
+                            <span className="truncate max-w-[35%] text-right" title={fixture.homeTeam?.name || fixture.teams?.home?.name}>
+                              {(fixture.homeTeam?.name || fixture.teams?.home?.name)?.length > 12 ? 
+                                (fixture.homeTeam?.name || fixture.teams?.home?.name)?.substring(0, 12) + '...' : 
+                                fixture.homeTeam?.name || fixture.teams?.home?.name}
+                            </span>
+                            <span className="text-gray-400 text-xs">vs</span>
+                            <span className="truncate max-w-[35%] text-left" title={fixture.awayTeam?.name || fixture.teams?.away?.name}>
+                              {(fixture.awayTeam?.name || fixture.teams?.away?.name)?.length > 12 ? 
+                                (fixture.awayTeam?.name || fixture.teams?.away?.name)?.substring(0, 12) + '...' : 
+                                fixture.awayTeam?.name || fixture.teams?.away?.name}
+                            </span>
                           </div>
-                          {relevanceScore > 0 && (
-                            <div 
-                              className={`text-xs px-2 py-1 rounded ml-2 cursor-help ${
-                                relevanceScore >= 70 ? 'bg-green-100 text-green-800' :
-                                relevanceScore >= 40 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-600'
-                              }`}
-                              title={scoringReasons.length > 0 ? 
-                                `Scoring breakdown:\n${scoringReasons.slice(0, 3).join('\n')}${scoringReasons.length > 3 ? '\n...' : ''}` :
-                                `Relevance Score: ${Math.round(relevanceScore)}%`
-                              }
-                            >
-                              {Math.round(relevanceScore)}%
-                              {scoringBreakdown && (
-                                <span className="ml-1 text-xs opacity-60">
-                                  ⓘ
-                                </span>
-                              )}
+                          
+                          {/* Score or Time */}
+                          <div className="text-center mb-1">
+                            {hasScore ? (
+                              <div className={`font-bold ${
+                                isLive ? 'text-green-700' : 
+                                isFinished ? 'text-blue-700' : 
+                                'text-gray-700'
+                              }`}>
+                                {homeScore} - {awayScore}
+                                {isLive && (
+                                  <div className="text-xs bg-red-500 text-white px-1 rounded mt-1">
+                                    LIVE
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-gray-500">
+                                {fixture.fixture?.date ? 
+                                  new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  }) : 
+                                  'TBD'
+                                }
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* League */}
+                          <div className="text-xs text-gray-500 text-center truncate mb-1">
+                            {fixture.competition?.name || fixture.league?.name}
+                          </div>
+                          
+                          {/* Match Status */}
+                          <div className="text-xs text-gray-600 text-center mb-1">
+                            {fixture.fixture?.status?.long || fixture.fixture?.status?.short || 'Scheduled'}
+                          </div>
+                          
+                          {/* Round/Stage Info */}
+                          {fixture.league?.round && (
+                            <div className="text-xs text-gray-400 text-center mt-1 truncate">
+                              {fixture.league.round}
                             </div>
                           )}
                         </div>
-                        
-                        {/* Score Display */}
-                        {hasScore && (
-                          <div className={`text-lg font-bold mb-1 ${
-                            isLive ? 'text-green-700' : 
-                            isFinished ? 'text-blue-700' : 
-                            'text-gray-700'
-                          }`}>
-                            {homeScore} - {awayScore}
-                            {isLive && (
-                              <span className="text-xs ml-2 bg-red-500 text-white px-1 rounded animate-pulse">
-                                LIVE
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className="text-xs text-gray-600 flex items-center justify-between">
-                          <span>{fixture.league?.name}</span>
-                          <span>
-                            {fixture.fixture?.date ? 
-                              new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              }) : 
-                              'TBD'
-                            }
-                          </span>
-                        </div>
-                        
-                        {/* Match Status */}
-                        {fixture.fixture?.status?.long && (
-                          <div className={`text-xs mt-1 ${
-                            isLive ? 'text-green-600 font-medium' :
-                            isFinished ? 'text-blue-600' :
-                            'text-gray-500'
-                          }`}>
-                            {fixture.fixture.status.long}
-                            {fixture.fixture.status.elapsed && ` (${fixture.fixture.status.elapsed}')`}
-                          </div>
-                        )}
+                      );
+                    })}
+                    
+                    {/* Show additional matches count */}
+                    {day.fixtures.length > 3 && (
+                      <div className="text-center text-xs text-gray-500 mt-2">
+                        +{day.fixtures.length - 3} more
                       </div>
-                    );
-                  })}
-                  {day.fixtures.length > 6 && (
-                    <div className="bg-gray-100 rounded p-3 text-sm text-center text-gray-500">
-                      +{day.fixtures.length - 6} more matches
-                    </div>
-                  )}
+                    )}
+                    
+                    {/* Empty state for days with no matches */}
+                    {day.fixtures.length === 0 && (
+                      <div className="text-center text-xs text-gray-400 py-4">
+                        No matches
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">

@@ -17,6 +17,7 @@ import { unifiedFootballService } from './unified-football-service';
 import { rssNewsFetcher } from './rss-news-fetcher';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
+import { getOpenAIClient } from '../api-keys';
 
 export interface MatchResult {
   id: string;
@@ -201,24 +202,21 @@ export class DailyWeeklySummaryGenerator {
     const standoutPerformances = await this.analyzeStandoutPerformances(todaysMatches);
     const dailyStats = await this.calculateDailyStatistics(todaysMatches);
     
-    // Step 4: Get relevant news storylines
-    const keyStorylines = await this.getRelevantNewsStorylines();
-    
-    // Step 5: Get tomorrow's fixtures
+    // Step 4: Get tomorrow's fixtures (NO RSS NEWS!)
     const tomorrowsFixtures = await this.getTomorrowsFixtures(request.targetDate);
     
-    // Step 6: Build daily summary data
+    // Step 5: Build daily summary data (without news storylines)
     const summaryData: DailySummaryData = {
       date: request.targetDate || new Date().toISOString().split('T')[0],
       interestingMatches,
       standoutPerformances,
       statistics: dailyStats,
-      keyStorylines,
+      keyStorylines: [], // Empty - no RSS news needed for daily summary
       tomorrowsFixtures,
       weekendPreview: this.isWeekendPreviewDay() ? await this.generateWeekendPreview() : undefined
     };
 
-    // Step 7: Generate content and visuals
+    // Step 6: Generate content and visuals
     const { content, aiEditedContent } = await this.generateDailyContent(summaryData, request);
     const imageUrl = await this.generateDailySummaryImage(summaryData);
     const visualElements = await this.generateDailyVisualElements(summaryData);
@@ -312,6 +310,10 @@ export class DailyWeeklySummaryGenerator {
       const highlightReason = this.getMatchHighlightReason(match, interestFactors);
       const audienceAppeal = this.determineAudienceAppeal(interestScore);
 
+      // Update the match object with the calculated interest score
+      match.interestScore = interestScore;
+      match.significance = highlightReason;
+
       return {
         match,
         interestFactors,
@@ -322,7 +324,7 @@ export class DailyWeeklySummaryGenerator {
     }).sort((a, b) => b.score - a.score);
 
     // Return top interesting matches (usually 3-5)
-    return scoredMatches.slice(0, 5).map(({ score, ...rest }) => rest);
+    return scoredMatches.slice(0, 4).map(({ score, ...rest }) => rest);
   }
 
   /**
@@ -525,8 +527,58 @@ export class DailyWeeklySummaryGenerator {
    * 📄 Build daily content
    */
   private buildDailyContent(summaryData: DailySummaryData, language: 'en' | 'am' | 'sw'): string {
-    if (language !== 'en') {
-      return `📅 Daily Football Summary - ${new Date(summaryData.date).toLocaleDateString()}\n\n${summaryData.interestingMatches.length} interesting matches today with comprehensive analysis.`;
+    const date = new Date(summaryData.date).toLocaleDateString();
+    
+    if (language === 'am') {
+      // Build full content in Amharic
+      let content = `📅 የዕለት እግርኳስ ማጠቃለያ - ${date}\n\n`;
+      
+      if (summaryData.interestingMatches.length > 0) {
+        content += `🏆 ዋና ዋና ውጤቶች\n\n`;
+        summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
+          const match = interestingMatch.match;
+          content += `${index + 1}. ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}\n`;
+          content += `   🏟️ ${match.competition} | ${interestingMatch.highlightReason}\n\n`;
+        });
+      }
+      
+      content += `📊 ስታትስቲክስ\n`;
+      content += `• ${summaryData.statistics.totalMatches} ጨዋታዎች\n`;
+      content += `• ${summaryData.statistics.totalGoals} ጎሎች\n`;
+      
+      if (summaryData.tomorrowsFixtures.length > 0) {
+        content += `\n👀 የነገ ጨዋታዎች\n`;
+        summaryData.tomorrowsFixtures.slice(0, 3).forEach(fixture => {
+          content += `• ${fixture.homeTeam} vs ${fixture.awayTeam}\n`;
+        });
+      }
+      
+      return content;
+    } else if (language === 'sw') {
+      // Build full content in Swahili
+      let content = `📅 Muhtasari wa Mpira wa Miguu - ${date}\n\n`;
+      
+      if (summaryData.interestingMatches.length > 0) {
+        content += `🏆 Mechi Kuu za Leo\n\n`;
+        summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
+          const match = interestingMatch.match;
+          content += `${index + 1}. ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}\n`;
+          content += `   🏟️ ${match.competition} | ${interestingMatch.highlightReason}\n\n`;
+        });
+      }
+      
+      content += `📊 Takwimu\n`;
+      content += `• Mechi ${summaryData.statistics.totalMatches}\n`;
+      content += `• Mabao ${summaryData.statistics.totalGoals}\n`;
+      
+      if (summaryData.tomorrowsFixtures.length > 0) {
+        content += `\n👀 Mechi za Kesho\n`;
+        summaryData.tomorrowsFixtures.slice(0, 3).forEach(fixture => {
+          content += `• ${fixture.homeTeam} vs ${fixture.awayTeam}\n`;
+        });
+      }
+      
+      return content;
     }
 
     let content = `📅 DAILY FOOTBALL ROUNDUP\n`;
@@ -717,61 +769,89 @@ export class DailyWeeklySummaryGenerator {
 
   // Helper methods for data fetching (would integrate with real APIs)
   private async getTodaysMatches(targetDate?: string): Promise<MatchResult[]> {
-    // This would call unified football service to get today's matches
-    // For now, returning mock data structure
-    return [
-      {
-        id: 'match_1',
-        homeTeam: 'Manchester City',
-        awayTeam: 'Arsenal',
-        homeScore: 2,
-        awayScore: 1,
-        competition: 'Premier League',
-        date: targetDate || new Date().toISOString(),
-        venue: 'Etihad Stadium',
-        status: 'finished',
-        interestScore: 85,
-        significance: 'Title race implications',
-        keyMoments: ['Goal 34\'', 'Red card 67\''],
-        standoutPerformances: ['Haaland hat-trick heroics']
-      },
-      {
-        id: 'match_2',
-        homeTeam: 'Liverpool',
-        awayTeam: 'Chelsea',
-        homeScore: 3,
-        awayScore: 2,
-        competition: 'Premier League',
-        date: targetDate || new Date().toISOString(),
-        venue: 'Anfield',
-        status: 'finished',
-        interestScore: 90,
-        significance: 'European qualification battle',
-        keyMoments: ['Late winner 89\''],
-        standoutPerformances: ['Salah double strike']
+    console.log(`📅 Getting today's matches for ${targetDate || 'today'}`);
+    
+    try {
+      // Format date correctly for API
+      const today = targetDate || new Date().toISOString().split('T')[0];
+      
+      // Get real matches from unified football service
+      const realMatches = await unifiedFootballService.getMatchesByDate(today);
+      
+      if (!realMatches || realMatches.length === 0) {
+        console.log(`📅 No matches found for ${today}`);
+        return [];
       }
-    ];
+
+      // Convert MatchData to MatchResult format
+      const matchResults: MatchResult[] = realMatches.map(match => ({
+        id: match.id,
+        homeTeam: match.homeTeam.name,
+        awayTeam: match.awayTeam.name,
+        homeScore: match.score?.home || 0,
+        awayScore: match.score?.away || 0,
+        competition: match.competition.name,
+        date: match.kickoff.toISOString(),
+        venue: '', // Will be enriched later if needed
+        status: match.status === 'FINISHED' ? 'finished' : 
+                match.status === 'LIVE' || match.status === 'IN_PLAY' ? 'live' : 'scheduled',
+        interestScore: 0, // Will be calculated in findInterestingMatches
+        significance: '', // Will be calculated in findInterestingMatches
+        keyMoments: [], // Will be enriched later
+        standoutPerformances: [] // Will be enriched later
+      }));
+
+      console.log(`📅 Found ${matchResults.length} real matches for ${today}`);
+      return matchResults;
+
+    } catch (error) {
+      console.error(`❌ Error getting today's matches:`, error);
+      return [];
+    }
   }
 
   private async getTomorrowsFixtures(targetDate?: string): Promise<MatchResult[]> {
-    // Would get tomorrow's scheduled matches
-    return [
-      {
-        id: 'fixture_1',
-        homeTeam: 'Manchester United',
-        awayTeam: 'Tottenham',
-        homeScore: 0,
+    console.log(`🔮 Getting tomorrow's fixtures for ${targetDate || 'today'}`);
+    
+    try {
+      // Calculate tomorrow's date
+      const today = targetDate ? new Date(targetDate) : new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const tomorrowDateString = tomorrow.toISOString().split('T')[0];
+
+      // Get real fixtures from unified football service
+      const realFixtures = await unifiedFootballService.getMatchesByDate(tomorrowDateString);
+      
+      if (!realFixtures || realFixtures.length === 0) {
+        console.log(`🔮 No fixtures found for tomorrow (${tomorrowDateString})`);
+        return [];
+      }
+
+      // Convert MatchData to MatchResult format
+      const fixtureResults: MatchResult[] = realFixtures.map(fixture => ({
+        id: fixture.id,
+        homeTeam: fixture.homeTeam.name,
+        awayTeam: fixture.awayTeam.name,
+        homeScore: 0, // Future matches don't have scores
         awayScore: 0,
-        competition: 'Premier League',
-        date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        venue: 'Old Trafford',
+        competition: fixture.competition.name,
+        date: fixture.kickoff.toISOString(),
+        venue: '', // Will be enriched later if needed
         status: 'scheduled',
-        interestScore: 75,
-        significance: 'Top 4 battle',
+        interestScore: 0, // Will be calculated if needed
+        significance: 'Upcoming fixture',
         keyMoments: [],
         standoutPerformances: []
-      }
-    ];
+      }));
+
+      console.log(`🔮 Found ${fixtureResults.length} fixtures for tomorrow`);
+      return fixtureResults;
+
+    } catch (error) {
+      console.error(`❌ Error getting tomorrow's fixtures:`, error);
+      return [];
+    }
   }
 
   private async getWeeklyMatches(weekStart: string, weekEnd: string): Promise<MatchResult[]> {
@@ -880,7 +960,11 @@ export class DailyWeeklySummaryGenerator {
     }, {} as { [league: string]: MatchResult[] });
   }
 
-  private analyzeTeamPerformances(matches: MatchResult[]) {
+  private analyzeTeamPerformances(matches: MatchResult[]): Array<{
+    team: string;
+    form: string;
+    trend: 'up' | 'down' | 'stable';
+  }> {
     // Simplified team performance analysis
     const teamStats: { [team: string]: { wins: number; draws: number; losses: number } } = {};
     
@@ -903,7 +987,7 @@ export class DailyWeeklySummaryGenerator {
     return Object.entries(teamStats).map(([team, stats]) => ({
       team,
       form: `${stats.wins}W ${stats.draws}D ${stats.losses}L`,
-      trend: stats.wins > stats.losses ? 'up' : stats.losses > stats.wins ? 'down' : 'stable'
+      trend: (stats.wins > stats.losses ? 'up' : stats.losses > stats.wins ? 'down' : 'stable') as 'up' | 'down' | 'stable'
     })).sort((a, b) => {
       const aPoints = teamStats[a.team].wins * 3 + teamStats[a.team].draws;
       const bPoints = teamStats[b.team].wins * 3 + teamStats[b.team].draws;
@@ -940,6 +1024,16 @@ export class DailyWeeklySummaryGenerator {
 
   private getWeekStart(targetDate?: string): string {
     const date = targetDate ? new Date(targetDate) : new Date();
+    
+    // If it's Sunday and we want last week's summary
+    if (date.getDay() === 0 && !targetDate) {
+      // Go back to previous week's Monday
+      const mondayLastWeek = new Date(date);
+      mondayLastWeek.setDate(date.getDate() - 6);
+      return mondayLastWeek.toISOString().split('T')[0];
+    }
+    
+    // For any other day, calculate the Monday of the current week
     const monday = new Date(date);
     monday.setDate(date.getDate() - date.getDay() + 1);
     return monday.toISOString().split('T')[0];
@@ -955,79 +1049,86 @@ export class DailyWeeklySummaryGenerator {
     return new Date().getDay() === 5; // Friday
   }
 
-  private async generateWeekendPreview(): string {
+  private async generateWeekendPreview(): Promise<string> {
     return 'Big weekend of football ahead with key Premier League clashes and European action!';
   }
 
   // Image and visual generation methods
   private async generateDailySummaryImage(summaryData: DailySummaryData): Promise<string | undefined> {
-    const prompt = `Daily football summary infographic for ${summaryData.date}.
-    Football daily roundup design with match results, statistics, modern sports graphics,
-    daily summary layout, professional sports media aesthetic, high quality digital art.`;
+    console.log(`🎨 Generating daily summary image for ${summaryData.date}`);
+    
+    // Build dynamic prompt based on actual data
+    const date = new Date(summaryData.date).toLocaleDateString();
+    const matchCount = summaryData.statistics.totalMatches;
+    const totalGoals = summaryData.statistics.totalGoals;
+    
+    let prompt = `Daily football summary infographic for ${date}.\n`;
+    
+    // Add match information
+    if (summaryData.interestingMatches.length > 0) {
+      prompt += `${matchCount} matches today with ${totalGoals} total goals.\n`;
+      
+      const topMatches = summaryData.interestingMatches.slice(0, 3);
+      const matchDetails = topMatches.map(({ match }) => 
+        `${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam} (${match.competition})`
+      ).join(', ');
+      
+      prompt += `Key matches: ${matchDetails}.\n`;
+    }
+    
+    // Add biggest win if available
+    if (summaryData.statistics.biggestWin) {
+      prompt += `Biggest win: ${summaryData.statistics.biggestWin.teams} ${summaryData.statistics.biggestWin.score}.\n`;
+    }
+    
+    // Add style requirements
+    prompt += `Clean football infographic design with match results, scores, statistics, modern sports graphics, professional layout, football stadium background, vibrant colors, clear typography.`;
 
     try {
-      const imageBuffer = await aiImageGenerator.generateImage({
+      const generatedImage = await aiImageGenerator.generateImage({
         prompt,
-        quality: 'medium'
+        quality: 'low', // Smaller file size
+        size: '1024x1024' // Standard size
       });
-      if (!imageBuffer) return undefined;
-
-      const fileName = `daily_summary_${Date.now()}.png`;
-      const { data, error } = await supabase.storage
-        .from('content-images')
-        .upload(fileName, imageBuffer, {
-          contentType: 'image/png',
-          cacheControl: '3600'
-        });
-
-      if (error) {
-        console.error(`❌ Error uploading daily summary image:`, error);
+      
+      if (!generatedImage || !generatedImage.url) {
+        console.log('⚠️ No image generated for daily summary');
         return undefined;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('content-images')
-        .getPublicUrl(fileName);
-
-      return urlData.publicUrl;
+      console.log(`✅ Daily summary image generated: ${generatedImage.url}`);
+      return generatedImage.url;
+      
     } catch (error) {
       console.error(`❌ Error generating daily summary image:`, error);
+      console.log('📝 Continuing without image for daily summary');
       return undefined;
     }
   }
 
   private async generateWeeklySummaryImage(summaryData: WeeklySummaryData): Promise<string | undefined> {
     const prompt = `Weekly football summary infographic for week of ${summaryData.weekStart}.
-    Football weekly review design with statistics, trends, league tables, comprehensive analysis graphics,
-    weekly summary layout, professional sports media aesthetic, high quality digital art.`;
+    Simple football weekly review design with statistics, trends, clean layout,
+    minimalist sports graphics, small file size, compact design.`;
 
     try {
-      const imageBuffer = await aiImageGenerator.generateImage({
+      const generatedImage = await aiImageGenerator.generateImage({
         prompt,
-        quality: 'medium'
+        quality: 'low', // Smaller file size
+        size: '1024x1024' // Standard size
       });
-      if (!imageBuffer) return undefined;
-
-      const fileName = `weekly_summary_${Date.now()}.png`;
-      const { data, error } = await supabase.storage
-        .from('content-images')
-        .upload(fileName, imageBuffer, {
-          contentType: 'image/png',
-          cacheControl: '3600'
-        });
-
-      if (error) {
-        console.error(`❌ Error uploading weekly summary image:`, error);
+      
+      if (!generatedImage || !generatedImage.url) {
+        console.log('⚠️ No image generated for weekly summary');
         return undefined;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('content-images')
-        .getPublicUrl(fileName);
-
-      return urlData.publicUrl;
+      console.log(`✅ Weekly summary image generated: ${generatedImage.url}`);
+      return generatedImage.url;
+      
     } catch (error) {
       console.error(`❌ Error generating weekly summary image:`, error);
+      console.log('📝 Continuing without image for weekly summary');
       return undefined;
     }
   }
@@ -1049,37 +1150,98 @@ export class DailyWeeklySummaryGenerator {
   }
 
   private async aiEditDailyContent(content: string, summaryData: DailySummaryData, language: 'en' | 'am' | 'sw'): Promise<string> {
-    const engagementText = {
-      'en': '🔥 What a day of football! Check back tomorrow for more action!',
-      'am': '🔥 ምን አይነት የእግር ኳስ ቀን! ነገ ለተጨማሪ እርምጃ ተመለሱ!',
-      'sw': '🔥 Sikuhii ya mpira wa miguu! Rudini kesho kwa matukio mengine!'
-    };
+    const openai = await getOpenAIClient();
+    if (!openai) {
+      console.warn('OpenAI client not available, returning original content');
+      return content;
+    }
     
-    const hashtags = {
-      'en': '#DailyFootball #FootballSummary #MatchResults #Football',
-      'am': '#ዕለታዊእግርኳስ #የእግርኳስማጠቃለያ #DailyFootball #Football',
-      'sw': '#MpiraKilaiku #MukhtasariMpira #DailyFootball #Football'
-    };
+    const prompt = `Edit the following daily football summary content to make it more engaging and relevant to ${language} readers.
+    Original content:
+    ${content}
     
-    const enhanced = `${content}\n\n${engagementText[language]}\n\n${hashtags[language]}`;
-    return enhanced;
+    Summary data:
+    Date: ${summaryData.date}
+    Interesting matches: ${summaryData.interestingMatches.length}
+    Standout performances: ${Object.values(summaryData.standoutPerformances).some(v => v) ? 'Yes' : 'No'}
+    Statistics: ${summaryData.statistics.totalMatches} matches, ${summaryData.statistics.totalGoals} goals
+    Key storylines: ${summaryData.keyStorylines.length}
+    Tomorrow's fixtures: ${summaryData.tomorrowsFixtures.length}
+    Weekend preview: ${summaryData.weekendPreview ? 'Yes' : 'No'}
+    
+    Edit the content to:
+    1. Add more context and background about the matches and events.
+    2. Highlight key moments and standout performances.
+    3. Include more specific statistics and details.
+    4. Make the language more engaging and local to ${language}.
+    5. Add relevant hashtags and calls to action.
+    6. Ensure the content is concise and informative.
+    7. Maintain the original structure and flow.
+    
+    Edit the content and return ONLY the edited version.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1500,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      });
+      return response.choices[0].message.content || content;
+    } catch (error) {
+      console.error(`❌ Error editing daily content with AI:`, error);
+      return content; // Fallback to original if AI fails
+    }
   }
 
   private async aiEditWeeklyContent(content: string, summaryData: WeeklySummaryData, language: 'en' | 'am' | 'sw'): Promise<string> {
-    const engagementText = {
-      'en': '📊 Comprehensive weekly analysis complete! Exciting week ahead!',
-      'am': '📊 አጠቃላይ ሳምንታዊ ትንተና ተጠናቋል! አስደሳች ሳምንት ወደፊት!',
-      'sw': '📊 Uchambuzi mkamilifu wa wiki umekamilika! Wiki ya kusisimua inasubiri!'
-    };
+    const openai = await getOpenAIClient();
+    if (!openai) {
+      console.warn('OpenAI client not available, returning original content');
+      return content;
+    }
     
-    const hashtags = {
-      'en': '#WeeklyFootball #FootballAnalysis #WeeklyReview #Football',
-      'am': '#ሳምንታዊእግርኳስ #የእግርኳስትንተና #WeeklyFootball #Football',
-      'sw': '#MpiraWiki #UchambuziMpira #WeeklyFootball #Football'
-    };
+    const prompt = `Edit the following weekly football summary content to make it more engaging and relevant to ${language} readers.
+    Original content:
+    ${content}
     
-    const enhanced = `${content}\n\n${engagementText[language]}\n\n${hashtags[language]}`;
-    return enhanced;
+    Summary data:
+    Week start: ${summaryData.weekStart}
+    Week end: ${summaryData.weekEnd}
+    Weekly results: ${summaryData.weeklyResults.topMatches.length} top matches, ${summaryData.weeklyResults.leagueHighlights.length} league highlights
+    Weekly statistics: ${summaryData.weeklyStats.totalMatches} matches, ${summaryData.weeklyStats.totalGoals} goals
+    Trends: ${summaryData.trends.teamOfTheWeek} team of the week, ${summaryData.trends.playerOfTheWeek} player of the week
+    Next week preview: ${summaryData.nextWeekPreview.keyFixtures.length} key fixtures, ${summaryData.nextWeekPreview.matchesToWatch.length} matches to watch
+    
+    Edit the content to:
+    1. Add more context and background about the week's events and trends.
+    2. Highlight key moments and standout performances.
+    3. Include more specific statistics and details.
+    4. Make the language more engaging and local to ${language}.
+    5. Add relevant hashtags and calls to action.
+    6. Ensure the content is concise and informative.
+    7. Maintain the original structure and flow.
+    
+    Edit the content and return ONLY the edited version.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 2000,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      });
+      return response.choices[0].message.content || content;
+    } catch (error) {
+      console.error(`❌ Error editing weekly content with AI:`, error);
+      return content; // Fallback to original if AI fails
+    }
   }
 
   /**
@@ -1088,12 +1250,12 @@ export class DailyWeeklySummaryGenerator {
   async scheduleAutomatedSummaries(timezone: string = 'UTC') {
     // This would integrate with a cron job system
     // Daily summaries: 10 PM local time
-    // Weekly summaries: Sunday 8 PM local time
+    // Weekly summaries: Sunday 8 AM local time (morning review of previous week)
     console.log(`📅 Scheduling automated summaries for timezone: ${timezone}`);
     
     return {
       dailySchedule: '0 22 * * *', // 10 PM daily
-      weeklySchedule: '0 20 * * 0', // 8 PM Sunday
+      weeklySchedule: '0 8 * * 0', // 8 AM Sunday (morning review of previous week)
       timezone
     };
   }

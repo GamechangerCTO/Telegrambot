@@ -41,41 +41,41 @@ export class TelegramSender {
   }
 
   async sendMessage(options: TelegramSendOptions): Promise<TelegramResponse> {
+    const { botToken, channelId, content, imageUrl, inlineKeyboard, parseMode = 'HTML', disablePreview = false, poll } = options
+    const apiUrl = `https://api.telegram.org/bot${botToken}`
+
     try {
-      const { botToken, channelId, content, imageUrl, inlineKeyboard, parseMode = 'HTML', disablePreview = false, poll } = options
-
-      // בדיקת תקינות הפרמטרים
-      if (!botToken || !channelId) {
-        throw new Error('Missing required parameters: botToken or channelId')
-      }
-
-      // אם יש פרמטר poll, שולחים סקר במקום טקסט
+      let response: Response;
+      
       if (poll) {
-        if (!poll.question || !poll.options || poll.options.length < 2) {
-          throw new Error('Poll must have a question and at least 2 options')
+        // Send poll
+        return await this.sendPoll(botToken, channelId, poll);
+      } else if (imageUrl) {
+        // Try to send with image first
+        try {
+          console.log('📷 Attempting to send message with image');
+          response = await this.sendPhoto(apiUrl, channelId, content, imageUrl, inlineKeyboard, parseMode);
+          
+          if (!response.ok) {
+            throw new Error(`Photo send failed: ${response.status} ${response.statusText}`);
+          }
+          
+        } catch (imageError) {
+          console.error('❌ Image send failed:', imageError);
+          console.log('🔄 Falling back to text-only message...');
+          
+          // Fallback: Send text without image
+          response = await this.sendTextMessage(apiUrl, channelId, content, inlineKeyboard, parseMode, disablePreview);
         }
-        return await this.sendPoll(botToken, channelId, poll)
-      }
-
-      // אם אין תוכן (content), זה שגיאה (אלא אם יש poll)
-      if (!content) {
-        throw new Error('Missing required parameter: content')
-      }
-
-      const telegramApiUrl = `https://api.telegram.org/bot${botToken}`
-      
-      let response: any
-      
-      if (imageUrl) {
-        // שליחת תמונה עם טקסט
-        response = await this.sendPhoto(telegramApiUrl, channelId, content, imageUrl, inlineKeyboard, parseMode)
       } else {
-        // שליחת טקסט בלבד
-        response = await this.sendTextMessage(telegramApiUrl, channelId, content, inlineKeyboard, parseMode, disablePreview)
+        // Send text message only
+        response = await this.sendTextMessage(apiUrl, channelId, content, inlineKeyboard, parseMode, disablePreview);
       }
 
-      if (response.ok) {
-        const result = await response.json()
+      const result = await response.json()
+      
+      if (result.ok) {
+        console.log(`✅ Message sent successfully to ${channelId}`)
         
         // שמירת לוג הצלחה במסד הנתונים
         await this.logMessage({
@@ -110,21 +110,23 @@ export class TelegramSender {
           timestamp: new Date()
         }
       }
+
     } catch (error) {
-      console.error('🚨 Telegram sending error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      console.error(`❌ Failed to send message to ${channelId}:`, errorMessage)
       
-      // שמירת לוג שגיאה כללית
+      // שמירת לוג שגיאה
       await this.logMessage({
-        channel_id: options.channelId,
-        content: options.content ? options.content.substring(0, 500) : 'Poll content',
+        channel_id: channelId,
+        content: content.substring(0, 500),
         status: 'failed',
-        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_message: errorMessage,
         sent_at: new Date().toISOString()
       })
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: errorMessage,
         timestamp: new Date()
       }
     }
@@ -141,13 +143,33 @@ export class TelegramSender {
     try {
       console.log('📷 Attempting to send photo via Telegram:', photoUrl);
       
-      // Download the image first to send as buffer instead of URL
-      const imageResponse = await fetch(photoUrl);
+      // 🧹 CRITICAL: Validate and clean HTML in caption
+      const cleanedCaption = this.validateAndCleanHTML(caption);
+      
+      // Download the image with timeout (10 seconds max)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const imageResponse = await fetch(photoUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'TelegramBot/1.0'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (!imageResponse.ok) {
         throw new Error(`Failed to download image: ${imageResponse.status} ${imageResponse.statusText}`);
       }
       
       const imageBuffer = await imageResponse.arrayBuffer();
+      
+      // Check image size (max 10MB for Telegram)
+      if (imageBuffer.byteLength > 10 * 1024 * 1024) {
+        throw new Error(`Image too large: ${imageBuffer.byteLength} bytes (max 10MB)`);
+      }
+      
       const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
       
       console.log(`📊 Image downloaded successfully: ${imageBuffer.byteLength} bytes`);
@@ -156,7 +178,7 @@ export class TelegramSender {
       const formData = new FormData();
       formData.append('chat_id', chatId);
       formData.append('photo', imageBlob, 'image.png');
-      formData.append('caption', caption);
+      formData.append('caption', cleanedCaption);
       formData.append('parse_mode', parseMode);
 
       if (keyboard && keyboard.length > 0) {
@@ -167,18 +189,29 @@ export class TelegramSender {
 
       return fetch(`${apiUrl}/sendPhoto`, {
         method: 'POST',
-        body: formData // Using FormData instead of JSON
+        body: formData,
+        // 15 second timeout for Telegram API call
+        signal: AbortSignal.timeout(15000)
       });
       
     } catch (error) {
       console.error('❌ Error in sendPhoto:', error);
-      // Fallback to URL method if file upload fails
+      
+      // If it's a timeout/abort error, don't try URL fallback (it will also fail)
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
+        console.log('⏰ Image download/send timeout - skipping URL fallback');
+        throw error; // Let the main function handle fallback to text-only
+      }
+      
+      // For other errors, try URL method as fallback
       console.log('🔄 Falling back to URL method...');
+      
+      const cleanedCaption = this.validateAndCleanHTML(caption);
       
       const payload: any = {
         chat_id: chatId,
         photo: photoUrl,
-        caption: caption,
+        caption: cleanedCaption,
         parse_mode: parseMode
       }
 
@@ -193,7 +226,9 @@ export class TelegramSender {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        // 10 second timeout for URL method
+        signal: AbortSignal.timeout(10000)
       });
     }
   }
@@ -206,9 +241,15 @@ export class TelegramSender {
     parseMode: string = 'HTML',
     disablePreview: boolean = false
   ) {
+    // 🧹 CRITICAL: Validate and clean HTML before sending
+    const cleanedText = this.validateAndCleanHTML(text);
+    
+    console.log('📤 Sending text message to:', chatId);
+    console.log('📝 Message preview:', cleanedText.substring(0, 100) + '...');
+    
     const payload: any = {
       chat_id: chatId,
-      text: text,
+      text: cleanedText,
       parse_mode: parseMode,
       disable_web_page_preview: disablePreview
     }
@@ -226,6 +267,58 @@ export class TelegramSender {
       },
       body: JSON.stringify(payload)
     })
+  }
+
+  /**
+   * 🧹 Validate and clean HTML for Telegram compatibility
+   */
+  private validateAndCleanHTML(text: string): string {
+    if (!text || typeof text !== 'string') return text;
+
+    // List of HTML tags that Telegram supports
+    const supportedTags = ['b', 'i', 'u', 's', 'a', 'code', 'pre'];
+    
+    // Remove all HTML tags except supported ones
+    let cleanedText = text
+      // Remove unsupported HTML tags but keep content
+      .replace(/<\/?(?!(?:\/?)(?:b|i|u|s|a|code|pre)\b)[^>]*>/gi, '')
+      // Convert common formatting to Telegram-supported format
+      .replace(/<\/?strong[^>]*>/gi, '')
+      .replace(/<\/?em[^>]*>/gi, '')
+      .replace(/<\/?p[^>]*>/gi, '\n')
+      .replace(/<\/?div[^>]*>/gi, '\n')
+      .replace(/<\/?span[^>]*>/gi, '')
+      .replace(/<\/?br[^>]*>/gi, '\n')
+      .replace(/<\/?h[1-6][^>]*>/gi, '\n')
+      .replace(/<\/?ul[^>]*>/gi, '\n')
+      .replace(/<\/?ol[^>]*>/gi, '\n')
+      .replace(/<\/?li[^>]*>/gi, '\n• ')
+      // Remove any remaining HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Decode HTML entities
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&hellip;/g, '...')
+      .replace(/&mdash;/g, '—')
+      .replace(/&ndash;/g, '–')
+      // Clean up excessive whitespace and newlines
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+    // Final validation - ensure no problematic characters remain
+    cleanedText = cleanedText
+      .replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .replace(/[^\u0000-\u007F\u0080-\uFFFF]/g, ''); // Keep only valid Unicode characters
+
+    console.log('🧹 HTML validation complete. Clean text length:', cleanedText.length);
+    
+    return cleanedText;
   }
 
   async sendToMultipleChannels(

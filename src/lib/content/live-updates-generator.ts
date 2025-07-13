@@ -159,6 +159,19 @@ export class LiveUpdatesGenerator {
   private monitoringInterval?: NodeJS.Timeout;
   private isMonitoring: boolean = false;
   private lastProcessedEvents: Map<number, string[]> = new Map(); // fixtureId -> eventIds
+  private EVENT_PROBABILITIES = {
+    'Goal': 0.15,
+    'Card': 0.25,
+    'subst': 0.20,
+    'Var': 0.05,
+    'penalty': 0.02,
+    'freekick': 0.10,
+    'corner': 0.30,
+    'offside': 0.18,
+    'injury': 0.05,
+    'halftime': 0.50,
+    'fulltime': 0.90
+  };
   private monitoringStats = {
     totalMatches: 0,
     liveMatches: 0,
@@ -546,7 +559,7 @@ export class LiveUpdatesGenerator {
         .eq('active', true)
         .eq('live_updates_enabled', true);
 
-      return (channels || []).map(channel => ({
+      return (channels || []).map((channel: any) => ({
         id: channel.id,
         language: (channel.language as 'en' | 'am' | 'sw') || 'en'
       }));
@@ -605,7 +618,7 @@ export class LiveUpdatesGenerator {
       return {
         title: updateContent.title,
         content: updateContent.content,
-        imageUrl: await this.generateLiveUpdateImage(liveMatchData, request.updateType || 'event'),
+        imageUrl: undefined, // No image generation for live updates
         matchData: liveMatchData,
         updateType: updateContent.updateType,
         aiEditedContent: await this.aiEditLiveContent(updateContent.content, liveMatchData, request.language),
@@ -649,50 +662,59 @@ export class LiveUpdatesGenerator {
    * 🔴 Step 1: Get current live match (or create simulation)
    */
   private async getCurrentLiveMatch(language: 'en' | 'am' | 'sw'): Promise<LiveMatchData | null> {
-    // In production, this would check for actual live matches from APIs
-    // For now, we'll create a realistic simulation based on available matches
-    
-    const bestMatch = await unifiedFootballService.getBestMatchForContent('live_update', language);
-    if (!bestMatch) return null;
+    try {
+      const bestMatch = await unifiedFootballService.getBestMatchForContent('live_update', language);
+      if (!bestMatch) return null;
 
-    // Create live match simulation
-    const liveMatch: LiveMatchData = {
-      homeTeam: {
-        id: bestMatch.homeTeam.id,
-        name: bestMatch.homeTeam.name,
-        logo: bestMatch.homeTeam.logo || ''
-      },
-      awayTeam: {
-        id: bestMatch.awayTeam.id,
-        name: bestMatch.awayTeam.name,
-        logo: bestMatch.awayTeam.logo || ''
-      },
-      competition: {
-        id: bestMatch.competition.id,
-        name: bestMatch.competition.name,
-        country: bestMatch.competition.country || 'Unknown'
-      },
-      venue: {
-        name: `${bestMatch.homeTeam.name} Stadium`,
-        city: 'Unknown City'
-      },
-      status: {
-        long: 'Live',
-        short: 'LIVE',
-        elapsed: 0
-      },
-      score: {
-        home: 0,
-        away: 0
-      },
-      currentStats: this.initializeLiveStats(),
-      recentEvents: [],
-      lastUpdate: new Date().toISOString(),
-      relevanceScore: 0,
-      matchImportance: this.determineMatchImportance(bestMatch.competition.name)
-    };
+      // Create live match simulation
+      const basicMatch: LiveMatchData = {
+        fixture_id: (bestMatch as any).fixture_id || Date.now(),
+        homeTeam: {
+          id: parseInt(bestMatch.homeTeam.id?.toString() || '1', 10),
+          name: bestMatch.homeTeam.name || 'Home Team',
+          logo: ''
+        },
+        awayTeam: {
+          id: parseInt(bestMatch.awayTeam.id?.toString() || '2', 10),
+          name: bestMatch.awayTeam.name || 'Away Team',
+          logo: ''
+        },
+        competition: {
+          id: parseInt(bestMatch.competition.id?.toString() || '1', 10),
+          name: bestMatch.competition.name || 'Championship',
+          country: 'Unknown'
+        },
+        venue: {
+          name: `${bestMatch.homeTeam.name} Stadium`,
+          city: 'Unknown City'
+        },
+        status: {
+          long: 'Live',
+          short: '1H',
+          elapsed: Math.floor(Math.random() * 90) + 1
+        },
+        score: {
+          home: Math.floor(Math.random() * 3),
+          away: Math.floor(Math.random() * 3)
+        },
+        currentStats: this.initializeLiveStats(),
+        recentEvents: [],
+        lastUpdate: new Date().toISOString(),
+        relevanceScore: 85,
+        matchImportance: 'HIGH'
+      };
 
-    return liveMatch;
+      // Generate events after creating the match
+      basicMatch.recentEvents = this.generateRealisticEvents(basicMatch);
+
+      // Update match progression
+      await this.updateMatchProgression(basicMatch);
+
+      return basicMatch;
+    } catch (error) {
+      console.error('❌ Error getting current live match:', error);
+      return null;
+    }
   }
 
   /**
@@ -810,149 +832,84 @@ export class LiveUpdatesGenerator {
    * 📈 Get event probability multiplier based on match context
    */
   private getEventProbabilityMultiplier(minute: number, period: string): number {
-    let multiplier = 1.0;
+    const elapsed = minute || 0;
     
-    // More events in final minutes
-    if (minute > 85) multiplier *= 1.5;
-    else if (minute > 70) multiplier *= 1.2;
+    if (period === 'halftime') return 0.1;
+    if (period === 'fulltime') return 0.0;
     
-    // More events in second half
-    if (period === 'second_half') multiplier *= 1.1;
+    // Higher probability in certain minutes
+    if (elapsed >= 35 && elapsed <= 45) return 1.8; // End of first half
+    if (elapsed >= 80 && elapsed <= 90) return 2.2; // End of second half
+    if (elapsed >= 1 && elapsed <= 15) return 1.5; // Start of match
     
-    // Fewer events during half time
-    if (period === 'half_time') multiplier *= 0.1;
-    
-    return multiplier;
+    return 1.0;
   }
 
   /**
    * ⚽ Create specific match event
    */
   private createMatchEvent(eventType: RealMatchEventType, minute: number, liveMatch: LiveMatchData): RealMatchEvent | null {
-    const team = Math.random() < 0.5 ? 'home' : 'away';
-    const teamName = team === 'home' ? liveMatch.homeTeam.name : liveMatch.awayTeam.name;
+    const elapsed = minute || 0;
     
-    const event: RealMatchEvent = {
-      time: { elapsed: minute },
-      team: {
-        id: team === 'home' ? liveMatch.homeTeam.id : liveMatch.awayTeam.id,
-        name: teamName
-      },
-      importance: this.getEventImportance(eventType)
-    };
-
-    // Generate specific event details
-    switch (eventType) {
-      case 'Goal':
-        event.detail = `⚽ GOAL! ${teamName} takes the lead! ${this.getRandomPlayer(liveMatch, team)} finds the net with a brilliant finish!`;
-        event.importance = 'HIGH';
-        break;
-        
-      case 'Card':
-        event.detail = `🟨 Yellow card for ${this.getRandomPlayer(liveMatch, team)} (${teamName}) for a tactical foul`;
-        event.importance = 'MEDIUM';
-        break;
-        
-      case 'Var':
-        event.detail = `📺 VAR check in progress - referee reviewing potential incident`;
-        event.importance = 'MEDIUM';
-        break;
-        
-      case 'subst':
-        const newPlayer = this.getRandomPlayer(liveMatch, team);
-        event.detail = `🔄 Substitution: ${newPlayer} comes on for ${this.getRandomPlayer(liveMatch, team)} (${teamName})`;
-        break;
-        
-      case 'corner':
-        event.detail = `🚩 Corner kick for ${teamName} - good attacking opportunity`;
-        break;
-        
-      case 'penalty':
-        event.detail = `🎯 PENALTY! ${teamName} awarded a spot kick! ${this.getRandomPlayer(liveMatch, team)} steps up...`;
-        event.importance = 'HIGH';
-        break;
-        
-      case 'freekick':
-        event.detail = `⚽ FREE KICK! ${teamName} awarded a free kick in a dangerous position!`;
-        break;
-        
-      case 'offside':
-        event.detail = `🚶‍♂️ OFFSIDE! ${this.getRandomPlayer(liveMatch, team)} was offside!`;
-        break;
-        
-      case 'injury':
-        event.detail = `⚕️ INJURY! ${this.getRandomPlayer(liveMatch, team)} is down!`;
-        break;
-        
-      case 'halftime':
-        event.detail = `🏆 HALF TIME! The first half ends with a score of ${liveMatch.score.home}-${liveMatch.score.away}!`;
-        break;
-        
-      case 'fulltime':
-        event.detail = `🏆 FULL TIME! The match ends with a score of ${liveMatch.score.home}-${liveMatch.score.away}!`;
-        break;
-        
-      default:
+    try {
+      const baseProbability = this.EVENT_PROBABILITIES[eventType] || 0.1;
+      const multiplier = this.getEventProbabilityMultiplier(elapsed, liveMatch.status.short);
+      
+      if (Math.random() > baseProbability * multiplier) {
         return null;
-    }
+      }
 
-    return event;
+      const event: RealMatchEvent = {
+        time: { elapsed },
+        team: {
+          id: liveMatch.homeTeam.id,
+          name: liveMatch.homeTeam.name
+        },
+        type: eventType,
+        detail: `${eventType} event`,
+        importance: this.getEventImportance(eventType)
+      };
+
+      return event;
+    } catch (error) {
+      console.error('❌ Error creating match event:', error);
+      return null;
+    }
   }
 
   /**
    * 📊 Update match statistics from events
    */
   private updateStatsFromEvents(stats: RealMatchStatistics[], events: RealMatchEvent[]): void {
+    if (!stats || !events) return;
+
     events.forEach(event => {
-      const teamSide = event.team.name.includes(stats[0].team_name) ? 0 : 1; // Assuming stats[0] is home, stats[1] is away
-      
-      switch (event.type) {
-        case 'Goal':
-          stats[teamSide].total_shots++;
-          stats[teamSide].shots_on_goal++;
-          break;
-          
-        case 'Card':
-          stats[teamSide].fouls++;
-          stats[teamSide].yellow_cards++;
-          break;
-          
-        case 'Var':
-          // VAR events don't directly affect stats, but they are important for commentary
-          break;
-          
-        case 'subst':
-          // Substitution doesn't directly affect stats, but it's a significant event
-          break;
-          
-        case 'corner':
-          stats[teamSide].corner_kicks++;
-          break;
-          
-        case 'penalty':
-          stats[teamSide].total_shots++; // Penalty is a shot
-          stats[teamSide].shots_on_goal++;
-          break;
-          
-        case 'freekick':
-          stats[teamSide].total_shots++; // Free kick is a shot
-          break;
-          
-        case 'offside':
-          stats[teamSide].offsides++;
-          break;
-          
-        case 'injury':
-          // Injury doesn't directly affect stats, but it's a significant event
-          break;
-          
-        case 'halftime':
-          // Half time event doesn't directly affect stats, but it's a significant event
-          break;
-          
-        case 'fulltime':
-          // Full time event doesn't directly affect stats, but it's a significant event
-          break;
+      const teamStats = stats.find(s => s.team_id === event.team.id);
+      if (!teamStats) return;
+
+      try {
+        // Update stats based on event type
+        switch (event.type) {
+          case 'Goal':
+            teamStats.total_shots = (teamStats.total_shots || 0) + 1;
+            teamStats.shots_on_goal = (teamStats.shots_on_goal || 0) + 1;
+            break;
+          case 'Card':
+            if (event.detail === 'Yellow Card') {
+              teamStats.yellow_cards = (teamStats.yellow_cards || 0) + 1;
+            } else if (event.detail === 'Red Card') {
+              teamStats.red_cards = (teamStats.red_cards || 0) + 1;
+            }
+            break;
+          case 'corner':
+            teamStats.corner_kicks = (teamStats.corner_kicks || 0) + 1;
+            break;
+          case 'offside':
+            teamStats.offsides = (teamStats.offsides || 0) + 1;
+            break;
+        }
+      } catch (error) {
+        console.error('❌ Error updating stats from event:', error);
       }
     });
   }
@@ -1362,42 +1319,8 @@ export class LiveUpdatesGenerator {
    * 🖼️ Generate live update image
    */
   private async generateLiveUpdateImage(liveMatch: LiveMatchData, updateType: string): Promise<string | undefined> {
-    const { homeTeam, awayTeam, competition, currentStats } = liveMatch;
-    
-    const prompt = `Live football match graphics: ${homeTeam} vs ${awayTeam} in ${competition}.
-    Real-time score display showing ${liveMatch.score.home}-${liveMatch.score.away}, minute ${currentStats.ball_possession},
-    live broadcast graphics style, dynamic sports design, live TV aesthetic, exciting match moment,
-    team colors, modern live sports graphics, high energy design, professional broadcast quality.`;
-
-    try {
-      const imageBuffer = await aiImageGenerator.generateImage({
-        prompt,
-        quality: 'medium'
-      });
-      if (!imageBuffer) return undefined;
-
-      const fileName = `live_update_${Date.now()}.png`;
-      const { data, error } = await supabase.storage
-        .from('content-images')
-        .upload(fileName, imageBuffer, {
-          contentType: 'image/png',
-          cacheControl: '3600'
-        });
-
-      if (error) {
-        console.error(`❌ Error uploading live update image:`, error);
-        return undefined;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('content-images')
-        .getPublicUrl(fileName);
-
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error(`❌ Error generating live update image:`, error);
-      return undefined;
-    }
+    // Live updates don't need images - skip image generation to save API calls
+    return undefined;
   }
 
   /**
@@ -1474,10 +1397,10 @@ export class LiveUpdatesGenerator {
 
   private getRandomPlayer(liveMatch: LiveMatchData, team: 'home' | 'away'): string {
     const players = team === 'home' 
-      ? liveMatch.preMatchInfo.keyPlayers.home 
-      : liveMatch.preMatchInfo.keyPlayers.away;
+      ? liveMatch.preMatchInfo?.keyPlayers?.home 
+      : liveMatch.preMatchInfo?.keyPlayers?.away;
     
-    return players[Math.floor(Math.random() * players.length)];
+    return players?.[Math.floor(Math.random() * players.length)] || 'Player';
   }
 
   private getUpdatedScore(liveMatch: LiveMatchData, scoringTeam: 'home' | 'away', eventType: string): string {
