@@ -305,7 +305,11 @@ async function saveContentToDatabase(content: any, action: string, mode: string)
  */
 async function triggerSmartCouponSystem(contentType: ContentType, language: Language, targetChannels?: string[]) {
   try {
-    const couponTriggerResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/smart-push/trigger`, {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    
+    const couponTriggerResponse = await fetch(`${baseUrl}/api/smart-push/trigger`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

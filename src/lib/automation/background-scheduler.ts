@@ -96,58 +96,47 @@ export class BackgroundScheduler {
       
       console.log(`🔍 Checking matches for today: ${todayStr}`);
       
-      // Call the football service to get today's matches
-      const response = await fetch(`http://localhost:3000/api/debug-football`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          date: todayStr,
-          test_mode: true
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const matches = data.matches || [];
+      // Get today's matches directly without HTTP calls (better for serverless)
+      try {
+        const { unifiedFootballService } = await import('../content/unified-football-service');
         
-        console.log(`⚽ Found ${matches.length} matches for today`);
+        // Get best matches for different content types
+        const [bettingMatch, analysisMatch, liveMatch] = await Promise.all([
+          unifiedFootballService.getBestMatchForContent('betting_tip', 'en'),
+          unifiedFootballService.getBestMatchForContent('analysis', 'en'),
+          unifiedFootballService.getBestMatchForContent('live_update', 'en')
+        ]);
         
-        // Import scoring system
-        const { FootballMatchScorer } = await import('../content/football-match-scorer');
-        const scorer = new FootballMatchScorer();
+        const matches = [bettingMatch, analysisMatch, liveMatch].filter(Boolean);
         
-        // Score matches for different content types
-        const bettingMatches = await scorer.getBestMatchesForContentType(matches, 'betting_tip', 5);
-        const analysisMatches = await scorer.getBestMatchesForContentType(matches, 'analysis', 5);
+        console.log(`⚽ Found ${matches.length} potential matches for content`);
         
-        console.log(`🎯 Top betting matches (scored): ${bettingMatches.length}`);
-        console.log(`📊 Top analysis matches (scored): ${analysisMatches.length}`);
-        
-        // Check betting opportunities (2-3 hours before TOP matches)
-        for (const match of bettingMatches) {
-          const matchTime = new Date(match.kickoff);
-          const timeDiff = matchTime.getTime() - now.getTime();
-          const hoursUntilMatch = timeDiff / (1000 * 60 * 60);
+        // For each available match, schedule content if timing is right
+        for (const match of matches) {
+          if (!match) continue;
           
-          if (hoursUntilMatch > 2 && hoursUntilMatch < 3) {
-            console.log(`🎯 HIGH PRIORITY Betting: ${match.homeTeam.name} vs ${match.awayTeam.name} (Score: ${match.relevance_score.total}) in ${hoursUntilMatch.toFixed(1)} hours`);
-            this.scheduleContentForMatch(match, 'betting', 'pre_match_betting_scored');
+          const homeTeamName = match.homeTeam?.name || 'Home Team';
+          const awayTeamName = match.awayTeam?.name || 'Away Team';
+          
+          console.log(`🎯 Checking match: ${homeTeamName} vs ${awayTeamName}`);
+          
+          // Schedule content based on current time (simplified for serverless)
+          const currentHour = now.getHours();
+          
+          // Schedule betting content during peak hours
+          if (currentHour >= 14 && currentHour <= 18) {
+            console.log(`🎯 SCHEDULED Betting: ${homeTeamName} vs ${awayTeamName} during peak hours`);
+            this.scheduleContentForMatch(match, 'betting', 'peak_hours_betting');
+          }
+          
+          // Schedule analysis content during evening hours  
+          if (currentHour >= 19 && currentHour <= 22) {
+            console.log(`📊 SCHEDULED Analysis: ${homeTeamName} vs ${awayTeamName} during evening hours`);
+            this.scheduleContentForMatch(match, 'analysis', 'evening_hours_analysis');
           }
         }
-        
-        // Check analysis opportunities (30-60 minutes before TOP matches)
-        for (const match of analysisMatches) {
-          const matchTime = new Date(match.kickoff);
-          const timeDiff = matchTime.getTime() - now.getTime();
-          const hoursUntilMatch = timeDiff / (1000 * 60 * 60);
-          
-          if (hoursUntilMatch > 0.5 && hoursUntilMatch < 1) {
-            console.log(`📊 HIGH PRIORITY Analysis: ${match.homeTeam.name} vs ${match.awayTeam.name} (Score: ${match.relevance_score.total}) in ${hoursUntilMatch.toFixed(1)} hours`);
-            this.scheduleContentForMatch(match, 'analysis', 'pre_match_analysis_scored');
-          }
-        }
+      } catch (error) {
+        console.error('❌ Error getting matches from unified service:', error);
       }
     } catch (error) {
       console.error('❌ Error checking upcoming matches:', error);
@@ -172,14 +161,16 @@ export class BackgroundScheduler {
     console.log(`📅 Scheduling ${contentType} content for ${homeTeamName} vs ${awayTeamName}`);
     
     try {
-      const response = await fetch('http://localhost:3000/api/automation/auto-scheduler', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-match-triggered': 'true'
-        },
-        body: JSON.stringify({
-          content_type: contentType,
+      // Use direct content generation instead of HTTP calls for serverless efficiency
+      const { ContentRouter } = await import('../content/api-modules/content-router');
+      const router = new ContentRouter();
+      
+      const result = await router.generateContent({
+        type: contentType as any,
+        language: 'en',
+        maxItems: 1,
+        channelId: 'automation',
+        customContent: {
           match_context: {
             home_team: homeTeamName,
             away_team: awayTeamName,
@@ -187,11 +178,11 @@ export class BackgroundScheduler {
             competition: match.competition?.name || match.competition
           },
           trigger_reason: reason
-        })
+        }
       });
 
-      if (response.ok) {
-        console.log(`✅ Scheduled ${contentType} content for match successfully`);
+      if (result?.contentItems && result.contentItems.length > 0) {
+        console.log(`✅ Generated ${contentType} content for match successfully`);
         this.lastExecutionTimes.set(matchKey, Date.now());
       }
     } catch (error) {

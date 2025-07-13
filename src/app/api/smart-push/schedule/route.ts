@@ -230,7 +230,11 @@ async function triggerRandomCoupon(channelId?: string) {
     }
 
     // Trigger the smart push system
-    const triggerResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/smart-push/trigger`, {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    
+    const triggerResponse = await fetch(`${baseUrl}/api/smart-push/trigger`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -1777,7 +1777,7 @@ export class MatchAnalysisGenerator {
 
       const languagePrompts = {
         'en': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. Write professionally in English. END with hashtags in both English and the content language:`,
-        'am': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. IMPORTANT: Write the entire response in AMHARIC language only. Do not use English words. Use only Amharic script. END with hashtags in both Amharic and English:`,
+        'am': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. IMPORTANT: Write the entire response in AMHARIC language only. Use clear, natural Amharic football terminology. END with relevant hashtags in Amharic:`,
         'sw': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. IMPORTANT: Write the entire response in SWAHILI language only. END with hashtags in both Swahili and English:`
       };
 

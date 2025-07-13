@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
       supabase.from('users').select('count', { count: 'exact', head: true }),
       
       // API Health - check if key endpoints are responding
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/unified-content`, {
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
+      fetch(`${baseUrl}/api/unified-content`, {
         method: 'HEAD'
       }).catch(() => null),
       

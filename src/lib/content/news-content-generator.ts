@@ -438,11 +438,53 @@ export class OptimizedNewsContentGenerator {
     
     const templates = {
       en: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 ${news.source}\n\n#FootballNews #Breaking`,
-      am: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 ምንጭ፡ ${news.source}\n\n#እግርኳስዜና #FootballNews`,
+      am: this.createAmharicNewsContent(news, shortContent),
       sw: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 Chanzo: ${news.source}\n\n#HabariMpira #FootballNews`
     };
 
     return templates[language];
+  }
+
+  /**
+   * 🔤 Create proper Amharic news content
+   */
+  private createAmharicNewsContent(news: NewsItem, shortContent: string): string {
+    // Create meaningful Amharic content instead of just mixing English
+    const amharicIntro = this.getAmharicNewsIntro(news.category);
+    const processedContent = this.processContentForAmharic(shortContent);
+    
+    return `📰 ${amharicIntro}\n\n⚽ ${processedContent}\n\n🔗 ምንጭ፡ ${news.source}\n📅 ${new Date().toLocaleDateString('am-ET')}\n\n#እግርኳስዜና #ስፖርት #ዝማኔ`;
+  }
+
+  /**
+   * 🌍 Get Amharic intro based on news category
+   */
+  private getAmharicNewsIntro(category?: string): string {
+    const categoryIntros = {
+      'Premier League': 'የፕሪሚየር ሊግ ዜና',
+      'Champions League': 'የቻምፒዮንስ ሊግ ዜና',
+      'Transfer News': 'የተጫዋቾች ዝውውር ዜና',
+      'World Cup': 'የዓለም ዋንጫ ዜና',
+      'La Liga': 'የላ ሊጋ ዜና',
+      'Serie A': 'የሴሪ ኤ ዜና',
+      'Bundesliga': 'የቡንደስሊጋ ዜና',
+      'International': 'የአለም አቀፍ እግር ኳስ ዜና'
+    };
+    
+    return categoryIntros[category as keyof typeof categoryIntros] || 'የእግር ኳስ ዜና እና ዝማኔ';
+  }
+
+  /**
+   * 📝 Process content for better Amharic presentation
+   */
+  private processContentForAmharic(content: string): string {
+    // Basic improvement - add context for Amharic readers
+    if (content.length < 50) {
+      return 'ዝርዝር መረጃ በቅርቡ ይመጣል። ለተጨማሪ ዝማኔ ይከተሉን።';
+    }
+    
+    // For longer content, add Amharic context
+    return `ከአለም አቀፍ እግር ኳስ ዓለም የደረሰ ወቅታዊ ዜና፡\n\n"${content.substring(0, 150)}..."\n\nለሙሉ ዝርዝር የእንግሊዝኛ ምንጭ ይመልከቱ።`;
   }
 
   /**

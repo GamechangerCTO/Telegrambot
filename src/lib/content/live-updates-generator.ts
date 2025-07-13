@@ -1430,6 +1430,89 @@ export class LiveUpdatesGenerator {
   }
 
   /**
+   * 🎯 Main Generate Live Update Method - Missing Implementation
+   */
+  async generateLiveUpdate(request: LiveUpdateRequest): Promise<GeneratedLiveUpdate | null> {
+    try {
+      console.log(`🔴 Generating live update for ${request.language}`);
+      
+      // Get current live match
+      const liveMatch = await this.getCurrentLiveMatch(request.language);
+      if (!liveMatch) {
+        console.log('⚠️ No live match available, using fallback');
+        return this.generateFallbackUpdate(request);
+      }
+
+      // Generate update content
+      const updateContent = await this.generateUpdateContent(liveMatch, request);
+
+      return {
+        title: updateContent.title,
+        content: updateContent.content,
+        imageUrl: undefined, // No image generation for live updates
+        matchData: liveMatch,
+        updateType: updateContent.updateType,
+        aiEditedContent: await this.aiEditLiveContent(updateContent.content, liveMatch, request.language),
+        engagement: this.createEngagementElements(liveMatch, request.language),
+        metadata: {
+          language: request.language,
+          generatedAt: new Date().toISOString(),
+          contentId: `live_${liveMatch.fixture_id}_${Date.now()}`,
+          matchMinute: liveMatch.status.elapsed || 0,
+          eventImportance: updateContent.importance || 'MEDIUM',
+          fixtureId: liveMatch.fixture_id
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error generating live update:', error);
+      return this.generateFallbackUpdate(request);
+    }
+  }
+
+  /**
+   * 🛡️ Generate fallback update when no live match available
+   */
+  private generateFallbackUpdate(request: LiveUpdateRequest): GeneratedLiveUpdate {
+    const templates = {
+      en: {
+        title: '⚽ Football Live Updates',
+        content: '🔴 Stay tuned for live football updates!\n\n📺 We bring you real-time scores and match highlights.\n\n⚡ Follow us for instant notifications when matches go live!'
+      },
+      am: {
+        title: '⚽ የቀጥታ የእግር ኳስ ዝማኔ',
+        content: '🔴 የቀጥታ የእግር ኳስ ዝማኔ\n\n⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች\n🏟️ በቀጥታ ከመጫወቻ ሜዳ\n⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት\n📊 ቀጥታ ስታቲስቲክስ እና ተጫዋቾች አፈጻጸም\n\n📱 ለተጨማሪ ቀጥታ ዝማኔዎች ይከተሉን\n🔔 ፈጣን ማሳወቂያ ለሁሉም ጨዋታዎች\n\n#እግርኳስ #ቀጥታዝማኔ #ውጤቶች #ስፖርት'
+      },
+      sw: {
+        title: '⚽ Masasisho ya Moja kwa Moja ya Mpira',
+        content: '🔴 Jiandae kwa masasisho ya moja kwa moja ya mpira!\n\n📺 Tunakuletea matokeo ya wakati halisi na vipengele muhimu.\n\n⚡ Tufuate kwa arifa za haraka mechi zinapoanza moja kwa moja!'
+      }
+    };
+
+    const template = templates[request.language] || templates.en;
+
+    return {
+      title: template.title,
+      content: template.content,
+      imageUrl: undefined,
+      matchData: null,
+      updateType: 'fallback',
+      engagement: {
+        polls: [],
+        callToAction: 'Follow for live updates!',
+        hashtags: ['#LIVE', `#${request.language.toUpperCase()}`]
+      },
+      metadata: {
+        language: request.language,
+        generatedAt: new Date().toISOString(),
+        contentId: `live_fallback_${Date.now()}`,
+        matchMinute: 0,
+        eventImportance: 'LOW',
+        fixtureId: 0
+      }
+    };
+  }
+
+  /**
    * 🎯 Get multiple live updates for active matches
    */
   async getActiveLiveUpdates(language: 'en' | 'am' | 'sw' = 'en', limit: number = 3): Promise<GeneratedLiveUpdate[]> {
