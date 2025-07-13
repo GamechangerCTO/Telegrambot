@@ -208,6 +208,18 @@ export default function AutomationPage() {
             const relevanceScore = fixture.relevance_score?.total || 0;
             const isSignificant = relevanceScore > 60;
             
+            // Try multiple ways to get team names
+            const homeTeam = fixture.home_team || 
+                           fixture.teams?.home?.name || 
+                           fixture.homeTeam || 
+                           fixture.home?.name ||
+                           'Home';
+            const awayTeam = fixture.away_team || 
+                           fixture.teams?.away?.name || 
+                           fixture.awayTeam || 
+                           fixture.away?.name ||
+                           'Away';
+            
             // Add betting tips opportunity (2-3 hours before)
             if (hoursUntilMatch <= 3 && hoursUntilMatch > 1) {
               const bettingTime = new Date(matchTime.getTime() - (2.5 * 60 * 60 * 1000));
@@ -217,8 +229,8 @@ export default function AutomationPage() {
                   type: 'betting',
                   name: `Betting Tips`,
                   emoji: '🎯',
-                  match: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
-                  scheduledTime: bettingTime.toLocaleTimeString('en-US', { 
+                  match: `${homeTeam} vs ${awayTeam}`,
+                  scheduledTime: bettingTime.toLocaleString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit',
                     hour12: false 
@@ -238,8 +250,8 @@ export default function AutomationPage() {
                   type: 'analysis',
                   name: `Match Analysis`,
                   emoji: '📈',
-                  match: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
-                  scheduledTime: analysisTime.toLocaleTimeString('en-US', { 
+                  match: `${homeTeam} vs ${awayTeam}`,
+                  scheduledTime: analysisTime.toLocaleString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit',
                     hour12: false 
@@ -257,8 +269,8 @@ export default function AutomationPage() {
                 type: 'live',
                 name: `Live Updates`,
                 emoji: '⚡',
-                match: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
-                scheduledTime: matchTime.toLocaleTimeString('en-US', { 
+                match: `${homeTeam} vs ${awayTeam}`,
+                scheduledTime: matchTime.toLocaleString('he-IL', { 
                   hour: '2-digit', 
                   minute: '2-digit',
                   hour12: false 
@@ -286,7 +298,7 @@ export default function AutomationPage() {
         
         return {
           ...scheduled,
-          scheduledTime: scheduledTime.toLocaleTimeString('en-US', { 
+          scheduledTime: scheduledTime.toLocaleString('he-IL', { 
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false 
@@ -362,13 +374,25 @@ export default function AutomationPage() {
               // Add betting tips (2.5 hours before match)
               const bettingTime = new Date(matchTime.getTime() - (2.5 * 60 * 60 * 1000));
               if (bettingTime > today) {
+                // Try multiple ways to get team names
+                const homeTeam = fixture.home_team || 
+                               fixture.teams?.home?.name || 
+                               fixture.homeTeam || 
+                               fixture.home?.name ||
+                               'Home';
+                const awayTeam = fixture.away_team || 
+                               fixture.teams?.away?.name || 
+                               fixture.awayTeam || 
+                               fixture.away?.name ||
+                               'Away';
+                
                 todaysMatches.push({
                   time: bettingTime.toTimeString().slice(0, 5),
                   type: 'betting',
                   name: 'Betting Tips',
                   emoji: '🎯',
-                  description: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
-                  scheduledTime: bettingTime.toLocaleTimeString('en-US', { 
+                  description: `${homeTeam} vs ${awayTeam}`,
+                  scheduledTime: bettingTime.toLocaleString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit',
                     hour12: false 
@@ -382,13 +406,25 @@ export default function AutomationPage() {
               if (isSignificant) {
                 const analysisTime = new Date(matchTime.getTime() - (2 * 60 * 60 * 1000));
                 if (analysisTime > today) {
+                  // Try multiple ways to get team names
+                  const homeTeam = fixture.home_team || 
+                                 fixture.teams?.home?.name || 
+                                 fixture.homeTeam || 
+                                 fixture.home?.name ||
+                                 'Home';
+                  const awayTeam = fixture.away_team || 
+                                 fixture.teams?.away?.name || 
+                                 fixture.awayTeam || 
+                                 fixture.away?.name ||
+                                 'Away';
+                  
                   todaysMatches.push({
                     time: analysisTime.toTimeString().slice(0, 5),
                     type: 'analysis',
                     name: 'Match Analysis',
                     emoji: '📈',
-                    description: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
-                    scheduledTime: analysisTime.toLocaleTimeString('en-US', { 
+                    description: `${homeTeam} vs ${awayTeam}`,
+                    scheduledTime: analysisTime.toLocaleString('he-IL', { 
                       hour: '2-digit', 
                       minute: '2-digit',
                       hour12: false 
@@ -400,13 +436,25 @@ export default function AutomationPage() {
               }
               
               // Add live updates (at match time)
+              // Try multiple ways to get team names
+              const homeTeam = fixture.home_team || 
+                             fixture.teams?.home?.name || 
+                             fixture.homeTeam || 
+                             fixture.home?.name ||
+                             'Home';
+              const awayTeam = fixture.away_team || 
+                             fixture.teams?.away?.name || 
+                             fixture.awayTeam || 
+                             fixture.away?.name ||
+                             'Away';
+              
               todaysMatches.push({
                 time: matchTime.toTimeString().slice(0, 5),
                 type: 'live',
                 name: 'Live Updates',
                 emoji: '⚡',
-                description: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
-                scheduledTime: matchTime.toLocaleTimeString('en-US', { 
+                description: `${homeTeam} vs ${awayTeam}`,
+                scheduledTime: matchTime.toLocaleString('he-IL', { 
                   hour: '2-digit', 
                   minute: '2-digit',
                   hour12: false 
@@ -1053,20 +1101,22 @@ export default function AutomationPage() {
               <Clock className="w-4 h-4" />
               <span>Automation Time</span>
             </div>
-            <div className="text-lg font-mono font-bold text-blue-600">
-              {currentTime.toLocaleTimeString('en-US', { 
-                hour12: false, 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-              })}
-            </div>
-            <div className="text-xs text-gray-400">
-              {currentTime.toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric' 
-              })}
+            <div className="text-right">
+              <div className="text-lg font-mono font-bold text-blue-600">
+                {currentTime.toLocaleTimeString('he-IL', { 
+                  hour12: false, 
+                  hour: '2-digit', 
+                  minute: '2-digit', 
+                  second: '2-digit' 
+                })}
+              </div>
+              <div className="text-xs text-gray-400">
+                {currentTime.toLocaleDateString('he-IL', { 
+                  weekday: 'short', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </div>
             </div>
           </div>
           
@@ -1117,7 +1167,7 @@ export default function AutomationPage() {
               <Clock className="h-8 w-8 text-blue-600" />
               <div>
                 <div className="text-xl font-mono font-bold text-blue-800">
-                  {currentTime.toLocaleTimeString('en-US', { 
+                  {currentTime.toLocaleTimeString('he-IL', { 
                     hour: '2-digit', 
                     minute: '2-digit', 
                     second: '2-digit',
@@ -1125,7 +1175,7 @@ export default function AutomationPage() {
                   })}
                 </div>
                 <div className="text-xs text-gray-600">
-                  {currentTime.toLocaleDateString('en-US', { 
+                  {currentTime.toLocaleDateString('he-IL', { 
                     weekday: 'short', 
                     month: 'short', 
                     day: 'numeric' 
@@ -1215,10 +1265,15 @@ export default function AutomationPage() {
                 const today = new Date();
                 const todayDate = today.toISOString().split('T')[0];
                 
+                // Debug: log fixtures data
+                console.log('🔍 Debug fixtures data:', fixtures);
+                
                 // Find today's matches
                 const todaysMatches = fixtures.flatMap(day => 
                   day.date === todayDate ? day.fixtures.slice(0, 2) : []
                 );
+                
+                console.log('🔍 Debug today matches:', todaysMatches);
                 
                 // If no matches today, show next matches
                 if (todaysMatches.length === 0) {
@@ -1226,35 +1281,52 @@ export default function AutomationPage() {
                     day.date > todayDate ? day.fixtures.slice(0, 2) : []
                   ).slice(0, 2);
                   
+                  console.log('🔍 Debug next matches:', nextMatches);
+                  
                   if (nextMatches.length > 0) {
                     return (
                       <div className="space-y-2">
                         <div className="text-xs text-orange-600 font-medium">Next matches:</div>
-                        {nextMatches.map((fixture: any, index: number) => (
-                          <div key={index} className="text-xs">
-                            <div className="font-medium text-orange-900 truncate">
-                              {fixture.home_team || fixture.teams?.home?.name} vs {fixture.away_team || fixture.teams?.away?.name}
-                            </div>
-                            <div className="text-orange-600">
-                              {fixture.kickoff ? 
-                                new Date(fixture.kickoff).toLocaleDateString('en-US', { 
-                                  weekday: 'short',
-                                  hour: '2-digit', 
-                                  minute: '2-digit',
-                                  hour12: false 
-                                }) : 
-                                fixture.fixture?.date ? 
-                                  new Date(fixture.fixture.date).toLocaleDateString('en-US', { 
+                        {nextMatches.map((fixture: any, index: number) => {
+                          console.log('🔍 Debug fixture:', fixture);
+                          
+                          // Try multiple ways to get team names
+                          const homeTeam = fixture.home_team || 
+                                         fixture.teams?.home?.name || 
+                                         fixture.homeTeam || 
+                                         fixture.home?.name ||
+                                         'Home';
+                          const awayTeam = fixture.away_team || 
+                                         fixture.teams?.away?.name || 
+                                         fixture.awayTeam || 
+                                         fixture.away?.name ||
+                                         'Away';
+                          
+                          // Try multiple ways to get match time
+                          const matchTime = fixture.kickoff || 
+                                          fixture.fixture?.date || 
+                                          fixture.date ||
+                                          fixture.datetime;
+                          
+                          return (
+                            <div key={index} className="text-xs">
+                              <div className="font-medium text-orange-900 truncate">
+                                {homeTeam} vs {awayTeam}
+                              </div>
+                              <div className="text-orange-600">
+                                {matchTime ? 
+                                  new Date(matchTime).toLocaleString('he-IL', { 
                                     weekday: 'short',
                                     hour: '2-digit', 
                                     minute: '2-digit',
                                     hour12: false 
                                   }) : 
                                   'TBD'
-                              }
+                                }
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     );
                   }
@@ -1262,29 +1334,45 @@ export default function AutomationPage() {
                 }
                 
                 // Show today's matches
-                return todaysMatches.map((fixture: any, index: number) => (
-                  <div key={index} className="text-xs">
-                    <div className="font-medium text-orange-900 truncate">
-                      {fixture.home_team || fixture.teams?.home?.name} vs {fixture.away_team || fixture.teams?.away?.name}
-                    </div>
-                    <div className="text-orange-600">
-                      {fixture.kickoff ? 
-                        new Date(fixture.kickoff).toLocaleTimeString('en-US', { 
-                          hour: '2-digit', 
-                          minute: '2-digit',
-                          hour12: false 
-                        }) : 
-                        fixture.fixture?.date ? 
-                          new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
+                return todaysMatches.map((fixture: any, index: number) => {
+                  console.log('🔍 Debug today fixture:', fixture);
+                  
+                  // Try multiple ways to get team names
+                  const homeTeam = fixture.home_team || 
+                                 fixture.teams?.home?.name || 
+                                 fixture.homeTeam || 
+                                 fixture.home?.name ||
+                                 'Home';
+                  const awayTeam = fixture.away_team || 
+                                 fixture.teams?.away?.name || 
+                                 fixture.awayTeam || 
+                                 fixture.away?.name ||
+                                 'Away';
+                  
+                  // Try multiple ways to get match time
+                  const matchTime = fixture.kickoff || 
+                                  fixture.fixture?.date || 
+                                  fixture.date ||
+                                  fixture.datetime;
+                  
+                  return (
+                    <div key={index} className="text-xs">
+                      <div className="font-medium text-orange-900 truncate">
+                        {homeTeam} vs {awayTeam}
+                      </div>
+                      <div className="text-orange-600">
+                        {matchTime ? 
+                          new Date(matchTime).toLocaleString('he-IL', { 
                             hour: '2-digit', 
                             minute: '2-digit',
                             hour12: false 
                           }) : 
                           'TBD'
-                      }
+                        }
+                      </div>
                     </div>
-                  </div>
-                ));
+                  );
+                });
               })()}
             </div>
           </CardContent>
