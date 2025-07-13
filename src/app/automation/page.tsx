@@ -68,6 +68,7 @@ export default function AutomationPage() {
     time: string;
     timeUntil: string;
     scheduledTime: string;
+    match?: string;
   } | null>(null);
 
   // Smart Content Configuration
@@ -179,7 +180,6 @@ export default function AutomationPage() {
   // Calculate next scheduled content
   const calculateNextScheduledContent = () => {
     const now = new Date();
-    const currentTimeString = now.toTimeString().slice(0, 5); // HH:MM format
     
     // Define all scheduled content times
     const scheduledTimes = [
@@ -191,31 +191,124 @@ export default function AutomationPage() {
       { time: '21:00', type: 'news', name: 'Night News', emoji: '📰' }
     ];
 
-    // Find next scheduled time
-    let nextScheduled = null;
-    let minTimeDiff = Infinity;
+    // Get match-based content opportunities
+    const matchOpportunities: any[] = [];
+    
+    if (fixtures && fixtures.length > 0) {
+      fixtures.forEach(day => {
+        day.fixtures?.forEach((fixture: any) => {
+          const matchTime = fixture.kickoff ? new Date(fixture.kickoff) : 
+                          fixture.fixture?.date ? new Date(fixture.fixture.date) : null;
+          
+          if (matchTime && matchTime > now) {
+            const timeDiff = matchTime.getTime() - now.getTime();
+            const hoursUntilMatch = timeDiff / (1000 * 60 * 60);
+            
+            // Check if this is a significant match (relevance score > 60)
+            const relevanceScore = fixture.relevance_score?.total || 0;
+            const isSignificant = relevanceScore > 60;
+            
+            // Add betting tips opportunity (2-3 hours before)
+            if (hoursUntilMatch <= 3 && hoursUntilMatch > 1) {
+              const bettingTime = new Date(matchTime.getTime() - (2.5 * 60 * 60 * 1000));
+              if (bettingTime > now) {
+                matchOpportunities.push({
+                  time: bettingTime.toTimeString().slice(0, 5),
+                  type: 'betting',
+                  name: `Betting Tips`,
+                  emoji: '🎯',
+                  match: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
+                  scheduledTime: bettingTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                  }),
+                  actualTime: bettingTime,
+                  relevanceScore
+                });
+              }
+            }
+            
+            // Add analysis opportunity for high-importance matches
+            if (isSignificant && hoursUntilMatch <= 3 && hoursUntilMatch > 1) {
+              const analysisTime = new Date(matchTime.getTime() - (2 * 60 * 60 * 1000));
+              if (analysisTime > now) {
+                matchOpportunities.push({
+                  time: analysisTime.toTimeString().slice(0, 5),
+                  type: 'analysis',
+                  name: `Match Analysis`,
+                  emoji: '📈',
+                  match: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
+                  scheduledTime: analysisTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                  }),
+                  actualTime: analysisTime,
+                  relevanceScore
+                });
+              }
+            }
+            
+            // Add live update opportunity (at match time)
+            if (hoursUntilMatch <= 0.5 && hoursUntilMatch > -2) {
+              matchOpportunities.push({
+                time: matchTime.toTimeString().slice(0, 5),
+                type: 'live',
+                name: `Live Updates`,
+                emoji: '⚡',
+                match: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
+                scheduledTime: matchTime.toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                }),
+                actualTime: matchTime,
+                relevanceScore
+              });
+            }
+          }
+        });
+      });
+    }
 
-    for (const scheduled of scheduledTimes) {
-      const [hours, minutes] = scheduled.time.split(':').map(Number);
-      const scheduledTime = new Date(now);
-      scheduledTime.setHours(hours, minutes, 0, 0);
-      
-      // If time has passed today, schedule for tomorrow
-      if (scheduledTime < now) {
-        scheduledTime.setDate(scheduledTime.getDate() + 1);
-      }
-      
-      const timeDiff = scheduledTime.getTime() - now.getTime();
-      
-      if (timeDiff < minTimeDiff) {
-        minTimeDiff = timeDiff;
-        nextScheduled = {
+    // Combine scheduled content with match opportunities
+    const allOpportunities = [
+      ...scheduledTimes.map(scheduled => {
+        const [hours, minutes] = scheduled.time.split(':').map(Number);
+        const scheduledTime = new Date(now);
+        scheduledTime.setHours(hours, minutes, 0, 0);
+        
+        // If time has passed today, schedule for tomorrow
+        if (scheduledTime < now) {
+          scheduledTime.setDate(scheduledTime.getDate() + 1);
+        }
+        
+        return {
           ...scheduled,
           scheduledTime: scheduledTime.toLocaleTimeString('en-US', { 
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false 
           }),
+          actualTime: scheduledTime,
+          relevanceScore: 0
+        };
+      }),
+      ...matchOpportunities
+    ];
+
+    // Find the next opportunity
+    let nextScheduled = null;
+    let minTimeDiff = Infinity;
+
+    for (const opportunity of allOpportunities) {
+      const timeDiff = opportunity.actualTime.getTime() - now.getTime();
+      
+      if (timeDiff > 0 && timeDiff < minTimeDiff) {
+        minTimeDiff = timeDiff;
+        nextScheduled = {
+          ...opportunity,
           timeUntil: formatTimeUntil(timeDiff)
         };
       }
@@ -250,26 +343,129 @@ export default function AutomationPage() {
       { time: '21:00', type: 'news', name: 'Night News', emoji: '📰', description: 'Night news update' }
     ];
 
-    return schedule.map(item => {
-      const [hours, minutes] = item.time.split(':').map(Number);
-      const scheduledTime = new Date(today);
-      scheduledTime.setHours(hours, minutes, 0, 0);
-      
-      const isPast = scheduledTime < today;
-      const isNext = nextScheduledContent?.time === item.time;
-      
-      return {
-        ...item,
-        isPast,
-        isNext,
-        scheduledTime: scheduledTime.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          hour12: false 
-        })
-      };
-    });
+    // Add today's matches to schedule
+    const todaysMatches: any[] = [];
+    if (fixtures && fixtures.length > 0) {
+      fixtures.forEach(day => {
+        day.fixtures?.forEach((fixture: any) => {
+          const matchTime = fixture.kickoff ? new Date(fixture.kickoff) : 
+                          fixture.fixture?.date ? new Date(fixture.fixture.date) : null;
+          
+          if (matchTime) {
+            const matchDate = matchTime.toDateString();
+            const todayDate = today.toDateString();
+            
+            if (matchDate === todayDate) {
+              const relevanceScore = fixture.relevance_score?.total || 0;
+              const isSignificant = relevanceScore > 60;
+              
+              // Add betting tips (2.5 hours before match)
+              const bettingTime = new Date(matchTime.getTime() - (2.5 * 60 * 60 * 1000));
+              if (bettingTime > today) {
+                todaysMatches.push({
+                  time: bettingTime.toTimeString().slice(0, 5),
+                  type: 'betting',
+                  name: 'Betting Tips',
+                  emoji: '🎯',
+                  description: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
+                  scheduledTime: bettingTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                  }),
+                  actualTime: bettingTime,
+                  relevanceScore
+                });
+              }
+              
+              // Add analysis for significant matches (2 hours before)
+              if (isSignificant) {
+                const analysisTime = new Date(matchTime.getTime() - (2 * 60 * 60 * 1000));
+                if (analysisTime > today) {
+                  todaysMatches.push({
+                    time: analysisTime.toTimeString().slice(0, 5),
+                    type: 'analysis',
+                    name: 'Match Analysis',
+                    emoji: '📈',
+                    description: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
+                    scheduledTime: analysisTime.toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      hour12: false 
+                    }),
+                    actualTime: analysisTime,
+                    relevanceScore
+                  });
+                }
+              }
+              
+              // Add live updates (at match time)
+              todaysMatches.push({
+                time: matchTime.toTimeString().slice(0, 5),
+                type: 'live',
+                name: 'Live Updates',
+                emoji: '⚡',
+                description: `${fixture.home_team || fixture.teams?.home?.name} vs ${fixture.away_team || fixture.teams?.away?.name}`,
+                scheduledTime: matchTime.toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                }),
+                actualTime: matchTime,
+                relevanceScore
+              });
+            }
+          }
+        });
+      });
+    }
+
+    // Combine and sort all schedule items
+    const allScheduleItems = [
+      ...schedule.map(item => {
+        const [hours, minutes] = item.time.split(':').map(Number);
+        const scheduledTime = new Date(today);
+        scheduledTime.setHours(hours, minutes, 0, 0);
+        
+        const isPast = scheduledTime < today;
+        const isNext = nextScheduledContent?.time === item.time;
+        
+        return {
+          ...item,
+          isPast,
+          isNext,
+          scheduledTime: scheduledTime.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          }),
+          actualTime: scheduledTime,
+          relevanceScore: 0
+        };
+      }),
+      ...todaysMatches.map(match => {
+        const isPast = match.actualTime < today;
+        const isNext = nextScheduledContent?.type === match.type && 
+                      nextScheduledContent?.scheduledTime === match.scheduledTime;
+        
+        return {
+          ...match,
+          isPast,
+          isNext
+        };
+      })
+    ];
+
+    // Sort by time
+    return allScheduleItems.sort((a, b) => a.actualTime.getTime() - b.actualTime.getTime());
   };
+
+  // Update schedule when fixtures change
+  useEffect(() => {
+    if (fixtures.length > 0) {
+      calculateNextScheduledContent();
+    }
+  }, [fixtures]);
 
   // Auto-refresh fixtures every 2 minutes if there are live matches
   useEffect(() => {
@@ -288,9 +484,7 @@ export default function AutomationPage() {
       }, 120000); // 2 minutes
     }
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [fixtures]);
 
   const formatTime = (seconds: number) => {
@@ -953,6 +1147,11 @@ export default function AutomationPage() {
                     <div>
                       <div className="font-semibold text-green-800 text-sm">{nextScheduledContent.name}</div>
                       <div className="text-xs text-gray-600">at {nextScheduledContent.scheduledTime}</div>
+                      {nextScheduledContent.match && (
+                        <div className="text-xs text-green-700 font-medium truncate max-w-24">
+                          {nextScheduledContent.match}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -968,48 +1167,125 @@ export default function AutomationPage() {
         </Card>
 
         {/* Daily Progress */}
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Calendar className="h-6 w-6 text-orange-600" />
+                <Calendar className="h-5 w-5 text-blue-600" />
                 <div>
-                  <div className="font-semibold text-orange-800 text-sm">Today's Progress</div>
+                  <div className="font-semibold text-blue-800 text-sm">Daily Progress</div>
                   <div className="text-xs text-gray-600">
-                    {getTodaysSchedule().filter(item => item.isPast).length} / {getTodaysSchedule().length} completed
+                    {(() => {
+                      const schedule = getTodaysSchedule();
+                      const completedItems = schedule.filter(item => item.isPast).length;
+                      const totalItems = schedule.length;
+                      const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+                      
+                      return `${completedItems}/${totalItems} items completed`;
+                    })()}
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-orange-600">
-                  {Math.round((getTodaysSchedule().filter(item => item.isPast).length / getTodaysSchedule().length) * 100)}%
+                <div className="text-xs text-gray-500">Progress:</div>
+                <div className="text-lg font-mono font-bold text-blue-600">
+                  {(() => {
+                    const schedule = getTodaysSchedule();
+                    const completedItems = schedule.filter(item => item.isPast).length;
+                    const totalItems = schedule.length;
+                    const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+                    
+                    return `${percentage}%`;
+                  })()}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Schedule View */}
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        {/* Today's Matches Widget */}
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
           <CardContent className="p-4">
-            <div className="space-y-1">
-              <div className="font-semibold text-purple-800 text-sm mb-2 flex items-center">
-                <Zap className="h-4 w-4 mr-1" />
-                Quick Schedule
-              </div>
-              {getTodaysSchedule().slice(0, 3).map((item, index) => (
-                <div key={index} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-1">
-                    <span className={`${item.isPast ? 'opacity-50' : ''}`}>{item.emoji}</span>
-                    <span className={`${item.isPast ? 'text-gray-500' : item.isNext ? 'text-purple-700 font-medium' : 'text-gray-700'}`}>
-                      {item.name}
-                    </span>
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-lg">⚽</span>
+              <div className="font-semibold text-orange-800 text-sm">Today's Matches</div>
+            </div>
+            <div className="space-y-2 max-h-16 overflow-y-auto">
+              {(() => {
+                const today = new Date();
+                const todayDate = today.toISOString().split('T')[0];
+                
+                // Find today's matches
+                const todaysMatches = fixtures.flatMap(day => 
+                  day.date === todayDate ? day.fixtures.slice(0, 2) : []
+                );
+                
+                // If no matches today, show next matches
+                if (todaysMatches.length === 0) {
+                  const nextMatches = fixtures.flatMap(day => 
+                    day.date > todayDate ? day.fixtures.slice(0, 2) : []
+                  ).slice(0, 2);
+                  
+                  if (nextMatches.length > 0) {
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-xs text-orange-600 font-medium">Next matches:</div>
+                        {nextMatches.map((fixture: any, index: number) => (
+                          <div key={index} className="text-xs">
+                            <div className="font-medium text-orange-900 truncate">
+                              {fixture.home_team || fixture.teams?.home?.name} vs {fixture.away_team || fixture.teams?.away?.name}
+                            </div>
+                            <div className="text-orange-600">
+                              {fixture.kickoff ? 
+                                new Date(fixture.kickoff).toLocaleDateString('en-US', { 
+                                  weekday: 'short',
+                                  hour: '2-digit', 
+                                  minute: '2-digit',
+                                  hour12: false 
+                                }) : 
+                                fixture.fixture?.date ? 
+                                  new Date(fixture.fixture.date).toLocaleDateString('en-US', { 
+                                    weekday: 'short',
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    hour12: false 
+                                  }) : 
+                                  'TBD'
+                              }
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return <div className="text-xs text-gray-500">No matches scheduled</div>;
+                }
+                
+                // Show today's matches
+                return todaysMatches.map((fixture: any, index: number) => (
+                  <div key={index} className="text-xs">
+                    <div className="font-medium text-orange-900 truncate">
+                      {fixture.home_team || fixture.teams?.home?.name} vs {fixture.away_team || fixture.teams?.away?.name}
+                    </div>
+                    <div className="text-orange-600">
+                      {fixture.kickoff ? 
+                        new Date(fixture.kickoff).toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          hour12: false 
+                        }) : 
+                        fixture.fixture?.date ? 
+                          new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false 
+                          }) : 
+                          'TBD'
+                      }
+                    </div>
                   </div>
-                  <span className={`font-mono ${item.isNext ? 'text-purple-600 font-bold' : item.isPast ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {item.time}
-                  </span>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </CardContent>
         </Card>
