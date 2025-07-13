@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Settings, Clock, Zap, Calendar, Users, Globe, ToggleLeft, ToggleRight, Info } from 'lucide-react';
+import { Play, Settings, Clock, Zap, Calendar, Users, Globe, ToggleLeft, ToggleRight, Info, Timer, Loader2, Square, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AutomationRule {
@@ -70,6 +70,8 @@ export default function AutomationPage() {
     scheduledTime: string;
     match?: string;
   } | null>(null);
+  const [schedulerStatus, setSchedulerStatus] = useState<any>(null);
+  const [isSchedulerLoading, setIsSchedulerLoading] = useState(false);
 
   // Smart Content Configuration
   const SMART_CONTENT_CONFIG = {
@@ -153,6 +155,14 @@ export default function AutomationPage() {
     fetchSystemStatus();
     fetchFixtures();
     calculateNextScheduledContent();
+    fetchSchedulerStatus();
+    
+    // Auto-start scheduler if automation is enabled
+    setTimeout(() => {
+      if (isFullAutomationEnabled) {
+        controlScheduler('start');
+      }
+    }, 2000); // Wait 2 seconds for other initializations
   }, []);
 
   // Timer effect
@@ -174,6 +184,14 @@ export default function AutomationPage() {
       setCurrentTime(new Date());
       calculateNextScheduledContent();
     }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Background Scheduler status updater
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchSchedulerStatus();
+    }, 30000); // Refresh every 30 seconds
     return () => clearInterval(timer);
   }, []);
 
@@ -842,6 +860,50 @@ export default function AutomationPage() {
     }
   };
 
+  // Background Scheduler functions
+  const fetchSchedulerStatus = async () => {
+    try {
+      setIsSchedulerLoading(true);
+      const response = await fetch('/api/automation/background-scheduler');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSchedulerStatus(data.scheduler);
+      }
+    } catch (error) {
+      console.error('Error fetching scheduler status:', error);
+    } finally {
+      setIsSchedulerLoading(false);
+    }
+  };
+
+  const controlScheduler = async (action: 'start' | 'stop' | 'restart') => {
+    try {
+      setIsSchedulerLoading(true);
+      const response = await fetch('/api/automation/background-scheduler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showNotification(data.message, 'success');
+        await fetchSchedulerStatus(); // Refresh status
+      } else {
+        showNotification(data.error || 'שגיאה בשליטה על הScheduler', 'error');
+      }
+    } catch (error) {
+      console.error('Error controlling scheduler:', error);
+      showNotification('שגיאה בשליטה על הScheduler', 'error');
+    } finally {
+      setIsSchedulerLoading(false);
+    }
+  };
+
   // Simple relevance scoring function
   const calculateMatchRelevanceScore = (match: any): number => {
     let score = 30; // Base score for all matches
@@ -1190,6 +1252,44 @@ export default function AutomationPage() {
         </div>
       )}
       
+      {/* 🤖 Compact Background Scheduler Control */}
+      <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Timer className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium">Auto Scheduler</span>
+            <div className={`w-2 h-2 rounded-full ${
+              schedulerStatus?.isRunning ? 'bg-green-500' : 'bg-red-500'
+            }`} />
+            <span className="text-xs text-gray-600">
+              {schedulerStatus?.isRunning ? 'Running' : 'Stopped'}
+            </span>
+          </div>
+          
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => controlScheduler('start')}
+              disabled={isSchedulerLoading || schedulerStatus?.isRunning}
+              className="h-7 px-2 text-green-600 hover:text-green-700"
+            >
+              <Play className="w-3 h-3" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => controlScheduler('stop')}
+              disabled={isSchedulerLoading || !schedulerStatus?.isRunning}
+              className="h-7 px-2 text-red-600 hover:text-red-700"
+            >
+              <Square className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* 🕐 Compact Schedule Monitor */}
       <div className="mb-6 grid grid-cols-1 xl:grid-cols-4 gap-4">
         {/* Current Time Widget */}
