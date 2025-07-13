@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { BettingTipsGenerator } from '@/lib/content/betting-tips-generator'
 import { newsContentGenerator } from '@/lib/content/news-content-generator'
 import { matchAnalysisGenerator } from '@/lib/content/match-analysis-generator'
+import { TelegramSender } from '@/lib/content/telegram-sender'
 // Using specialized content generators instead
 
 export interface ExecutionResult {
@@ -14,9 +15,11 @@ export interface ExecutionResult {
 
 export class RuleExecutor {
   private bettingGenerator: BettingTipsGenerator
+  private telegramSender: TelegramSender
 
   constructor() {
     this.bettingGenerator = new BettingTipsGenerator()
+    this.telegramSender = new TelegramSender()
   }
 
   async executeRule(ruleId: string): Promise<ExecutionResult> {
@@ -48,8 +51,8 @@ export class RuleExecutor {
         // Create pending approval
         await this.createPendingApproval(rule, content, channelDetails)
       } else {
-        // Auto send (TODO: implement)
-        console.log('📤 Would auto-send content')
+        // Auto send - שליחה אמיתית לטלגרם
+        await this.sendToTelegram(content, channelDetails)
       }
 
       // Log success
@@ -128,6 +131,13 @@ export class RuleExecutor {
       }
 
       console.log(`✅ Found channel: ${channelData.name} (Language: ${channelData.language})`)
+      console.log(`📊 Channel details:`, {
+        id: channelData.id,
+        name: channelData.name,
+        bot_id: channelData.bot_id,
+        telegram_channel_id: channelData.telegram_channel_id,
+        language: channelData.language
+      })
       return channelData
 
     } catch (error) {
@@ -138,6 +148,78 @@ export class RuleExecutor {
         telegram_channel_id: rule.channels?.[0],
         error: true 
       }
+    }
+  }
+
+  private async getBotDetails(botId: string): Promise<any> {
+    try {
+      const { data: botData, error } = await supabase
+        .from('bots')
+        .select('id, name, telegram_token_encrypted')
+        .eq('id', botId)
+        .single()
+
+      if (error || !botData) {
+        console.error(`❌ Bot ${botId} not found in database. Error:`, error)
+        console.error(`❌ Please check that the bot exists in the 'bots' table`)
+        return null
+      }
+
+      console.log(`✅ Found bot: ${botData.name}`)
+      return botData
+    } catch (error) {
+      console.error('❌ Error getting bot details:', error)
+      return null
+    }
+  }
+
+  private async sendToTelegram(content: string, channelDetails: any): Promise<void> {
+    try {
+      if (!channelDetails.bot_id) {
+        console.error('❌ No bot_id found in channel details')
+        console.log('📤 Skipping Telegram send - no bot configured')
+        return
+      }
+
+      // קבלת פרטי הבוט
+      const botDetails = await this.getBotDetails(channelDetails.bot_id)
+      if (!botDetails) {
+        console.error('❌ Failed to get bot details - bot may not exist in database')
+        console.log('📤 Skipping Telegram send - bot not configured properly')
+        return
+      }
+
+      console.log(`📤 Sending to channel: ${channelDetails.telegram_channel_id}`)
+      
+      // פענוח הטוקן מ-Base64 אם נדרש
+      let botToken = botDetails.telegram_token_encrypted
+      if (!botToken.includes(':') || botToken.length < 20) {
+        try {
+          const decoded = Buffer.from(botToken, 'base64').toString('utf-8')
+          if (decoded.includes(':') && decoded.length > 20) {
+            botToken = decoded
+            console.log(`🔓 Decoded base64 token for bot ${botDetails.name}`)
+          }
+        } catch (decodeError) {
+          console.log(`⚠️ Failed to decode token for bot ${botDetails.name}, using as-is`)
+        }
+      }
+      
+      const result = await this.telegramSender.sendMessage({
+        botToken: botToken,
+        channelId: channelDetails.telegram_channel_id,
+        content: content,
+        parseMode: 'HTML'
+      })
+
+      if (result.success) {
+        console.log(`✅ Message sent successfully! Message ID: ${result.messageId}`)
+      } else {
+        console.error(`❌ Failed to send message: ${result.error}`)
+      }
+
+    } catch (error) {
+      console.error('❌ Error sending to Telegram:', error)
     }
   }
 
