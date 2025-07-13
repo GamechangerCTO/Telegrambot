@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// Force dynamic rendering for all HTTP methods
+export const dynamic = 'force-dynamic';
+
 // PUT - Update content types configuration
 export async function PUT(request: NextRequest) {
   try {
