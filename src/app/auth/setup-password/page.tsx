@@ -5,12 +5,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-export default function SetupPasswordPage() {
+// Separate component for search params handling
+function SetupPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -124,108 +125,129 @@ export default function SetupPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-2xl">🔐</span>
+    <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span className="text-white text-2xl">🔐</span>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Set Up Your Password
+        </h1>
+        <p className="text-gray-600">
+          Welcome! Please create a secure password for your account.
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Password Field */}
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            New Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your new password"
+            required
+          />
+          <div className="mt-2 text-sm text-gray-500">
+            <p>Password must contain:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>At least 8 characters</li>
+              <li>One uppercase letter</li>
+              <li>One lowercase letter</li>
+              <li>One number</li>
+            </ul>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Set Up Your Password
-          </h1>
-          <p className="text-gray-600">
-            Welcome! Please create a secure password for your account.
-          </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              New Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your new password"
-              required
-            />
-            <div className="mt-2 text-sm text-gray-500">
-              <p>Password must contain:</p>
-              <ul className="list-disc list-inside mt-1 space-y-1">
-                <li>At least 8 characters</li>
-                <li>One uppercase letter</li>
-                <li>One lowercase letter</li>
-                <li>One number</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Confirm Password Field */}
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Confirm your new password"
-              required
-            />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Success Message */}
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-              {success}
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isLoading ? 'Updating Password...' : 'Update Password'}
-          </button>
-        </form>
-
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Need help?{' '}
-            <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
-              Back to Login
-            </Link>
-          </p>
+        {/* Confirm Password Field */}
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            Confirm Password
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Confirm your new password"
+            required
+          />
         </div>
 
-        {/* Security Note */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">🔒 Security Tips</h3>
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>• Use a unique password for this account</p>
-            <p>• Don't share your password with anyone</p>
-            <p>• Consider using a password manager</p>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            {error}
           </div>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+            {success}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isLoading ? 'Updating Password...' : 'Update Password'}
+        </button>
+      </form>
+
+      {/* Footer */}
+      <div className="mt-8 text-center">
+        <p className="text-sm text-gray-600">
+          Need help?{' '}
+          <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
+            Back to Login
+          </Link>
+        </p>
+      </div>
+
+      {/* Security Note */}
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="text-sm font-medium text-gray-900 mb-2">🔒 Security Tips</h3>
+        <div className="text-sm text-gray-600 space-y-1">
+          <p>• Use a unique password for this account</p>
+          <p>• Don't share your password with anyone</p>
+          <p>• Consider using a password manager</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Loading component for Suspense fallback
+function LoadingFallback() {
+  return (
+    <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading password setup...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main page component
+export default function SetupPasswordPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <Suspense fallback={<LoadingFallback />}>
+        <SetupPasswordForm />
+      </Suspense>
     </div>
   );
 } 
