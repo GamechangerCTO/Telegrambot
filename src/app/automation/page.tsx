@@ -61,6 +61,14 @@ export default function AutomationPage() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [loadingFixtures, setLoadingFixtures] = useState(false);
+  const [nextScheduledContent, setNextScheduledContent] = useState<{
+    type: string;
+    name: string;
+    emoji: string;
+    time: string;
+    timeUntil: string;
+    scheduledTime: string;
+  } | null>(null);
 
   // Smart Content Configuration
   const SMART_CONTENT_CONFIG = {
@@ -143,6 +151,7 @@ export default function AutomationPage() {
     checkFullAutomationStatus();
     fetchSystemStatus();
     fetchFixtures();
+    calculateNextScheduledContent();
   }, []);
 
   // Timer effect
@@ -162,9 +171,105 @@ export default function AutomationPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
+      calculateNextScheduledContent();
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Calculate next scheduled content
+  const calculateNextScheduledContent = () => {
+    const now = new Date();
+    const currentTimeString = now.toTimeString().slice(0, 5); // HH:MM format
+    
+    // Define all scheduled content times
+    const scheduledTimes = [
+      { time: '00:30', type: 'daily_summary', name: 'Daily Summary', emoji: '📋' },
+      { time: '09:00', type: 'news', name: 'Football News', emoji: '📰' },
+      { time: '12:00', type: 'news', name: 'Football News', emoji: '📰' },
+      { time: '15:00', type: 'news', name: 'Football News', emoji: '📰' },
+      { time: '18:00', type: 'news', name: 'Football News', emoji: '📰' },
+      { time: '21:00', type: 'news', name: 'Football News', emoji: '📰' }
+    ];
+
+    // Find next scheduled time
+    let nextScheduled = null;
+    let minTimeDiff = Infinity;
+
+    for (const scheduled of scheduledTimes) {
+      const [hours, minutes] = scheduled.time.split(':').map(Number);
+      const scheduledTime = new Date(now);
+      scheduledTime.setHours(hours, minutes, 0, 0);
+      
+      // If time has passed today, schedule for tomorrow
+      if (scheduledTime < now) {
+        scheduledTime.setDate(scheduledTime.getDate() + 1);
+      }
+      
+      const timeDiff = scheduledTime.getTime() - now.getTime();
+      
+      if (timeDiff < minTimeDiff) {
+        minTimeDiff = timeDiff;
+        nextScheduled = {
+          ...scheduled,
+          scheduledTime: scheduledTime.toLocaleTimeString('he-IL', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          }),
+          timeUntil: formatTimeUntil(timeDiff)
+        };
+      }
+    }
+
+    setNextScheduledContent(nextScheduled);
+  };
+
+  // Format time until next scheduled content
+  const formatTimeUntil = (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+  };
+
+  // Get today's schedule
+  const getTodaysSchedule = () => {
+    const today = new Date();
+    const schedule = [
+      { time: '00:30', type: 'daily_summary', name: 'Daily Summary', emoji: '📋', description: 'End of day summary (after all matches)' },
+      { time: '09:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Morning news update' },
+      { time: '12:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Midday news update' },
+      { time: '15:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Afternoon news update' },
+      { time: '18:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Evening news update' },
+      { time: '21:00', type: 'news', name: 'Football News', emoji: '📰', description: 'Night news update' }
+    ];
+
+    return schedule.map(item => {
+      const [hours, minutes] = item.time.split(':').map(Number);
+      const scheduledTime = new Date(today);
+      scheduledTime.setHours(hours, minutes, 0, 0);
+      
+      const isPast = scheduledTime < today;
+      const isNext = nextScheduledContent?.time === item.time;
+      
+      return {
+        ...item,
+        isPast,
+        isNext,
+        scheduledTime: scheduledTime.toLocaleTimeString('he-IL', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false 
+        })
+      };
+    });
+  };
 
   // Auto-refresh fixtures every 2 minutes if there are live matches
   useEffect(() => {
@@ -808,6 +913,122 @@ export default function AutomationPage() {
           </div>
         </div>
       )}
+      
+      {/* 🕐 Real-Time Schedule Dashboard */}
+      <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Next Scheduled Content */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-blue-600" />
+              הזמן הנוכחי ושליחה הבאה
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="text-center">
+                <div className="text-3xl font-mono font-bold text-blue-800">
+                  {currentTime.toLocaleTimeString('he-IL', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    hour12: false 
+                  })}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {currentTime.toLocaleDateString('he-IL', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </div>
+              </div>
+              
+              {nextScheduledContent && (
+                <div className="bg-white/70 rounded-lg p-3 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl">{nextScheduledContent.emoji}</span>
+                      <div>
+                        <div className="font-semibold text-blue-900">{nextScheduledContent.name}</div>
+                        <div className="text-sm text-gray-600">בזמן: {nextScheduledContent.scheduledTime}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">זמן עד השליחה:</div>
+                      <div className="text-xl font-mono font-bold text-green-600">
+                        {nextScheduledContent.timeUntil}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Today's Schedule */}
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <Calendar className="mr-2 h-5 w-5 text-green-600" />
+              לוח זמנים יומי
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {getTodaysSchedule().map((item, index) => (
+                <div 
+                  key={index} 
+                  className={`flex items-center justify-between p-2 rounded-lg border ${
+                    item.isNext 
+                      ? 'bg-yellow-100 border-yellow-300 ring-2 ring-yellow-200' 
+                      : item.isPast 
+                        ? 'bg-gray-100 border-gray-200 opacity-60' 
+                        : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-xl ${item.isPast ? 'opacity-50' : ''}`}>
+                      {item.emoji}
+                    </span>
+                    <div>
+                      <div className={`font-medium ${item.isPast ? 'text-gray-500' : 'text-gray-900'}`}>
+                        {item.name}
+                      </div>
+                      <div className={`text-xs ${item.isPast ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {item.description}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`font-mono font-bold ${
+                      item.isNext 
+                        ? 'text-orange-600' 
+                        : item.isPast 
+                          ? 'text-gray-400' 
+                          : 'text-blue-600'
+                    }`}>
+                      {item.time}
+                    </div>
+                    {item.isNext && (
+                      <div className="text-xs text-orange-500 font-medium">
+                        הבא בתור
+                      </div>
+                    )}
+                    {item.isPast && (
+                      <div className="text-xs text-gray-400">
+                        הושלם
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       
       {/* System Status Card */}
       <div className="bg-white rounded-lg shadow p-6 border border-gray-200">

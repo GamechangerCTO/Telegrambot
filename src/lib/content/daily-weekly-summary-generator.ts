@@ -255,17 +255,21 @@ export class DailyWeeklySummaryGenerator {
       return null;
     }
 
-    // Step 2: Analyze weekly results by league
-    const weeklyResults = await this.analyzeWeeklyResults(weeklyMatches);
+    // Step 2: Find top 10 interesting matches from the week
+    const topWeeklyMatches = await this.findInterestingMatches(weeklyMatches, 10);
+    const topWeeklyMatchesRaw = topWeeklyMatches.map(m => m.match);
+
+    // Step 3: Analyze weekly results by league
+    const weeklyResults = await this.analyzeWeeklyResults(topWeeklyMatchesRaw);
     
-    // Step 3: Calculate weekly statistics and trends
+    // Step 4: Calculate weekly statistics and trends
     const weeklyStats = await this.calculateWeeklyStatistics(weeklyMatches);
     const trends = await this.analyzeWeeklyTrends(weeklyMatches);
     
-    // Step 4: Generate next week preview
+    // Step 5: Generate next week preview
     const nextWeekPreview = await this.generateNextWeekPreview(weekEnd);
 
-    // Step 5: Build weekly summary data
+    // Step 6: Build weekly summary data
     const summaryData: WeeklySummaryData = {
       weekStart,
       weekEnd,
@@ -275,7 +279,7 @@ export class DailyWeeklySummaryGenerator {
       nextWeekPreview
     };
 
-    // Step 6: Generate content and visuals
+    // Step 7: Generate content and visuals
     const { content, aiEditedContent } = await this.generateWeeklyContent(summaryData, request);
     const imageUrl = await this.generateWeeklySummaryImage(summaryData);
     const visualElements = await this.generateWeeklyVisualElements(summaryData);
@@ -301,13 +305,13 @@ export class DailyWeeklySummaryGenerator {
   /**
    * 🔍 Step 2: Find and score interesting matches from today
    */
-  private async findInterestingMatches(matches: MatchResult[]): Promise<DailyInterestingMatch[]> {
-    console.log(`🔍 Analyzing ${matches.length} matches for interest level`);
+  private async findInterestingMatches(matches: MatchResult[], maxMatches: number = 4): Promise<DailyInterestingMatch[]> {
+    console.log(`🔍 Analyzing ${matches.length} matches for interest level (top ${maxMatches})`);
 
     const scoredMatches = matches.map(match => {
       const interestScore = this.calculateMatchInterestScore(match);
       const interestFactors = this.getMatchInterestFactors(match);
-      const highlightReason = this.getMatchHighlightReason(match, interestFactors);
+      const highlightReason = this.getMatchHighlightReason(match, interestFactors, matches[0]?.competition?.includes('Premier League') ? 'am' : 'en'); // Pass language hint
       const audienceAppeal = this.determineAudienceAppeal(interestScore);
 
       // Update the match object with the calculated interest score
@@ -323,8 +327,8 @@ export class DailyWeeklySummaryGenerator {
       };
     }).sort((a, b) => b.score - a.score);
 
-    // Return top interesting matches (usually 3-5)
-    return scoredMatches.slice(0, 4).map(({ score, ...rest }) => rest);
+    // Return top interesting matches based on maxMatches parameter
+    return scoredMatches.slice(0, maxMatches).map(({ score, ...rest }) => rest);
   }
 
   /**
@@ -408,27 +412,54 @@ export class DailyWeeklySummaryGenerator {
   /**
    * 💫 Get match highlight reason
    */
-  private getMatchHighlightReason(match: MatchResult, factors: string[]): string {
+  private getMatchHighlightReason(match: MatchResult, factors: string[], language: 'en' | 'am' | 'sw' = 'en'): string {
     const totalGoals = match.homeScore + match.awayScore;
     const scoreDiff = Math.abs(match.homeScore - match.awayScore);
 
+    // Language-specific templates
+    const templates = {
+      en: {
+        upset: `Major upset as ${match.homeScore > match.awayScore ? match.homeTeam : match.awayTeam} pulled off a surprise victory`,
+        goalThriller: `Goal thriller with ${totalGoals} goals in an entertaining ${match.homeScore}-${match.awayScore} result`,
+        draw: `Evenly matched teams battled to a ${match.homeScore}-${match.awayScore} draw`,
+        bigClash: `High-profile clash between two top teams delivered quality football`,
+        default: `${match.competition} fixture provided competitive action`
+      },
+      am: {
+        upset: `የሚያስደንቅ ስኬት - ${match.homeScore > match.awayScore ? match.homeTeam : match.awayTeam} ከእጅ ያልተጠበቀ ድል አስመዘገበ`,
+        goalThriller: `${totalGoals} ጎሎች ያሉት አስደሳች ${match.homeScore}-${match.awayScore} ውጤት`,
+        draw: `እኩል ተጫዋቾች ${match.homeScore}-${match.awayScore} አቻችኋል`,
+        bigClash: `ከፍተኛ ደረጃ ያላቸው ሁለት ቡድኖች ጥሩ እግርኳስ አሳዩ`,
+        default: `የ${match.competition} ውድድር ተወዳዳሪ ተግባር አቅርቦልናል`
+      },
+      sw: {
+        upset: `Mshangao mkubwa - ${match.homeScore > match.awayScore ? match.homeTeam : match.awayTeam} alishinda kinyume na matarajio`,
+        goalThriller: `Mchezo wa kushangaza na magoli ${totalGoals} katika matokeo ya ${match.homeScore}-${match.awayScore}`,
+        draw: `Timu sawa zilishindana hadi ${match.homeScore}-${match.awayScore} sare`,
+        bigClash: `Mchezo wa hali ya juu kati ya timu kuu mbili ulitoa mpira wa miguu wa ubora`,
+        default: `Mchezo wa ${match.competition} ulitoa vitendo vya ushindani`
+      }
+    };
+
+    const t = templates[language];
+
     if (factors.includes('Shocking upset')) {
-      return `Major upset as ${match.homeScore > match.awayScore ? match.homeTeam : match.awayTeam} pulled off a surprise victory`;
+      return t.upset;
     }
     
     if (totalGoals >= 5) {
-      return `Goal thriller with ${totalGoals} goals in an entertaining ${match.homeScore}-${match.awayScore} result`;
+      return t.goalThriller;
     }
     
     if (scoreDiff === 0) {
-      return `Evenly matched teams battled to a ${match.homeScore}-${match.awayScore} draw`;
+      return t.draw;
     }
     
     if (factors.includes('Big team clash')) {
-      return `High-profile clash between two top teams delivered quality football`;
+      return t.bigClash;
     }
     
-    return `${match.competition} fixture provided competitive action`;
+    return t.default;
   }
 
   /**
@@ -554,7 +585,9 @@ export class DailyWeeklySummaryGenerator {
       }
       
       return content;
-    } else if (language === 'sw') {
+    }
+    
+    if (language === 'sw') {
       // Build full content in Swahili
       let content = `📅 Muhtasari wa Mpira wa Miguu - ${date}\n\n`;
       
@@ -677,8 +710,117 @@ export class DailyWeeklySummaryGenerator {
    * 📄 Build weekly content
    */
   private buildWeeklyContent(summaryData: WeeklySummaryData, language: 'en' | 'am' | 'sw'): string {
-    if (language !== 'en') {
-      return `📊 Weekly Football Summary - Week of ${new Date(summaryData.weekStart).toLocaleDateString()}\n\nComprehensive weekly analysis with next week preview.`;
+    const weekStartDate = new Date(summaryData.weekStart).toLocaleDateString();
+    const weekEndDate = new Date(summaryData.weekEnd).toLocaleDateString();
+    
+    if (language === 'am') {
+      // Build full content in Amharic
+      let content = `📊 የሳምንት እግርኳስ ክለሳ\n`;
+      content += `${weekStartDate} - ${weekEndDate}\n\n`;
+
+      // Past week recap
+      if (summaryData.weeklyResults.topMatches.length > 0) {
+        content += `🏆 የሳምንቱ ዋና ዋና ውጤቶች\n\n`;
+        summaryData.weeklyResults.topMatches.slice(0, 5).forEach(match => {
+          content += `• ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam} (${match.competition})\n`;
+        });
+        content += `\n`;
+      }
+
+      // Weekly statistics
+      content += `📈 የሳምንቱ ቁጥሮች\n`;
+      content += `• ${summaryData.weeklyStats.totalMatches} ጨዋታዎች\n`;
+      content += `• ${summaryData.weeklyStats.totalGoals} ጎሎች (በአማካይ ${summaryData.weeklyStats.averageGoalsPerMatch} በጨዋታ)\n`;
+      if (summaryData.weeklyStats.mostGoals.match) {
+        content += `• ከፍተኛ ጎል: ${summaryData.weeklyStats.mostGoals.match} (${summaryData.weeklyStats.mostGoals.goals} ጎሎች)\n`;
+      }
+      content += `• ${summaryData.weeklyStats.cleanSheets} ንጹህ ሉህ\n`;
+      content += `• ${summaryData.weeklyStats.redCards} ቀይ ካርዶች\n\n`;
+
+      // Trends and insights
+      if (summaryData.trends.teamOfTheWeek) {
+        content += `👑 የሳምንቱ ቡድን: ${summaryData.trends.teamOfTheWeek}\n`;
+      }
+      if (summaryData.trends.playerOfTheWeek) {
+        content += `⭐ የሳምንቱ ተጫዋች: ${summaryData.trends.playerOfTheWeek}\n`;
+      }
+      
+      // Next week preview
+      if (summaryData.nextWeekPreview.keyFixtures.length > 0) {
+        content += `\n🔮 የሚቀጥለው ሳምንት ማቅረቢያ\n\n`;
+        content += `🎯 ዋና ዋና ግጥሚያዎች:\n`;
+        summaryData.nextWeekPreview.keyFixtures.slice(0, 5).forEach(fixture => {
+          content += `• ${fixture.homeTeam} በተቃወመ ${fixture.awayTeam} (${fixture.competition})\n`;
+        });
+        content += `\n`;
+      }
+
+      if (summaryData.nextWeekPreview.matchesToWatch.length > 0) {
+        content += `👀 ሊታዩ የሚገቡ ግጥሚያዎች:\n`;
+        summaryData.nextWeekPreview.matchesToWatch.slice(0, 3).forEach(match => {
+          content += `🔥 ${match.match.homeTeam} በተቃወመ ${match.match.awayTeam}\n`;
+          content += `   ለምንድነው: ${match.whyWatch}\n`;
+        });
+        content += `\n`;
+      }
+
+      content += `📱 ለሚቀጥለው ሳምንት ድርጊት አብረን ይከተሉ!`;
+      return content;
+    }
+    
+    if (language === 'sw') {
+      // Build full content in Swahili
+      let content = `📊 Mapitio ya Mpira wa Miguu ya Juma\n`;
+      content += `${weekStartDate} - ${weekEndDate}\n\n`;
+
+      // Past week recap
+      if (summaryData.weeklyResults.topMatches.length > 0) {
+        content += `🏆 Matokeo Makuu ya Juma\n\n`;
+        summaryData.weeklyResults.topMatches.slice(0, 5).forEach(match => {
+          content += `• ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam} (${match.competition})\n`;
+        });
+        content += `\n`;
+      }
+
+      // Weekly statistics
+      content += `📈 Takwimu za Juma\n`;
+      content += `• Mechi ${summaryData.weeklyStats.totalMatches}\n`;
+      content += `• Mabao ${summaryData.weeklyStats.totalGoals} (wastani ${summaryData.weeklyStats.averageGoalsPerMatch} kwa mechi)\n`;
+      if (summaryData.weeklyStats.mostGoals.match) {
+        content += `• Mabao mengi: ${summaryData.weeklyStats.mostGoals.match} (mabao ${summaryData.weeklyStats.mostGoals.goals})\n`;
+      }
+      content += `• Karatasi safi ${summaryData.weeklyStats.cleanSheets}\n`;
+      content += `• Kadi nyekundu ${summaryData.weeklyStats.redCards}\n\n`;
+
+      // Trends and insights
+      if (summaryData.trends.teamOfTheWeek) {
+        content += `👑 Timu ya Juma: ${summaryData.trends.teamOfTheWeek}\n`;
+      }
+      if (summaryData.trends.playerOfTheWeek) {
+        content += `⭐ Mchezaji wa Juma: ${summaryData.trends.playerOfTheWeek}\n`;
+      }
+      
+      // Next week preview
+      if (summaryData.nextWeekPreview.keyFixtures.length > 0) {
+        content += `\n🔮 Mapitio ya Juma Ijayo\n\n`;
+        content += `🎯 Mechi Kuu:\n`;
+        summaryData.nextWeekPreview.keyFixtures.slice(0, 5).forEach(fixture => {
+          content += `• ${fixture.homeTeam} dhidi ya ${fixture.awayTeam} (${fixture.competition})\n`;
+        });
+        content += `\n`;
+      }
+
+      if (summaryData.nextWeekPreview.matchesToWatch.length > 0) {
+        content += `👀 Mechi za Kuangalia:\n`;
+        summaryData.nextWeekPreview.matchesToWatch.slice(0, 3).forEach(match => {
+          content += `🔥 ${match.match.homeTeam} dhidi ya ${match.match.awayTeam}\n`;
+          content += `   Kwa nini: ${match.whyWatch}\n`;
+        });
+        content += `\n`;
+      }
+
+      content += `📱 Fuatilia vitendo vya juma ijayo!`;
+      return content;
     }
 
     let content = `📊 WEEKLY FOOTBALL REVIEW\n`;
@@ -769,17 +911,27 @@ export class DailyWeeklySummaryGenerator {
 
   // Helper methods for data fetching (would integrate with real APIs)
   private async getTodaysMatches(targetDate?: string): Promise<MatchResult[]> {
-    console.log(`📅 Getting today's matches for ${targetDate || 'today'}`);
+    console.log(`📅 Getting matches for daily summary`);
     
     try {
-      // Format date correctly for API
-      const today = targetDate || new Date().toISOString().split('T')[0];
+      let dateToQuery: string;
+      
+      if (targetDate) {
+        dateToQuery = targetDate;
+      } else {
+        // For daily summary, we want yesterday's matches (previous day)
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateToQuery = yesterday.toISOString().split('T')[0];
+      }
+      
+      console.log(`📅 Getting matches for date: ${dateToQuery} (for daily summary)`);
       
       // Get real matches from unified football service
-      const realMatches = await unifiedFootballService.getMatchesByDate(today);
+      const realMatches = await unifiedFootballService.getMatchesByDate(dateToQuery);
       
       if (!realMatches || realMatches.length === 0) {
-        console.log(`📅 No matches found for ${today}`);
+        console.log(`📅 No matches found for ${dateToQuery}`);
         return [];
       }
 
@@ -801,11 +953,11 @@ export class DailyWeeklySummaryGenerator {
         standoutPerformances: [] // Will be enriched later
       }));
 
-      console.log(`📅 Found ${matchResults.length} real matches for ${today}`);
+      console.log(`📅 Found ${matchResults.length} real matches for ${dateToQuery}`);
       return matchResults;
 
     } catch (error) {
-      console.error(`❌ Error getting today's matches:`, error);
+      console.error(`❌ Error getting matches:`, error);
       return [];
     }
   }
@@ -855,8 +1007,32 @@ export class DailyWeeklySummaryGenerator {
   }
 
   private async getWeeklyMatches(weekStart: string, weekEnd: string): Promise<MatchResult[]> {
-    // Would get all matches from the past week
-    return await this.getTodaysMatches(); // Simplified for now
+    console.log(`📅 Getting weekly matches from ${weekStart} to ${weekEnd}`);
+    
+    try {
+      // Get all matches for the entire week
+      let allMatches: MatchResult[] = [];
+      
+      // Get matches for each day of the week
+      const startDate = new Date(weekStart);
+      const endDate = new Date(weekEnd);
+      
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0];
+        console.log(`🔍 Getting matches for date: ${dateStr}`);
+        
+        const dayMatches = await this.getTodaysMatches(dateStr);
+        allMatches = allMatches.concat(dayMatches);
+      }
+      
+      console.log(`📊 Found ${allMatches.length} total matches for the week`);
+      return allMatches;
+      
+    } catch (error) {
+      console.error(`❌ Error getting weekly matches:`, error);
+      // Fallback to today's matches if weekly fetch fails
+      return await this.getTodaysMatches();
+    }
   }
 
   private async analyzeWeeklyResults(matches: MatchResult[]) {
@@ -1057,32 +1233,10 @@ export class DailyWeeklySummaryGenerator {
   private async generateDailySummaryImage(summaryData: DailySummaryData): Promise<string | undefined> {
     console.log(`🎨 Generating daily summary image for ${summaryData.date}`);
     
-    // Build dynamic prompt based on actual data
-    const date = new Date(summaryData.date).toLocaleDateString();
-    const matchCount = summaryData.statistics.totalMatches;
-    const totalGoals = summaryData.statistics.totalGoals;
-    
-    let prompt = `Daily football summary infographic for ${date}.\n`;
-    
-    // Add match information
-    if (summaryData.interestingMatches.length > 0) {
-      prompt += `${matchCount} matches today with ${totalGoals} total goals.\n`;
-      
-      const topMatches = summaryData.interestingMatches.slice(0, 3);
-      const matchDetails = topMatches.map(({ match }) => 
-        `${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam} (${match.competition})`
-      ).join(', ');
-      
-      prompt += `Key matches: ${matchDetails}.\n`;
-    }
-    
-    // Add biggest win if available
-    if (summaryData.statistics.biggestWin) {
-      prompt += `Biggest win: ${summaryData.statistics.biggestWin.teams} ${summaryData.statistics.biggestWin.score}.\n`;
-    }
-    
-    // Add style requirements
-    prompt += `Clean football infographic design with match results, scores, statistics, modern sports graphics, professional layout, football stadium background, vibrant colors, clear typography.`;
+    // Simple image with just the title
+    const prompt = `Simple and clean football-themed infographic showing only the title "Daily Summary" in elegant text.
+    Professional football background with stadium atmosphere, modern typography, minimalist design, 
+    clean layout, no detailed statistics or match results, just the title text.`;
 
     try {
       const generatedImage = await aiImageGenerator.generateImage({
@@ -1107,9 +1261,9 @@ export class DailyWeeklySummaryGenerator {
   }
 
   private async generateWeeklySummaryImage(summaryData: WeeklySummaryData): Promise<string | undefined> {
-    const prompt = `Weekly football summary infographic for week of ${summaryData.weekStart}.
-    Simple football weekly review design with statistics, trends, clean layout,
-    minimalist sports graphics, small file size, compact design.`;
+    const prompt = `Simple and clean football-themed infographic showing only the title "Weekly Summary" in elegant text.
+    Professional football background with stadium atmosphere, modern typography, minimalist design, 
+    clean layout, no detailed statistics or match results, just the title text.`;
 
     try {
       const generatedImage = await aiImageGenerator.generateImage({
@@ -1156,29 +1310,41 @@ export class DailyWeeklySummaryGenerator {
       return content;
     }
     
-    const prompt = `Edit the following daily football summary content to make it more engaging and relevant to ${language} readers.
+    const languageInstructions = {
+      en: "Write ONLY in English with engaging style and football terminology",
+      am: "Write ONLY in Amharic (አማርኛ) with native football terminology and engaging style",
+      sw: "Write ONLY in Swahili with native football terminology and engaging style"
+    };
+    
+    const prompt = `You are a professional football journalist. Create a comprehensive daily football summary based on the following data:
+
     Original content:
     ${content}
     
-    Summary data:
-    Date: ${summaryData.date}
-    Interesting matches: ${summaryData.interestingMatches.length}
-    Standout performances: ${Object.values(summaryData.standoutPerformances).some(v => v) ? 'Yes' : 'No'}
-    Statistics: ${summaryData.statistics.totalMatches} matches, ${summaryData.statistics.totalGoals} goals
-    Key storylines: ${summaryData.keyStorylines.length}
-    Tomorrow's fixtures: ${summaryData.tomorrowsFixtures.length}
-    Weekend preview: ${summaryData.weekendPreview ? 'Yes' : 'No'}
+    Match Details:
+    - Date: ${summaryData.date}
+    - Number of matches analyzed: ${summaryData.statistics.totalMatches}
+    - Total goals scored: ${summaryData.statistics.totalGoals}
+    - Top interesting matches: ${summaryData.interestingMatches.length}
+    - Tomorrow's fixtures: ${summaryData.tomorrowsFixtures.length}
     
-    Edit the content to:
-    1. Add more context and background about the matches and events.
-    2. Highlight key moments and standout performances.
-    3. Include more specific statistics and details.
-    4. Make the language more engaging and local to ${language}.
-    5. Add relevant hashtags and calls to action.
-    6. Ensure the content is concise and informative.
-    7. Maintain the original structure and flow.
+    Specific match information:
+    ${summaryData.interestingMatches.map((match, index) => 
+      `${index + 1}. ${match.match.homeTeam} ${match.match.homeScore}-${match.match.awayScore} ${match.match.awayTeam} (${match.match.competition})`
+    ).join('\n')}
     
-    Edit the content and return ONLY the edited version.`;
+    INSTRUCTIONS:
+    1. ${languageInstructions[language]}
+    2. Create a comprehensive, engaging summary with specific details about the matches
+    3. Include team names, scores, and competitions mentioned above
+    4. Add analysis about what made these matches interesting
+    5. Include the statistics (total matches and goals)
+    6. Mention tomorrow's fixtures if available
+    7. Make it informative but not too long (maximum 2 paragraphs)
+    8. NO generic content - only specific match details and real statistics
+    9. Use appropriate football emojis for better engagement
+    
+    Return ONLY the final summary content - no explanations or additional text.`;
 
     try {
       const response = await openai.chat.completions.create({
