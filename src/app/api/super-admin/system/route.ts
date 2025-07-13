@@ -6,15 +6,15 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Super Admin System Monitoring - Fetching system health data...');
 
     // System Health Checks
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    
     const healthChecks = await Promise.allSettled([
       // Database Health
       supabase.from('users').select('count', { count: 'exact', head: true }),
       
       // API Health - check if key endpoints are responding
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      
       fetch(`${baseUrl}/api/unified-content`, {
         method: 'HEAD'
       }).catch(() => null),
