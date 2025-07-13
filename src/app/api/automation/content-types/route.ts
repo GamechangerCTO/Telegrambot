@@ -1,6 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// PUT - Update content types configuration
+export async function PUT(request: NextRequest) {
+  try {
+    console.log('🔄 Updating content types configuration... [Version 2.0]');
+    
+    const body = await request.json();
+    const { contentTypes } = body;
+
+    if (!Array.isArray(contentTypes)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'contentTypes must be an array' 
+      }, { status: 400 });
+    }
+
+    // Extract active content type IDs
+    const activeContentTypes = contentTypes
+      .filter(ct => ct.enabled)
+      .map(ct => ct.id);
+
+    // Update automation settings
+    const { data: settings, error } = await supabase
+      .from('automation_settings')
+      .update({
+        active_content_types: activeContentTypes,
+        updated_at: new Date().toISOString()
+      })
+      .eq('organization_id', 'default')
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating content types:', error);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Failed to update content types configuration' 
+      }, { status: 500 });
+    }
+
+    // Also update automation rules to enable/disable based on content types
+    for (const contentType of contentTypes) {
+      await supabase
+        .from('automation_rules')
+        .update({ enabled: contentType.enabled })
+        .eq('content_type', contentType.id)
+        .eq('organization_id', 'default');
+    }
+
+    console.log('✅ Content types configuration updated successfully');
+    return NextResponse.json({
+      success: true,
+      message: 'Content types configuration updated successfully',
+      activeContentTypes
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating content types:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+
 // GET - Fetch content types configuration
 export async function GET(request: NextRequest) {
   try {
@@ -112,70 +176,6 @@ export async function GET(request: NextRequest) {
       success: false, 
       error: 'Failed to fetch content types configuration',
       contentTypes: []
-    }, { status: 500 });
-  }
-}
-
-// PUT - Update content types configuration
-export async function PUT(request: NextRequest) {
-  try {
-    console.log('🔄 Updating content types configuration... [Version 2.0]');
-    
-    const body = await request.json();
-    const { contentTypes } = body;
-
-    if (!Array.isArray(contentTypes)) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'contentTypes must be an array' 
-      }, { status: 400 });
-    }
-
-    // Extract active content type IDs
-    const activeContentTypes = contentTypes
-      .filter(ct => ct.enabled)
-      .map(ct => ct.id);
-
-    // Update automation settings
-    const { data: settings, error } = await supabase
-      .from('automation_settings')
-      .update({
-        active_content_types: activeContentTypes,
-        updated_at: new Date().toISOString()
-      })
-      .eq('organization_id', 'default')
-      .select()
-      .single();
-
-    if (error) {
-      console.error('❌ Error updating content types:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to update content types configuration' 
-      }, { status: 500 });
-    }
-
-    // Also update automation rules to enable/disable based on content types
-    for (const contentType of contentTypes) {
-      await supabase
-        .from('automation_rules')
-        .update({ enabled: contentType.enabled })
-        .eq('content_type', contentType.id)
-        .eq('organization_id', 'default');
-    }
-
-    console.log('✅ Content types configuration updated successfully');
-    return NextResponse.json({
-      success: true,
-      message: 'Content types configuration updated successfully',
-      activeContentTypes
-    });
-
-  } catch (error) {
-    console.error('❌ Error updating content types:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
     }, { status: 500 });
   }
 }
