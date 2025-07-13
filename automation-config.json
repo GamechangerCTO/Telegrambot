@@ -1,0 +1,126 @@
+{
+  "automation": {
+    "enabled": true,
+    "background_scheduler": "running",
+    "full_automation_enabled": true,
+    "content_generation_interval": 15,
+    "max_daily_content": 100,
+    "active_content_types": [
+      "live",
+      "betting", 
+      "news",
+      "analysis",
+      "polls",
+      "coupons"
+    ],
+    "rules": {
+      "live_updates": {
+        "id": "54c891e4-9bc2-439a-a0aa-44183f3d61a5",
+        "name": "Test Live Auto",
+        "enabled": true,
+        "automation_type": "continuous",
+        "content_type": "live",
+        "status": "active"
+      },
+      "betting_tips": {
+        "id": "4abc2298-2eba-493c-bb9f-35f2c6b612b0", 
+        "name": "Test Betting Auto",
+        "enabled": true,
+        "automation_type": "event_driven",
+        "content_type": "betting",
+        "status": "active"
+      },
+      "news_updates": {
+        "id": "75381b97-ffb5-4ddc-8d30-c4cd8e776d6c",
+        "name": "Test News Auto", 
+        "enabled": true,
+        "automation_type": "scheduled",
+        "content_type": "news",
+        "status": "active"
+      },
+      "smart_coupons": {
+        "id": "89d0591b-f98f-40c0-90ac-4ad31a0ca80d",
+        "name": "Smart Coupons",
+        "enabled": true,
+        "automation_type": "context_aware",
+        "content_type": "smart_push",
+        "status": "active"
+      },
+      "daily_summary": {
+        "id": "97a34cf9-9231-4e7b-9eb5-2632d761fd66",
+        "name": "Daily Summary",
+        "enabled": true,
+        "automation_type": "scheduled", 
+        "content_type": "daily_summary",
+        "status": "active"
+      },
+      "live_updates_premium": {
+        "id": "7aca2a04-e8f9-4b39-adcb-9f0260c7c33d",
+        "name": "Live Updates",
+        "enabled": true,
+        "automation_type": "event_driven",
+        "content_type": "live", 
+        "status": "active"
+      },
+      "pre_match_analysis": {
+        "id": "bb633603-010f-4d03-954f-44cdf0c1ba3f",
+        "name": "Pre-Match Analysis",
+        "enabled": true,
+        "automation_type": "event_driven",
+        "content_type": "analysis",
+        "status": "active"
+      },
+      "betting_tips_premium": {
+        "id": "ae99cc1a-a26d-44cb-b261-dba9e7a6b6eb",
+        "name": "Pre-Match Betting Tips",
+        "enabled": true,
+        "automation_type": "event_driven",
+        "content_type": "betting",
+        "status": "active"
+      },
+      "polls": {
+        "id": "5b06738e-85d7-41a0-88c0-1c28693f4166",
+        "name": "Pre-Match Polls",
+        "enabled": true,
+        "automation_type": "event_driven",
+        "content_type": "polls",
+        "status": "active"
+      },
+      "morning_news": {
+        "id": "d6ff4208-3e86-4389-8e7a-c9d5f571dd1e",
+        "name": "Test Morning News",
+        "enabled": true,
+        "automation_type": "scheduled",
+        "content_type": "news",
+        "status": "active"
+      }
+    },
+    "system_health": {
+      "database": "healthy",
+      "apis": "healthy",
+      "automation": "active"
+    },
+    "performance": {
+      "totalRules": 10,
+      "activeRules": 10,
+      "contentGenerated24h": 1,
+      "successRate": 100,
+      "averageGenerationTime": 72.6,
+      "apiCallsLast24h": 1,
+      "errorRate": 0,
+      "uptime": "99.8%"
+    },
+    "target_channel": {
+      "id": "3f41f4a4-ec2a-4e95-a99d-c713b2718d22",
+      "name": "AfircaSportCenter",
+      "language": "am",
+      "is_active": true
+    }
+  },
+  "deployment": {
+    "environment": "development",
+    "port": 3001,
+    "background_scheduler_status": "running",
+    "last_updated": "2025-01-13T20:35:00Z"
+  }
+} 
