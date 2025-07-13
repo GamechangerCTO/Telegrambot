@@ -938,15 +938,15 @@ export default function AutomationPage() {
       const today = new Date();
       const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
       
-      // Call the unified football service to get matches for the next week
-      const response = await fetch('/api/debug-football', {
+      // Call the api-football-showcase service to get matches for the next week
+      const response = await fetch('/api/api-football-showcase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'get_upcoming_matches',
-          start_date: today.toISOString().split('T')[0],
-          end_date: nextWeek.toISOString().split('T')[0],
-          apply_smart_scoring: true
+          action: 'get_fixtures_date_range',
+          from_date: today.toISOString().split('T')[0],
+          to_date: nextWeek.toISOString().split('T')[0],
+          limit: 50
         })
       });
       
@@ -954,7 +954,8 @@ export default function AutomationPage() {
         const data = await response.json();
         
         if (data.success && data.matches && data.matches.length > 0) {
-          console.log(`✅ Got ${data.matches.length} matches from smart service`);
+          console.log(`✅ Got ${data.matches.length} matches from api-football-showcase`);
+          showNotification(`✅ Loaded ${data.matches.length} matches successfully`, 'success');
           
           // Group matches by date and apply smart scoring
           const groupedByDate: { [key: string]: any[] } = {};
@@ -1031,6 +1032,7 @@ export default function AutomationPage() {
       
     } catch (error) {
       console.error('❌ Error fetching smart fixtures:', error);
+      showNotification('❌ Error loading smart fixtures, trying fallback...', 'error');
       // Fallback to API-Football
       await fetchFixturesAPIFootball();
     } finally {
@@ -1118,7 +1120,7 @@ export default function AutomationPage() {
 
   const fetchFixturesDebug = async () => {
     try {
-      const response = await fetch('/api/debug-football');
+      const response = await fetch('/api/api-football-showcase?feature=smart-matches&content_type=analysis&max_results=20');
       if (response.ok) {
         const data = await response.json();
         // Get fixtures for next 7 days
@@ -1126,13 +1128,32 @@ export default function AutomationPage() {
         const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         
         const allFixtures = [];
-        if (data.fixtures) {
-          for (const [date, dayFixtures] of Object.entries(data.fixtures)) {
+        if (data.success && data.data && data.data.bestMatches) {
+          // Process smart matches from api-football-showcase
+          const matches = data.data.bestMatches;
+          const groupedByDate: { [key: string]: any[] } = {};
+          
+          matches.forEach((matchDetail: any) => {
+            const match = matchDetail.match;
+            if (match && match.kickoff) {
+              const matchDate = new Date(match.kickoff).toISOString().split('T')[0];
+              if (!groupedByDate[matchDate]) {
+                groupedByDate[matchDate] = [];
+              }
+              groupedByDate[matchDate].push({
+                ...match,
+                contentSuitability: matchDetail.contentSuitability,
+                scoringReasons: matchDetail.scoringReasons
+              });
+            }
+          });
+          
+          for (const [date, dayFixtures] of Object.entries(groupedByDate)) {
             const fixtureDate = new Date(date);
             if (fixtureDate >= now && fixtureDate <= nextWeek) {
               allFixtures.push({
                 date,
-                fixtures: Array.isArray(dayFixtures) ? dayFixtures : []
+                fixtures: dayFixtures
               });
             }
           }
@@ -1397,15 +1418,12 @@ export default function AutomationPage() {
                 const today = new Date();
                 const todayDate = today.toISOString().split('T')[0];
                 
-                // Debug: log fixtures data
-                console.log('🔍 Debug fixtures data:', fixtures);
                 
                 // Find today's matches
                 const todaysMatches = fixtures.flatMap(day => 
                   day.date === todayDate ? day.fixtures.slice(0, 2) : []
                 );
                 
-                console.log('🔍 Debug today matches:', todaysMatches);
                 
                 // If no matches today, show next matches
                 if (todaysMatches.length === 0) {
@@ -1413,14 +1431,12 @@ export default function AutomationPage() {
                     day.date > todayDate ? day.fixtures.slice(0, 2) : []
                   ).slice(0, 2);
                   
-                  console.log('🔍 Debug next matches:', nextMatches);
                   
                   if (nextMatches.length > 0) {
                     return (
                       <div className="space-y-2">
                         <div className="text-xs text-orange-600 font-medium">Next matches:</div>
                         {nextMatches.map((fixture: any, index: number) => {
-                          console.log('🔍 Debug fixture:', fixture);
                           
                           // Try multiple ways to get team names
                           const homeTeam = fixture.home_team?.name || 
@@ -1475,7 +1491,6 @@ export default function AutomationPage() {
                 
                 // Show today's matches
                 return todaysMatches.map((fixture: any, index: number) => {
-                  console.log('🔍 Debug today fixture:', fixture);
                   
                   // Try multiple ways to get team names
                   const homeTeam = fixture.home_team?.name || 
@@ -1528,8 +1543,17 @@ export default function AutomationPage() {
       </div>
       
       {/* System Status Card */}
-      <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">🏥 System Status</h2>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="text-2xl">🏥</div>
+            <div>
+              <h2 className="text-lg font-semibold">System Status</h2>
+              <p className="text-sm text-gray-600 font-normal">Current system health and active components</p>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-blue-50 rounded-lg p-4">
             <div className="text-2xl font-bold text-blue-600">{activeChannels.length}</div>
@@ -1560,7 +1584,8 @@ export default function AutomationPage() {
             </div>
           </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Active Channels Display */}
       {activeChannels.length > 0 && (
@@ -1582,48 +1607,48 @@ export default function AutomationPage() {
       )}
 
       {/* Fixture Timetable */}
-      <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">⚽ Live Matches & Fixtures</h2>
-            <button
-              onClick={fetchFixtures}
-              disabled={loadingFixtures}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                loadingFixtures 
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {loadingFixtures ? 'Loading...' : 'Load Fixtures'}
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={runAutomationCycle}
-              disabled={isRunningCycle}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                isRunningCycle
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isRunningCycle ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  <span>Running Automation Cycle...</span>
-                </div>
-              ) : (
-                '🚀 Run Automation Cycle Now'
-              )}
-            </button>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="text-2xl">⚽</div>
+              <div>
+                <h2 className="text-lg font-semibold">Live Matches & Fixtures</h2>
+                <p className="text-sm text-gray-600 font-normal">Smart match scoring and content suitability</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={fetchFixtures}
+                disabled={loadingFixtures}
+                variant="outline"
+                size="sm"
+              >
+                {loadingFixtures ? 'Loading...' : 'Load Fixtures'}
+              </Button>
+              <Button
+                onClick={runAutomationCycle}
+                disabled={isRunningCycle}
+                size="sm"
+              >
+                {isRunningCycle ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Running...</span>
+                  </div>
+                ) : (
+                  <>🚀 Run Cycle</>
+                )}
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         
         {loadingFixtures ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-sm text-gray-500">Loading smart fixtures...</p>
           </div>
         ) : fixtures.length > 0 ? (
           <div className="max-h-96 overflow-y-auto">
@@ -1748,13 +1773,22 @@ export default function AutomationPage() {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>No fixtures found for the next week</p>
-            <Button onClick={fetchFixtures} className="mt-2" size="sm">
-              Load Fixtures
-            </Button>
+            <p className="mb-2">No fixtures found for the next week</p>
+            <p className="text-sm text-gray-400 mb-4">
+              Click "Load Fixtures" to fetch the latest match data from API-Football
+            </p>
+            <div className="flex justify-center gap-2">
+              <Button onClick={fetchFixtures} size="sm" variant="outline">
+                🔄 Refresh Data
+              </Button>
+              <Button onClick={() => window.location.reload()} size="sm" variant="ghost">
+                🔃 Reload Page
+              </Button>
+            </div>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="mb-8">
