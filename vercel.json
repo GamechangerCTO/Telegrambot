@@ -1,27 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/automation/cron/minute",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/automation/cron/hourly", 
-      "schedule": "0 * * * *"
+      "path": "/api/automation/cron/urgent",
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/automation/cron/daily",
-      "schedule": "0 9,18,23 * * *"
+      "schedule": "0 18 * * *"
     }
-  ],
-  "functions": {
-    "src/app/api/automation/cron/**/*.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/unified-content/route.ts": {
-      "maxDuration": 180
-    },
-    "src/app/api/automation/execute/route.ts": {
-      "maxDuration": 180
-    }
-  }
+  ]
 } 
