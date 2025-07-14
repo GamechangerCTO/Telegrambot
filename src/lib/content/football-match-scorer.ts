@@ -235,26 +235,52 @@ export class FootballMatchScorer {
         continue;
       }
       
-      // 🚨 STRICT FILTER: Content-specific time limits
-      const hoursAgo = Math.abs(daysDiff) * 24;
-      let maxHoursBack = 48; // Default: 48 hours for polls and daily summaries
+      // 🚨 FIXED FILTER: Content-specific time logic (FUTURE-FOCUSED)
+      const hoursFromNow = daysDiff * 24; // Positive = future, Negative = past
+      let allowPastMatches = false;
+      let maxHoursFuture = 336; // 14 days default
+      let maxHoursPast = 0;
       
-      // Adjust max hours based on content type
+      // Define time rules based on content type
       if (options.content_type === 'betting_tip') {
-        maxHoursBack = 0; // No past matches for betting
+        allowPastMatches = false; // Only future matches for betting
+        maxHoursFuture = 168; // 7 days into future
+        console.log(`🎯 Betting tips: Looking for FUTURE matches only (next 7 days)`);
       } else if (options.content_type === 'live_update') {
-        maxHoursBack = 12; // 12 hours for live updates
+        allowPastMatches = true;
+        maxHoursPast = 6; // Current matches or just finished
+        maxHoursFuture = 24; // Today and tomorrow
+        console.log(`🔴 Live updates: Looking for CURRENT/TODAY matches`);
       } else if (options.content_type === 'news') {
-        maxHoursBack = 168; // 7 days for news
+        allowPastMatches = true;
+        maxHoursPast = 168; // 7 days back
+        maxHoursFuture = 168; // 7 days forward
+        console.log(`📰 News: Looking for matches past 7 days and future 7 days`);
       } else if (options.content_type === 'analysis') {
-        maxHoursBack = 120; // 5 days for analysis
-      } else if (options.content_type === 'weekly_summary') {
-        maxHoursBack = 168; // 7 days for weekly summary
+        allowPastMatches = false; // Focus on upcoming matches
+        maxHoursFuture = 168; // 7 days forward
+        console.log(`📊 Analysis: Looking for UPCOMING matches (next 7 days)`);
+      } else {
+        allowPastMatches = true;
+        maxHoursPast = 72; // 3 days back
+        maxHoursFuture = 168; // 7 days forward
       }
       
-      if (daysDiff < 0 && hoursAgo > maxHoursBack) {
-        console.log(`⏰ STRICT FILTER: Rejecting match ${match.homeTeam.name} vs ${match.awayTeam.name} (${hoursAgo.toFixed(1)} hours ago - too old for ${options.content_type}, max: ${maxHoursBack}h)`);
-        continue;
+      // Apply filters
+      if (hoursFromNow < 0) { // Past match
+        if (!allowPastMatches || Math.abs(hoursFromNow) > maxHoursPast) {
+          console.log(`⏰ FIXED FILTER: Rejecting PAST match ${match.homeTeam.name} vs ${match.awayTeam.name} (${Math.abs(hoursFromNow).toFixed(1)} hours ago - ${allowPastMatches ? 'too old' : 'past matches not allowed'} for ${options.content_type})`);
+          continue;
+        } else {
+          console.log(`✅ ACCEPTING PAST match ${match.homeTeam.name} vs ${match.awayTeam.name} (${Math.abs(hoursFromNow).toFixed(1)} hours ago) for ${options.content_type}`);
+        }
+      } else { // Future match
+        if (hoursFromNow > maxHoursFuture) {
+          console.log(`⏰ FIXED FILTER: Rejecting FUTURE match ${match.homeTeam.name} vs ${match.awayTeam.name} (${hoursFromNow.toFixed(1)} hours away - too far for ${options.content_type}, max: ${maxHoursFuture}h)`);
+          continue;
+        } else {
+          console.log(`✅ ACCEPTING FUTURE match ${match.homeTeam.name} vs ${match.awayTeam.name} (${hoursFromNow.toFixed(1)} hours away) for ${options.content_type}`);
+        }
       }
       
       // סינון משחקים שעברו - מותאם לסוג תוכן
