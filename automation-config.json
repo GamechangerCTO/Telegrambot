@@ -121,6 +121,15 @@
     "environment": "development",
     "port": 3001,
     "background_scheduler_status": "running",
-    "last_updated": "2025-01-13T20:35:00Z"
+    "auto_start_enabled": true,
+    "startup_script": "./start-automation.sh",
+    "monitoring_enabled": true,
+    "last_updated": "2025-01-14T10:45:00Z"
+  },
+  "instructions": {
+    "startup": "Run './start-automation.sh' to start the complete autonomous system",
+    "monitoring": "System monitors itself and restarts if needed",
+    "content_schedule": "Checks every minute for content opportunities",
+    "manual_override": "Use dashboard at http://localhost:PORT/automation for manual control"
   }
 } 
