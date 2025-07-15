@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backgroundScheduler } from '@/lib/automation/background-scheduler';
 import { DailyWeeklySummaryGenerator } from '@/lib/content/daily-weekly-summary-generator';
+import { PollsGenerator } from '@/lib/content/polls-generator';
 import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
     const currentHour = new Date().getUTCHours();
     const currentDay = new Date().getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
     const summaryGenerator = new DailyWeeklySummaryGenerator();
+    const pollsGenerator = new PollsGenerator();
 
     // Morning summaries (9 AM UTC)
     if (currentHour === 9) {
@@ -69,6 +71,45 @@ export async function GET(request: NextRequest) {
         status: 'completed',
         data: { trigger: 'evening_schedule', hour: currentHour }
       });
+    }
+
+    // Polls generation (3 PM UTC daily)
+    if (currentHour === 15) {
+      console.log('📊 Generating polls for upcoming matches...');
+      
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, language, bot_id')
+        .eq('is_active', true);
+
+      if (channels) {
+        for (const channel of channels.slice(0, 3)) { // Limit to 3 channels
+          try {
+            const poll = await pollsGenerator.generatePoll({
+              language: channel.language as 'en' | 'am' | 'sw',
+              channelId: channel.id,
+              pollType: 'match_prediction',
+              includeAnalysis: true,
+              targetAudience: 'mixed',
+              creativityLevel: 'high'
+            });
+            
+            results.tasks.push({
+              task: 'polls_generation',
+              channel: channel.id,
+              status: poll ? 'completed' : 'failed',
+              data: poll
+            });
+          } catch (error) {
+            results.tasks.push({
+              task: 'polls_generation',
+              channel: channel.id,
+              status: 'error',
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      }
     }
 
     // Weekly summaries (Sunday 11 PM UTC)

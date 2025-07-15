@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SmartPushEngine } from '@/lib/content/smart-push-engine';
+import { SmartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Smart push job started:', new Date().toISOString());
@@ -19,6 +21,7 @@ export async function GET(request: NextRequest) {
 
     const currentHour = new Date().getUTCHours();
     const smartPushEngine = new SmartPushEngine();
+    const couponsGenerator = new SmartCouponsGenerator();
 
     // Smart push during peak hours (3 PM, 7 PM UTC)
     if ([15, 19].includes(currentHour)) {
@@ -46,6 +49,50 @@ export async function GET(request: NextRequest) {
           result: pushResult
         }
       });
+    }
+
+    // Generate smart coupons during peak hours
+    if ([15, 19].includes(currentHour)) {
+      console.log('🎫 Generating smart coupons...');
+      
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, language, bot_id')
+        .eq('is_active', true);
+
+      if (channels && channels.length > 0) {
+        for (const channel of channels.slice(0, 2)) { // Limit to 2 channels
+          try {
+            const now = new Date();
+            const coupon = await couponsGenerator.getSmartCouponForContext({
+              contentType: 'betting',
+              language: channel.language as 'en' | 'am' | 'sw',
+              channelId: channel.id,
+              matchImportance: 'HIGH',
+              userEngagement: 'HIGH',
+              timeContext: {
+                hour: currentHour,
+                dayOfWeek: now.toLocaleDateString('en-US', { weekday: 'long' }),
+                isWeekend: now.getDay() === 0 || now.getDay() === 6
+              }
+            });
+            
+            results.tasks.push({
+              task: 'smart_coupons_generation',
+              channel: channel.id,
+              status: coupon ? 'completed' : 'failed',
+              data: coupon
+            });
+          } catch (error) {
+            results.tasks.push({
+              task: 'smart_coupons_generation',
+              channel: channel.id,
+              status: 'error',
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      }
     }
 
     // Process smart push queue (always run during this cron)
