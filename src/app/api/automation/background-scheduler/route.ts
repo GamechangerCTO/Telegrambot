@@ -1,30 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSchedulerInstance, ensureSchedulerRunning, initializeScheduler } from '@/lib/automation/auto-start-scheduler';
+import { backgroundScheduler } from '@/lib/automation/background-scheduler';
 
 /**
  * GET - Get Background Scheduler status
  */
 export async function GET(request: NextRequest) {
   try {
-    // Ensure scheduler is running
-    ensureSchedulerRunning();
-    
-    const scheduler = getSchedulerInstance();
-    
-    if (!scheduler) {
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to initialize scheduler'
-      }, { status: 500 });
-    }
-
-    const stats = scheduler.getStats();
+    const stats = await backgroundScheduler.getStats();
     
     return NextResponse.json({
       success: true,
       scheduler: {
-        isRunning: scheduler.isActive(),
-        status: scheduler.isActive() ? 'running' : 'stopped',
+        isRunning: backgroundScheduler.isActive(),
+        status: backgroundScheduler.isActive() ? 'running' : 'stopped',
         ...stats
       }
     });
@@ -44,54 +32,40 @@ export async function POST(request: NextRequest) {
   try {
     const { action } = await request.json();
 
-    let scheduler = getSchedulerInstance();
-    
-    if (!scheduler) {
-      initializeScheduler();
-      scheduler = getSchedulerInstance();
-    }
-
-    if (!scheduler) {
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to initialize scheduler'
-      }, { status: 500 });
-    }
-
     switch (action) {
       case 'start':
-        scheduler.start();
+        backgroundScheduler.start();
         return NextResponse.json({
           success: true,
           message: 'Background Scheduler started successfully',
-          isRunning: scheduler.isActive()
+          isRunning: backgroundScheduler.isActive()
         });
 
       case 'stop':
-        scheduler.stop();
+        backgroundScheduler.stop();
         return NextResponse.json({
           success: true,
           message: 'Background Scheduler stopped successfully',
-          isRunning: scheduler.isActive()
+          isRunning: backgroundScheduler.isActive()
         });
 
       case 'restart':
-        scheduler.stop();
+        backgroundScheduler.stop();
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait one second
-        scheduler.start();
+        backgroundScheduler.start();
         return NextResponse.json({
           success: true,
           message: 'Background Scheduler restarted successfully',
-          isRunning: scheduler.isActive()
+          isRunning: backgroundScheduler.isActive()
         });
 
       case 'status':
-        const stats = scheduler.getStats();
+        const stats = await backgroundScheduler.getStats();
         return NextResponse.json({
           success: true,
           scheduler: {
-            isRunning: scheduler.isActive(),
-            status: scheduler.isActive() ? 'running' : 'stopped',
+            isRunning: backgroundScheduler.isActive(),
+            status: backgroundScheduler.isActive() ? 'running' : 'stopped',
             ...stats
           }
         });
@@ -99,12 +73,11 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({
           success: false,
-          error: 'Invalid action. Use "start", "stop", "restart", or "status"'
+          error: 'Invalid action. Options: start, stop, restart, status'
         }, { status: 400 });
     }
 
   } catch (error) {
-    console.error('❌ Error in Background Scheduler control:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'unknown error'

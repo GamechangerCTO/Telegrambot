@@ -1590,7 +1590,7 @@ export class UnifiedFootballService {
   }
 
   /**
-   * 🔍 בדיקת בריאות המערכת
+   * 🔍 System Health Check
    */
   async getSystemHealth(): Promise<{
     workingApis: number;

@@ -548,7 +548,8 @@ The prompt should create an image that perfectly complements this content for so
       size: '1024x1024'
     });
   }
-  
+
+
   /**
    * Generate a poll/voting image
    */
@@ -564,6 +565,27 @@ The prompt should create an image that perfectly complements this content for so
       prompt: prompt,
       quality: 'medium',
       language
+    });
+  }
+
+  /**
+   * Generate a professional coupon/promotional image
+   */
+  async generateCouponImage(
+    brandName: string,
+    title: string,
+    offerText: string,
+    brandColors: { primary: string },
+    language: 'en' | 'am' | 'sw' = 'en'
+  ): Promise<GeneratedImage | null> {
+    // תמונת קופון מקצועית
+    const prompt = `Professional promotional coupon design for ${brandName}: ${title} promotion with ${offerText}, modern coupon aesthetic, promotional graphics, discount badge design, brand colors ${brandColors.primary}, call-to-action elements, professional marketing design, high quality digital promotional material, clean modern design, attractive promotional layout`;
+    
+    return this.generateImage({
+      prompt: prompt,
+      quality: 'high',
+      language,
+      size: '1024x1024'
     });
   }
   

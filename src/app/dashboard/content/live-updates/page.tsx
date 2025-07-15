@@ -39,6 +39,15 @@ export default function LiveUpdatesPage() {
     eventsLast24h: 0,
     isRunning: false
   });
+  const [automationStatus, setAutomationStatus] = useState({
+    isRunning: false,
+    liveMonitoring: {
+      isActive: false,
+      activeMatches: 0,
+      updatesGenerated: 0,
+      lastUpdate: null
+    }
+  });
   const [recentEvents, setRecentEvents] = useState<LiveEvent[]>([]);
   const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,28 +56,28 @@ export default function LiveUpdatesPage() {
   useEffect(() => {
     loadData();
     
-    // רענון נתונים כל 30 שניות
+    // Refresh data every 30 seconds
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
     try {
-      // טעינת סטטיסטיקות מהמערכת החכמה
+      // Load statistics from smart system
       const statsResponse = await fetch('/api/live-monitor?action=stats')
       const statsData = await statsResponse.json()
       if (statsData.success) {
         setStats(statsData.data)
       }
 
-      // טעינת אירועים אחרונים
+      // Load recent events
       const eventsResponse = await fetch('/api/live-monitor?type=recent_events');
       const eventsData = await eventsResponse.json();
       if (eventsData.success) {
         setRecentEvents(eventsData.data);
       }
 
-      // טעינת משחקים חיים
+      // Load live matches
       const matchesResponse = await fetch('/api/live-monitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,12 +88,27 @@ export default function LiveUpdatesPage() {
         setLiveMatches(matchesData.data);
       }
 
-      // נתונים נוספים מהמערכת החכמה  
+      // Additional data from smart system  
       const healthResponse = await fetch('/api/live-monitor?action=health')
       const healthData = await healthResponse.json()
       if (healthData.success) {
-        // עדכון נתונים נוספים מהמערכת
+        // Update additional system data
         console.log('🧠 Smart System Data:', healthData.data)
+      }
+
+      // Load automation and background scheduler status
+      const automationResponse = await fetch('/api/automation/background-scheduler?action=status');
+      const automationData = await automationResponse.json();
+      if (automationData.success) {
+        setAutomationStatus({
+          isRunning: automationData.scheduler.isRunning,
+          liveMonitoring: automationData.scheduler.liveUpdates || {
+            isActive: false,
+            activeMatches: 0,
+            updatesGenerated: 0,
+            lastUpdate: null
+          }
+        });
       }
 
     } catch (error) {
@@ -108,12 +132,12 @@ export default function LiveUpdatesPage() {
       const data = await response.json();
       if (data.success) {
         await loadData();
-        alert('מעקב עדכונים חיים הופעל בהצלחה!');
+        alert('Live monitoring started successfully!');
       } else {
-        alert('שגיאה בהפעלת המעקב: ' + data.error);
+        alert('Error starting monitoring: ' + data.error);
       }
     } catch (error) {
-      alert('שגיאה בהפעלת המעקב');
+      alert('Error starting monitoring');
     }
   };
 
@@ -128,12 +152,12 @@ export default function LiveUpdatesPage() {
       const data = await response.json();
       if (data.success) {
         await loadData();
-        alert('מעקב עדכונים חיים הופסק בהצלחה!');
+        alert('Live monitoring stopped successfully!');
       } else {
-        alert('שגיאה בעצירת המעקב: ' + data.error);
+        alert('Error stopping monitoring: ' + data.error);
       }
     } catch (error) {
-      alert('שגיאה בעצירת המעקב');
+      alert('Error stopping monitoring');
     }
   };
 
@@ -178,32 +202,32 @@ export default function LiveUpdatesPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* כותרת */}
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🔴 עדכונים חיים ממשחקי כדורגל
+            🔴 Live Football Match Updates
           </h1>
           <p className="text-gray-600 mb-4">
-            ניהול מערכת עדכונים אוטומטיים בזמן אמת לגולים, כרטיסים ואירועי משחק
+            Management system for automatic real-time updates for goals, cards and match events
           </p>
           
-          {/* אינדיקטור מערכת חכמה */}
+          {/* Smart System Indicator */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center">
               <span className="text-2xl mr-3">🧠</span>
               <div>
-                <h3 className="text-sm font-semibold text-blue-900">מערכת בחירה חכמה פעילה</h3>
+                <h3 className="text-sm font-semibold text-blue-900">Smart Selection System Active</h3>
                 <p className="text-sm text-blue-700">
-                  המערכת עוקבת רק אחרי משחקים מעניינים עם ניקוד 15+ נקודות • 
-                  כוללת ליגות מובילות (פרמיירליג: 9 נק׳, ליגת אלופות: 9 נק׳) •
-                  קבוצות פופולריות (מנצ׳סטר יונייטד: 9 נק׳, ריאל מדריד: 10 נק׳)
+                  System monitors only interesting matches with 15+ score points • 
+                  Includes top leagues (Premier League: 9pts, Champions League: 9pts) •
+                  Popular teams (Manchester United: 9pts, Real Madrid: 10pts)
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* סטטיסטיקות */}
+        {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
@@ -211,7 +235,7 @@ export default function LiveUpdatesPage() {
                 <span className="text-2xl">📊</span>
               </div>
               <div className="mr-4">
-                <p className="text-sm font-medium text-gray-600">סה״כ משחקים</p>
+                <p className="text-sm font-medium text-gray-600">Total Matches</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalMatches}</p>
               </div>
             </div>
@@ -223,7 +247,7 @@ export default function LiveUpdatesPage() {
                 <span className="text-2xl">🔴</span>
               </div>
               <div className="mr-4">
-                <p className="text-sm font-medium text-gray-600">משחקים חיים</p>
+                <p className="text-sm font-medium text-gray-600">Live Matches</p>
                 <p className="text-2xl font-bold text-red-600">{stats.liveMatches}</p>
               </div>
             </div>
@@ -235,7 +259,7 @@ export default function LiveUpdatesPage() {
                 <span className="text-2xl">⚡</span>
               </div>
               <div className="mr-4">
-                <p className="text-sm font-medium text-gray-600">אירועים 24 שעות</p>
+                <p className="text-sm font-medium text-gray-600">Events 24h</p>
                 <p className="text-2xl font-bold text-green-600">{stats.eventsLast24h}</p>
               </div>
             </div>
@@ -247,23 +271,23 @@ export default function LiveUpdatesPage() {
                 <span className="text-2xl">{stats.isRunning ? '✅' : '⏸️'}</span>
               </div>
               <div className="mr-4">
-                <p className="text-sm font-medium text-gray-600">סטטוס מערכת</p>
+                <p className="text-sm font-medium text-gray-600">System Status</p>
                 <p className={`text-sm font-bold ${stats.isRunning ? 'text-green-600' : 'text-gray-600'}`}>
-                  {stats.isRunning ? 'פעיל' : 'לא פעיל'}
+                  {stats.isRunning ? 'Active' : 'Inactive'}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* בקרות */}
+        {/* Controls */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">בקרת מערכת</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">System Control</h2>
           
           <div className="flex items-center gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                תדירות בדיקה (שניות)
+                Check Frequency (seconds)
               </label>
               <input
                 type="number"
@@ -286,7 +310,7 @@ export default function LiveUpdatesPage() {
                   : 'bg-green-600 text-white hover:bg-green-700'
               }`}
             >
-              🚀 הפעל מעקב
+              🚀 Start Monitoring
             </button>
 
             <button
@@ -298,30 +322,129 @@ export default function LiveUpdatesPage() {
                   : 'bg-red-600 text-white hover:bg-red-700'
               }`}
             >
-              🛑 עצור מעקב
+              🛑 Stop Monitoring
             </button>
 
             <button
               onClick={loadData}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
             >
-              🔄 רענן נתונים
+              🔄 Refresh Data
+            </button>
+          </div>
+        </div>
+
+        {/* Automation Status */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">🤖 Automation & GitHub Actions Status</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Background Scheduler Status */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <span className={`text-2xl mr-2 ${automationStatus.isRunning ? '🟢' : '🔴'}`}>
+                  {automationStatus.isRunning ? '✅' : '❌'}
+                </span>
+                <h3 className="font-medium text-gray-900">Background Scheduler</h3>
+              </div>
+              <p className={`text-sm ${automationStatus.isRunning ? 'text-green-600' : 'text-red-600'}`}>
+                {automationStatus.isRunning ? 'Active and monitoring live updates' : 'Inactive'}
+              </p>
+            </div>
+
+            {/* Live Monitoring Integration */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <span className={`text-2xl mr-2 ${automationStatus.liveMonitoring.isActive ? '🔴' : '⏸️'}`}>
+                  {automationStatus.liveMonitoring.isActive ? '🔴' : '⏸️'}
+                </span>
+                <h3 className="font-medium text-gray-900">Live Monitoring</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Active matches: {automationStatus.liveMonitoring.activeMatches}
+              </p>
+              <p className="text-sm text-gray-600">
+                Updates generated: {automationStatus.liveMonitoring.updatesGenerated}
+              </p>
+            </div>
+
+            {/* GitHub Actions Integration */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <span className="text-2xl mr-2">⚙️</span>
+                <h3 className="font-medium text-gray-900">GitHub Actions</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Live workflow runs every 2-3 minutes
+              </p>
+              <p className="text-sm text-gray-600">
+                Automatic check for live matches
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-6 flex gap-4">
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/automation/background-scheduler?action=start', { method: 'POST' });
+                  const data = await response.json();
+                  if (data.success) {
+                    await loadData();
+                    alert('Background Scheduler started successfully!');
+                  }
+                } catch (error) {
+                  alert('Error starting scheduler');
+                }
+              }}
+              disabled={automationStatus.isRunning}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                automationStatus.isRunning 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              🚀 Start Background Scheduler
+            </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/automation/background-scheduler?action=stop', { method: 'POST' });
+                  const data = await response.json();
+                  if (data.success) {
+                    await loadData();
+                    alert('Background Scheduler stopped successfully!');
+                  }
+                } catch (error) {
+                  alert('Error stopping scheduler');
+                }
+              }}
+              disabled={!automationStatus.isRunning}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                !automationStatus.isRunning 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              🛑 Stop Background Scheduler
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* משחקים חיים */}
+          {/* Live Matches */}
           <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                📺 משחקים חיים ({liveMatches.length})
+                📺 Live Matches ({liveMatches.length})
               </h2>
             </div>
             <div className="p-6">
               {liveMatches.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  אין משחקים חיים כרגע
+                  No live matches currently
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -344,7 +467,7 @@ export default function LiveUpdatesPage() {
                           {match.home_score} - {match.away_score}
                         </div>
                         <div className="text-sm text-gray-500">
-                          עודכן: {new Date(match.last_updated).toLocaleTimeString('he-IL')}
+                          Updated: {new Date(match.last_updated).toLocaleTimeString('en-US')}
                         </div>
                       </div>
                     </div>
@@ -354,17 +477,17 @@ export default function LiveUpdatesPage() {
             </div>
           </div>
 
-          {/* אירועים אחרונים */}
+          {/* Recent Events */}
           <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                ⚡ אירועים אחרונים ({recentEvents.length})
+                ⚡ Recent Events ({recentEvents.length})
               </h2>
             </div>
             <div className="p-6">
               {recentEvents.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  אין אירועים אחרונים
+                  No recent events
                 </p>
               ) : (
                 <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -381,12 +504,12 @@ export default function LiveUpdatesPage() {
                                 {event.description}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {event.event_type} • {event.team_side === 'home' ? 'בית' : 'חוץ'}
-                                {event.minute && ` • דקה ${event.minute}`}
+                                {event.event_type} • {event.team_side === 'home' ? 'Home' : 'Away'}
+                                {event.minute && ` • Min ${event.minute}`}
                               </p>
                             </div>
                             <span className="text-xs text-gray-500">
-                              {new Date(event.created_at).toLocaleTimeString('he-IL')}
+                              {new Date(event.created_at).toLocaleTimeString('en-US')}
                             </span>
                           </div>
                         </div>

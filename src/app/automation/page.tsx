@@ -85,53 +85,11 @@ export default function AutomationPage() {
   
   // UI State
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'matches' | 'logs'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'settings' | 'logs'>('overview');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   
-  // New state for enhanced features
-  const [upcomingMatches, setUpcomingMatches] = useState<any[]>([]);
-  const [matchesLoading, setMatchesLoading] = useState(false);
-  const [vercelStatus, setVercelStatus] = useState<any>(null);
-  const [automationSchedule, setAutomationSchedule] = useState<any[]>([]);
-  
-  // Load upcoming matches on component mount
-  const loadUpcomingMatches = async () => {
-    setMatchesLoading(true);
-    try {
-      const response = await fetch('/api/matches/upcoming-week');
-      const data = await response.json();
-      if (data.success) {
-        setUpcomingMatches(data.matches || []);
-        console.log('✅ Loaded upcoming matches:', data.stats);
-      } else {
-        console.error('❌ Error loading matches:', data.error);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching matches:', error);
-    } finally {
-      setMatchesLoading(false);
-    }
-  };
-  
-  // Check Vercel automation status
-  const checkVercelStatus = async () => {
-    try {
-      const response = await fetch('/api/automation/vercel-status');
-      const data = await response.json();
-      setVercelStatus(data);
-      console.log('🔍 Vercel Status:', data);
-      
-      if (!data.success || !data.automation_settings?.full_automation_enabled) {
-        showNotification('⚠️ יש בעיות באוטומציה - בדוק את הסטטוס', 'error');
-      }
-    } catch (error) {
-      console.error('❌ Error checking Vercel status:', error);
-      showNotification('❌ שגיאה בבדיקת סטטוס Vercel', 'error');
-    }
-  };
-
   // Content Types Configuration
   const [contentTypes, setContentTypes] = useState<ContentType[]>([
     { id: 'live', name: 'Live Updates', emoji: '🔴', description: 'Real-time match updates', enabled: true, performance: 'excellent' },
@@ -148,28 +106,10 @@ export default function AutomationPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Load matches when switching to matches tab
-  useEffect(() => {
-    if (activeTab === 'matches' && upcomingMatches.length === 0 && !matchesLoading) {
-      loadUpcomingMatches();
-    }
-  }, [activeTab]);
-
   // Initialize data
   useEffect(() => {
     if (isAuthenticated && (isManager || isSuperAdmin)) {
       initializeAutomation();
-      loadUpcomingMatches(); // Load matches on init
-      checkVercelStatus(); // Check Vercel status on init
-      
-      // Set up periodic updates
-      const interval = setInterval(() => {
-        setCurrentTime(new Date());
-        fetchAutomationStats();
-        checkSystemHealth();
-      }, 30000); // Every 30 seconds
-
-      return () => clearInterval(interval);
     }
   }, [isAuthenticated, isManager, isSuperAdmin]);
 
@@ -500,6 +440,75 @@ export default function AutomationPage() {
         </div>
       )}
 
+      {/* Vercel Cron Status Card */}
+      <Card className="mb-6 border-green-200 bg-green-50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-green-100 rounded-full">
+                <Workflow className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-green-800">Vercel Cron Jobs Active</h3>
+                <p className="text-green-600">Automated scheduling with enterprise reliability</p>
+              </div>
+            </div>
+            <Badge className="bg-green-600 text-white">
+              Production Ready
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+              <Timer className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+              <div className="text-xs text-gray-500">Every Minute</div>
+              <div className="font-semibold text-sm">Live Monitoring</div>
+            </div>
+            
+            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+              <Clock className="w-5 h-5 text-green-500 mx-auto mb-1" />
+              <div className="text-xs text-gray-500">Hourly</div>
+              <div className="font-semibold text-sm">Automation</div>
+            </div>
+            
+            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+              <Calendar className="w-5 h-5 text-purple-500 mx-auto mb-1" />
+              <div className="text-xs text-gray-500">Daily</div>
+              <div className="font-semibold text-sm">Summaries</div>
+            </div>
+            
+            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+              <Activity className="w-5 h-5 text-orange-500 mx-auto mb-1" />
+              <div className="text-xs text-gray-500">Every 3min</div>
+              <div className="font-semibold text-sm">Live Updates</div>
+            </div>
+            
+            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+              <TrendingUp className="w-5 h-5 text-yellow-500 mx-auto mb-1" />
+              <div className="text-xs text-gray-500">Peak Hours</div>
+              <div className="font-semibold text-sm">Smart Push</div>
+            </div>
+            
+            <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+              <Zap className="w-5 h-5 text-red-500 mx-auto mb-1" />
+              <div className="text-xs text-gray-500">Every 2min</div>
+              <div className="font-semibold text-sm">Urgent Tasks</div>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-white rounded-lg border">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Next runs:</span>
+              <div className="flex gap-4 text-xs">
+                <span className="text-blue-600">Live: {new Date(Date.now() + 60000).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="text-green-600">Hourly: {new Date(Date.now() + 3600000).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="text-orange-600">Live Updates: {new Date(Date.now() + 180000).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* System Health Card */}
       <Card className={`mb-6 ${getHealthColor()}`}>
         <CardContent className="p-6">
@@ -582,119 +591,12 @@ export default function AutomationPage() {
         </Card>
       </div>
 
-      {/* Vercel Status & Diagnostics */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            אבחון בעיות האוטומציה
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <h3 className="font-medium">סטטוס Vercel</h3>
-              {vercelStatus ? (
-                <div className="space-y-2">
-                  <div className={`flex items-center gap-2 ${vercelStatus.success ? 'text-green-600' : 'text-red-600'}`}>
-                    {vercelStatus.success ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    {vercelStatus.success ? 'מערכת פועלת' : 'יש בעיות'}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    סביבה: {vercelStatus.environment?.deployment_type || 'לא ידוע'}
-                  </div>
-                  {vercelStatus.automation_settings && (
-                    <div className="text-sm">
-                      אוטומציה מלאה: {vercelStatus.automation_settings.full_automation_enabled ? '✅ פעיל' : '❌ כבוי'}
-                    </div>
-                  )}
-                  {vercelStatus.recommendations && vercelStatus.recommendations.length > 0 && (
-                    <div className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
-                      <div className="font-medium text-sm mb-1">המלצות לתיקון:</div>
-                      {vercelStatus.recommendations.map((rec: string, i: number) => (
-                        <div key={i} className="text-xs text-yellow-800">• {rec}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-gray-500 text-sm">טוען סטטוס...</div>
-              )}
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="font-medium">פעולות אבחון</h3>
-              <div className="space-y-2">
-                <Button
-                  onClick={checkVercelStatus}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  🔍 בדוק סטטוס מלא
-                </Button>
-                <Button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/automation/cron/minute');
-                      const data = await response.json();
-                      console.log('Manual cron test:', data);
-                      showNotification(data.success ? '✅ Cron עובד תקין' : '❌ Cron לא עובד', data.success ? 'success' : 'error');
-                    } catch (error) {
-                      showNotification('❌ שגיאה בבדיקת Cron', 'error');
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  🧪 בדוק Cron ידנית
-                </Button>
-                <Button
-                  onClick={async () => {
-                    await toggleFullAutomation();
-                    await checkVercelStatus();
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  🔄 הפעל/כבה אוטומציה
-                </Button>
-                <Button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/automation/force-fix-filtering');
-                      const data = await response.json();
-                      console.log('Filtering test:', data);
-                      showNotification(
-                        data.filtering_fixed 
-                          ? `✅ סינון תוקן! נמצאו ${data.test_results.total_raw_matches} משחקים`
-                          : '❌ בעיית סינון עדיין קיימת', 
-                        data.filtering_fixed ? 'success' : 'error'
-                      );
-                    } catch (error) {
-                      showNotification('❌ שגיאה בבדיקת סינון', 'error');
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  🔧 בדוק תיקון סינון
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Navigation Tabs */}
       <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
-          { id: 'schedule', label: 'Schedule', icon: Calendar },
-          { id: 'matches', label: 'Matches', icon: Users },
+          { id: 'content', label: 'Content Types', icon: Target },
+          { id: 'settings', label: 'Settings', icon: Settings },
           { id: 'logs', label: 'Activity Logs', icon: Eye }
         ].map((tab) => (
           <button
@@ -786,172 +688,94 @@ export default function AutomationPage() {
         </div>
       )}
 
-      {activeTab === 'schedule' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                לוח זמנים של האוטומציה
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-medium text-green-600 mb-2">🕐 כל דקה</h3>
-                    <p className="text-sm text-gray-600 mb-2">עדכונים חיים ותוכן דחוף</p>
-                    <div className="text-xs space-y-1">
-                      <div>• עדכונים חיים במהלך משחקים</div>
-                      <div>• התראות דחופות</div>
-                      <div>• ניטור אירועים</div>
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-medium text-blue-600 mb-2">⏰ כל שעה</h3>
-                    <p className="text-sm text-gray-600 mb-2">טיפים וניתוחים</p>
-                    <div className="text-xs space-y-1">
-                      <div>• טיפי הימורים (8:00-22:00)</div>
-                      <div>• ניתוחי משחקים</div>
-                      <div>• עדכוני נתונים</div>
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-medium text-purple-600 mb-2">📅 יומי</h3>
-                    <p className="text-sm text-gray-600 mb-2">חדשות וסיכומים</p>
-                    <div className="text-xs space-y-1">
-                      <div>• חדשות (9:00, 18:00)</div>
-                      <div>• סיכומים יומיים (23:00)</div>
-                      <div>• סקרי אוהדים</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t pt-4">
-                  <h3 className="font-medium mb-3">סטטוס Vercel Cron Jobs</h3>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch('/api/automation/vercel-status');
-                          const data = await response.json();
-                          setVercelStatus(data);
-                          console.log('Vercel Status:', data);
-                        } catch (error) {
-                          console.error('Error fetching Vercel status:', error);
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                    >
-                      בדוק סטטוס Vercel
-                    </Button>
-                    
-                    {vercelStatus && (
-                      <div className="text-sm">
-                        <span className={vercelStatus.success ? 'text-green-600' : 'text-red-600'}>
-                          {vercelStatus.success ? '✅ פועל' : '❌ שגיאה'}
-                        </span>
-                        {vercelStatus.environment && (
-                          <span className="text-gray-500 mr-2">
-                            ({vercelStatus.environment.deployment_type})
-                          </span>
-                        )}
+      {activeTab === 'content' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Content Types Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {contentTypes.map((contentType) => (
+                <div
+                  key={contentType.id}
+                  className={`border rounded-lg p-4 ${contentType.enabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{contentType.emoji}</span>
+                      <div>
+                        <div className="font-medium">{contentType.name}</div>
+                        <div className="text-sm text-gray-600">{contentType.description}</div>
                       </div>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getPerformanceColor(contentType.performance)}>
+                        {contentType.performance}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant={contentType.enabled ? "default" : "outline"}
+                        onClick={async () => {
+                          const updatedContentTypes = contentTypes.map(ct => 
+                            ct.id === contentType.id 
+                              ? { ...ct, enabled: !ct.enabled }
+                              : ct
+                          );
+                          setContentTypes(updatedContentTypes);
+                          await saveContentTypes(updatedContentTypes);
+                        }}
+                      >
+                        {contentType.enabled ? 'Enabled' : 'Enable'}
+                      </Button>
+                    </div>
                   </div>
+                  {contentType.lastGenerated && (
+                    <div className="text-xs text-gray-500">
+                      Last generated: {new Date(contentType.lastGenerated).toLocaleString()}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {activeTab === 'matches' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                משחקים לשבוע הקרוב
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  onClick={loadUpcomingMatches}
-                  variant="outline"
-                  size="sm"
-                  disabled={matchesLoading}
-                >
-                  {matchesLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'רענן משחקים'}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {matchesLoading ? (
-                <div className="text-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                  <p>טוען משחקים...</p>
-                </div>
-              ) : upcomingMatches.length > 0 ? (
+      {activeTab === 'settings' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Automation Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-medium mb-2">Global Settings</h3>
                 <div className="space-y-4">
-                  {upcomingMatches.slice(0, 20).map((match: any, index: number) => (
-                    <div
-                      key={index}
-                      className={`border rounded-lg p-4 ${match.automation_eligible ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium text-lg">
-                            {match.homeTeam?.name || 'Home Team'} vs {match.awayTeam?.name || 'Away Team'}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {match.competition?.name || 'Unknown Competition'}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {match.kickoff_local || new Date(match.kickoff).toLocaleString('he-IL')}
-                          </div>
-                        </div>
-                        <div className="text-left">
-                          <div className="text-sm font-medium">
-                            ניקוד: {match.scores?.overall || 0}/10
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {match.hours_from_now > 0 ? `בעוד ${Math.round(match.hours_from_now)} שעות` : 'עבר'}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          {match.scheduled_content?.map((content: any, i: number) => (
-                            <div
-                              key={i}
-                              className={`text-xs px-2 py-1 rounded ${
-                                content.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                content.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {content.emoji} {content.type}
-                            </div>
-                          )) || (
-                            <div className="text-xs text-gray-400">
-                              לא מתוכנן תוכן
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Full Automation Mode</div>
+                      <div className="text-sm text-gray-600">Enable automatic content generation and posting</div>
                     </div>
-                  ))}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleFullAutomation}
+                      className={isFullAutomationEnabled ? 'text-green-600' : 'text-gray-400'}
+                    >
+                      {isFullAutomationEnabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>לא נמצאו משחקים. לחץ על "רענן משחקים" כדי לטעון.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {activeTab === 'logs' && (

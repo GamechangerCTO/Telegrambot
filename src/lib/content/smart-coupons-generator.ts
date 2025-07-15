@@ -594,33 +594,20 @@ export class SmartCouponsGenerator {
    * 🖼️ Generate coupon image
    */
   private async generateCouponImage(coupon: CouponData): Promise<string | undefined> {
-    const prompt = `Professional promotional coupon design for ${coupon.brandName}.
-    ${coupon.title} promotion with ${coupon.offerText}, modern coupon aesthetic,
-    promotional graphics, discount badge design, brand colors ${coupon.brandColors.primary},
-    call-to-action elements, professional marketing design, high quality digital art.`;
-
     try {
-      const imageBuffer = await aiImageGenerator.generateImage(prompt);
-      if (!imageBuffer) return undefined;
+      // Use the centralized AIImageGenerator method
+      const generatedImage = await aiImageGenerator.generateCouponImage(
+        coupon.brandName,
+        coupon.title,
+        coupon.offerText,
+        coupon.brandColors,
+        'en'
+      );
+      
+      if (!generatedImage) return undefined;
 
-      const fileName = `coupon_${Date.now()}.png`;
-      const { data, error } = await supabase.storage
-        .from('content-images')
-        .upload(fileName, imageBuffer, {
-          contentType: 'image/png',
-          cacheControl: '3600'
-        });
-
-      if (error) {
-        console.error(`❌ Error uploading coupon image:`, error);
-        return undefined;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('content-images')
-        .getPublicUrl(fileName);
-
-      return urlData.publicUrl;
+      // The AIImageGenerator already handles upload to Supabase and returns a public URL
+      return generatedImage.url;
     } catch (error) {
       console.error(`❌ Error generating coupon image:`, error);
       return undefined;

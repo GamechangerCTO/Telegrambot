@@ -1,122 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RuleExecutor } from '@/lib/automation/rule-executor';
+import { backgroundScheduler } from '@/lib/automation/background-scheduler';
+import { AutomationEngine } from '@/lib/automation/automation-engine';
 
-/**
- * ⏰ Vercel Cron: Hourly Check
- * 
- * Runs every hour for medium-priority content
- * Handles betting tips, analysis, and match preparation
- */
 export async function GET(request: NextRequest) {
+  console.log('⏰ [CRON] Hourly job started:', new Date().toISOString());
+  
   try {
-    const now = new Date();
-    const hour = now.getHours();
-    
-    console.log(`⏰ Vercel Cron (Hourly): Starting hourly check at ${hour}:00...`);
-    
-    const executor = new RuleExecutor();
-    let contentGenerated = 0;
-    let executedRules: string[] = [];
-
-    // Get rules that should run hourly
-    const { supabase } = await import('@/lib/supabase');
-    const { data: rules } = await supabase
-      .from('automation_rules')
-      .select('*')
-      .eq('enabled', true);
-
-    for (const rule of rules || []) {
-      try {
-        // Check if rule should execute this hour
-        const shouldExecute = shouldRuleExecuteThisHour(rule, hour);
-        
-        if (shouldExecute) {
-          console.log(`⏰ Executing hourly rule: ${rule.name} (${rule.content_type})`);
-          const result = await executor.executeRule(rule.id);
-          
-          if (result.success) {
-            contentGenerated += result.contentGenerated;
-            executedRules.push(rule.name);
-          }
-        }
-      } catch (error) {
-        console.error(`❌ Error executing rule ${rule.name}:`, error);
-      }
+    // Verify this is a cron job
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.log('❌ [CRON] Unauthorized hourly job attempt');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Additional hourly tasks
-    if (hour % 4 === 0) { // Every 4 hours
-      console.log('🔄 Running 4-hour maintenance tasks...');
-      
-      try {
-        // Generate analysis content
-        const analysisResult = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/unified-content`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            content_type: 'analysis', 
-            force_generate: true,
-            cron_trigger: true 
-          })
-        });
-        
-        if (analysisResult.ok) {
-          contentGenerated++;
-          executedRules.push('4-Hour Analysis Generation');
-        }
-      } catch (error) {
-        console.error('❌ Error in 4-hour maintenance:', error);
-      }
-    }
-
-    console.log(`✅ Hourly Cron completed: ${contentGenerated} content items generated`);
-    
-    return NextResponse.json({
-      success: true,
-      type: 'hourly-cron',
-      hour,
+    const results = {
       timestamp: new Date().toISOString(),
-      contentGenerated,
-      executedRules,
-      message: `Generated ${contentGenerated} content items from ${executedRules.length} rules at ${hour}:00`
+      tasks: [] as any[]
+    };
+
+    // Execute hourly automation rules
+    const automationEngine = new AutomationEngine();
+    const automationResults = await automationEngine.executeActiveRules();
+    results.tasks.push({
+      task: 'automation_execution',
+      status: 'completed',
+      data: {
+        rulesExecuted: automationResults.length,
+        results: automationResults
+      }
     });
 
+    // Check for pending content and smart push opportunities
+    const currentHour = new Date().getUTCHours();
+    
+    // Smart push during peak hours (9 AM, 3 PM, 7 PM UTC)
+    if ([9, 15, 19].includes(currentHour)) {
+      results.tasks.push({
+        task: 'smart_push_trigger',
+        status: 'scheduled',
+        data: { hour: currentHour, trigger: 'peak_hour' }
+      });
+    }
+
+    // Get system stats
+    const stats = await backgroundScheduler.getStats();
+    results.tasks.push({
+      task: 'system_stats',
+      status: 'completed',
+      data: stats
+    });
+
+    console.log('✅ [CRON] Hourly job completed successfully');
+    return NextResponse.json(results);
+
   } catch (error) {
-    console.error('❌ Hourly Cron error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+    console.error('❌ [CRON] Hourly job failed:', error);
+    return NextResponse.json({ 
+      error: 'Cron job failed',
+      message: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
-}
-
-/**
- * Check if a rule should execute this hour
- */
-function shouldRuleExecuteThisHour(rule: any, hour: number): boolean {
-  // Context-aware rules (smart coupons) - run occasionally
-  if (rule.automation_type === 'context_aware') {
-    return hour % 6 === 0; // Every 6 hours
-  }
-  
-  // Event-driven rules - check for upcoming matches
-  if (rule.automation_type === 'event_driven') {
-    // Pre-match content - run during peak hours
-    if (rule.content_type === 'betting' || rule.content_type === 'analysis') {
-      return hour >= 8 && hour <= 22 && hour % 3 === 0; // Every 3 hours during peak
-    }
-    
-    // Live content - more frequent during match hours
-    if (rule.content_type === 'live') {
-      return hour >= 12 && hour <= 23; // Afternoon and evening
-    }
-  }
-  
-  // Polls - run before peak match times
-  if (rule.content_type === 'polls') {
-    return hour === 15 || hour === 19; // 3 PM and 7 PM
-  }
-  
-  return false;
 } 

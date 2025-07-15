@@ -6,6 +6,7 @@
  * - Automatic automation execution
  * - Rule monitoring and execution tracking
  * - Duplicate prevention logic
+ * - 🆕 Live updates monitoring integration
  */
 
 import { supabase } from '@/lib/supabase';
@@ -15,6 +16,10 @@ export class BackgroundScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private readonly CHECK_INTERVAL = 60000; // Check every minute
   private lastExecutionTimes: Map<string, number> = new Map();
+  
+  // 🆕 Live updates integration
+  private liveUpdatesGenerator: any = null;
+  private isLiveMonitoringActive = false;
 
   /**
    * Start the continuous background scheduler
@@ -27,6 +32,9 @@ export class BackgroundScheduler {
 
     this.isRunning = true;
     console.log('🚀 Background Scheduler starting - checking every minute');
+
+    // 🆕 Start live updates monitoring
+    this.startLiveUpdatesMonitoring();
 
     // Initial check immediately
     this.checkAndExecute();
@@ -49,7 +57,76 @@ export class BackgroundScheduler {
       this.intervalId = null;
     }
 
+    // 🆕 Stop live updates monitoring
+    this.stopLiveUpdatesMonitoring();
+
     console.log('🛑 Background Scheduler stopped');
+  }
+
+  /**
+   * 🆕 START LIVE UPDATES MONITORING
+   */
+  private async startLiveUpdatesMonitoring(): Promise<void> {
+    try {
+      console.log('🔴 Starting live updates monitoring...');
+      
+      // Dynamic import to avoid circular dependencies
+      const { LiveUpdatesGenerator } = await import('../content/live-updates-generator');
+      this.liveUpdatesGenerator = new LiveUpdatesGenerator();
+      
+      // Start monitoring with 60-second intervals
+      const result = await this.liveUpdatesGenerator.startMonitoring(60);
+      
+      if (result.isRunning) {
+        this.isLiveMonitoringActive = true;
+        console.log('✅ Live updates monitoring started successfully');
+      } else {
+        console.log('⚠️ Live updates monitoring failed to start');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error starting live updates monitoring:', error);
+    }
+  }
+
+  /**
+   * 🆕 STOP LIVE UPDATES MONITORING
+   */
+  private async stopLiveUpdatesMonitoring(): Promise<void> {
+    try {
+      if (this.liveUpdatesGenerator && this.isLiveMonitoringActive) {
+        console.log('🛑 Stopping live updates monitoring...');
+        
+        await this.liveUpdatesGenerator.stopMonitoring();
+        this.isLiveMonitoringActive = false;
+        
+        console.log('✅ Live updates monitoring stopped');
+      }
+    } catch (error) {
+      console.error('❌ Error stopping live updates monitoring:', error);
+    }
+  }
+
+  /**
+   * 🆕 GET LIVE UPDATES STATUS
+   */
+  async getLiveUpdatesStatus(): Promise<any> {
+    try {
+      if (!this.liveUpdatesGenerator || !this.isLiveMonitoringActive) {
+        return {
+          isActive: false,
+          message: 'Live monitoring not active'
+        };
+      }
+      
+      return await this.liveUpdatesGenerator.getMonitoringStats();
+    } catch (error) {
+      console.error('❌ Error getting live updates status:', error);
+      return {
+        isActive: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   /**
@@ -346,14 +423,26 @@ export class BackgroundScheduler {
   /**
    * Get statistics
    */
-  getStats(): any {
+  async getStats(): Promise<any> {
+    const liveStats = await this.getLiveUpdatesStatus();
+    
     return {
       isRunning: this.isRunning,
       totalRulesExecuted: this.lastExecutionTimes.size,
       lastExecutions: Array.from(this.lastExecutionTimes.entries()).map(([ruleId, time]) => ({
         ruleId,
         lastExecuted: new Date(time).toLocaleString('en-US')
-      }))
+      })),
+      // 🆕 Live updates status
+      liveUpdates: {
+        isActive: this.isLiveMonitoringActive,
+        isRunning: liveStats.isRunning || false,
+        totalMatches: liveStats.totalMatches || 0,
+        liveMatches: liveStats.liveMatches || 0,
+        eventsProcessed: liveStats.eventsProcessed || 0,
+        updatesGenerated: liveStats.updatesGenerated || 0,
+        startTime: liveStats.startTime || null
+      }
     };
   }
 }

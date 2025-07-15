@@ -1,6 +1,6 @@
 /**
  * 🚀 UNIFIED CONTENT API - Refactored Modular Architecture
- * זהו ה-API המרכזי לכל יצירה ושליחת תוכן במערכת
+ * This is the central API for all content creation and distribution in the system
  * Built with modular architecture for better maintainability
  */
 

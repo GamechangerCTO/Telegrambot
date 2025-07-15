@@ -1,99 +1,39 @@
-# ===============================================
-# 🚀 Telegram Bot Sport - Production .gitignore
-# ===============================================
-
-# Node.js Dependencies
+# Dependencies
 node_modules/
 /.pnp
 .pnp.js
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-# Next.js Build & Output
+# Production
+/build
 /.next/
 /out/
-.next
-.turbo
-build/
-dist/
 
-# Production & Deployment
-.vercel
-.netlify
-/.serverless/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Environment Variables & Secrets
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.*.local
-
-# API Keys & Sensitive Data (Critical for Telegram Bot)
-.env.openai
-.env.telegram
-.env.supabase
-api-keys.json
-secrets.json
-config/production.json
-
-# Database & Cache
-*.db
-*.sqlite
-*.sqlite3
-/database/*.sql
-cache/
-.cache/
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-tsconfig.tsbuildinfo
-
-# Testing
-/coverage/
-/.nyc_output
-.coverage
-jest-coverage/
-test-results/
-playwright-report/
-test-results/
-
-# Generated Files
-public/generated-images/
-public/uploads/
-uploads/
-generated/
-temp/
-tmp/
 
 # Logs
-logs
-*.log
-*.pid
-*.seed
-*.pid.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# Runtime & Process Files
-pids/
-lib-cov/
-
-# IDEs & Editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.project
-.classpath
-.settings/
-.metadata
 
-# OS Generated Files
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -101,76 +41,16 @@ lib-cov/
 .Trashes
 ehthumbs.db
 Thumbs.db
-desktop.ini
 
-# Memory Dumps & Core Files
-*.stackdump
-core.*
+# Supabase
+.vercel
 
-# Package Manager Lock Files (keep only one)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Generated images (optional - you might want to keep these)
+# public/generated-images/
 
-# Temporary Files
+# Temporary files
 *.tmp
 *.temp
-*.bak
-*.swp
-*.swo
 
-# Claude AI & Development Tools
+# Claude IDE settings
 .claude/
-.cursor/
-.replit
-.devcontainer/
-
-# Monitoring & Analytics
-.sentry/
-newrelic_agent.log
-
-# Docker
-Dockerfile*
-docker-compose*.yml
-.dockerignore
-
-# CI/CD
-.github/workflows/
-.gitlab-ci.yml
-.travis.yml
-circle.yml
-
-# Backup Files
-*.backup
-backup/
-backups/
-
-# Local Configuration Overrides
-local.json
-local.config.js
-local.settings.json
-
-# Supabase Local Development
-supabase/.temp/
-supabase/seed.sql
-
-# ===============================================
-# 🔧 Project Specific
-# ===============================================
-
-# Memory Bank Updates (Development Only)
-memory-bank/temp/
-memory-bank/*.bak
-
-# Test Data
-test-data/
-mock-data/
-sample-data/
-
-# Scripts Output
-scripts/output/
-scripts/logs/
-
-# Automation Logs
-automation-logs/
-content-logs/

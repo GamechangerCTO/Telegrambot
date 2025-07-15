@@ -1,7 +1,7 @@
 /**
  * 🏆 Advanced Match Analysis API - API לניתוח משחקים מתקדם
  * מתמחה בניתוח מעמיק של משחקים עם נתונים סטטיסטיים ואנליזה טקטית
- * פועל בשילוב עם מערכת הכדורגל המאוחדת ומנועי הבינה המלאכותית
+ * Works with the unified football system and AI engines
  */
 
 import { NextRequest, NextResponse } from 'next/server';

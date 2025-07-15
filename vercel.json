@@ -1,11 +1,16 @@
 {
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/automation/cron/minute",
       "schedule": "* * * * *"
     },
     {
-      "path": "/api/automation/cron/hourly",
+      "path": "/api/automation/cron/hourly", 
       "schedule": "0 * * * *"
     },
     {
@@ -13,8 +18,20 @@
       "schedule": "0 9,18,23 * * *"
     },
     {
-      "path": "/api/automation/webhook",
+      "path": "/api/automation/cron/live-updates",
+      "schedule": "*/3 6-23 * * *"
+    },
+    {
+      "path": "/api/automation/cron/smart-push",
       "schedule": "0 15,19 * * *"
+    },
+    {
+      "path": "/api/automation/cron/urgent",
+      "schedule": "*/2 * * * *"
     }
-  ]
+  ],
+  "regions": ["iad1"],
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install"
 } 

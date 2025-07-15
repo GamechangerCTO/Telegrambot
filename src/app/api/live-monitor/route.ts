@@ -1,6 +1,6 @@
 /**
  * 🔴 Live Monitor API Endpoint
- * API לניהול מערכת עדכונים חיים
+ * API for managing live updates system
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,11 +10,11 @@ import { LiveUpdatesGenerator } from '@/lib/content/live-updates-generator';
 const liveMonitor = new LiveUpdatesGenerator();
 
 /**
- * �� API לניהול מערכת עדכונים חיים - מחוברת למערכת בחירת המשחקים החכמה
+ * Live updates management API - connected to intelligent match selection system
  * 
  * תכונות:
  * ✅ מעקב אחרי משחקים מעניינים בלבד (דרך FootballMatchScorer)
- * ✅ זיהוי אירועים חיים (גולים, כרטיסים, התחלת/סיום משחק)
+ * ✅ Live event detection (goals, cards, match start/end)
  * ✅ שליחת התראות לערוצים רלוונטיים
  * ✅ מניעת דאבל פוסטים
  */

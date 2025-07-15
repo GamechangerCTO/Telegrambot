@@ -393,7 +393,7 @@ export default function BotManagementPage() {
       match_analysis: 'Match Analysis'
     };
 
-    // בדיקה אם types הוא מערך תקין
+            // Check if types is a valid array
     if (!types || !Array.isArray(types) || types.length === 0) {
       return 'No content types configured';
     }

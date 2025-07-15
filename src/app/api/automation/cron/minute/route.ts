@@ -1,95 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RuleExecutor } from '@/lib/automation/rule-executor';
+import { backgroundScheduler } from '@/lib/automation/background-scheduler';
 
-/**
- * 🕐 Vercel Cron: Every Minute Check
- * 
- * This runs every minute via Vercel Cron Jobs
- * Checks for live matches and immediate content opportunities
- */
 export async function GET(request: NextRequest) {
+  console.log('⏰ [CRON] Minute job started:', new Date().toISOString());
+  
   try {
-    console.log('🕐 Vercel Cron (Every Minute): Starting live content check...');
-    
-    // Verify this is called by Vercel Cron
+    // Verify this is a cron job
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.includes('Bearer')) {
-      console.log('⚠️ Unauthorized cron call - accepting for development');
-      // In development, allow without auth
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.log('❌ [CRON] Unauthorized minute job attempt');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const executor = new RuleExecutor();
-    let contentGenerated = 0;
-    let executedRules: string[] = [];
-
-    // Get live/event-driven rules that should run frequently
-    const { supabase } = await import('@/lib/supabase');
-    const { data: rules } = await supabase
-      .from('automation_rules')
-      .select('*')
-      .eq('enabled', true)
-      .in('automation_type', ['continuous', 'event_driven']);
-
-    for (const rule of rules || []) {
-      try {
-        // Check if rule should execute now
-        const shouldExecute = await shouldRuleExecuteNow(rule);
-        
-        if (shouldExecute) {
-          console.log(`⚡ Executing rule: ${rule.name} (${rule.content_type})`);
-          const result = await executor.executeRule(rule.id);
-          
-          if (result.success) {
-            contentGenerated += result.contentGenerated;
-            executedRules.push(rule.name);
-          }
-        }
-      } catch (error) {
-        console.error(`❌ Error executing rule ${rule.name}:`, error);
-      }
-    }
-
-    console.log(`✅ Minute Cron completed: ${contentGenerated} content items generated`);
-    
-    return NextResponse.json({
-      success: true,
-      type: 'minute-cron',
+    const results = {
       timestamp: new Date().toISOString(),
-      contentGenerated,
-      executedRules,
-      message: `Generated ${contentGenerated} content items from ${executedRules.length} rules`
+      tasks: [] as any[]
+    };
+
+    // Quick health checks and urgent monitoring
+    const healthStatus = await backgroundScheduler.getStats();
+    results.tasks.push({
+      task: 'system_health',
+      status: 'completed',
+      data: healthStatus
     });
 
+    // Live updates monitoring (every minute during active hours)
+    const currentHour = new Date().getUTCHours();
+    if (currentHour >= 6 && currentHour <= 23) {
+      const liveStatus = await backgroundScheduler.getLiveUpdatesStatus();
+      results.tasks.push({
+        task: 'live_monitoring',
+        status: 'completed',
+        data: liveStatus
+      });
+    }
+
+    console.log('✅ [CRON] Minute job completed successfully');
+    return NextResponse.json(results);
+
   } catch (error) {
-    console.error('❌ Minute Cron error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+    console.error('❌ [CRON] Minute job failed:', error);
+    return NextResponse.json({ 
+      error: 'Cron job failed',
+      message: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
-}
-
-/**
- * Check if a rule should execute now based on its type and timing
- */
-async function shouldRuleExecuteNow(rule: any): Promise<boolean> {
-  const now = new Date();
-  
-  // For live content - check if there are ongoing matches
-  if (rule.content_type === 'live') {
-    return true; // Always check for live content
-  }
-  
-  // For event-driven content - check based on timing config
-  if (rule.automation_type === 'event_driven') {
-    return true; // Check for upcoming matches
-  }
-  
-  // For continuous content - run every few minutes
-  if (rule.automation_type === 'continuous') {
-    return Math.random() > 0.8; // 20% chance each minute = ~every 5 minutes
-  }
-  
-  return false;
 } 

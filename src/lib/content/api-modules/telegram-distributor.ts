@@ -10,6 +10,7 @@ import { contentFormatter } from './content-formatter';
 import { aiImageGenerator } from '@/lib/content/ai-image-generator';
 import { Language } from './channel-resolver';
 import { ContentConfigUtils } from './content-config';
+import { contentSpamPreventer } from '@/lib/utils/content-spam-preventer';
 
 export interface TelegramDistributionOptions {
   content: any;
@@ -59,6 +60,33 @@ export class TelegramDistributor {
         console.log(`  - ${channel.name} (${channel.language})`);
       });
 
+      // 🛡️ ANTI-SPAM CHECK - Check each channel before sending
+      const allowedChannels = [];
+      for (const channel of channels) {
+        const canSend = await contentSpamPreventer.canSendContent(
+          content.content_type || 'unknown',
+          channel.id
+        );
+        
+        if (canSend.allowed) {
+          allowedChannels.push(channel);
+        } else {
+          console.log(`🚫 SPAM PREVENTION: Blocked sending to ${channel.name}: ${canSend.reason}`);
+        }
+      }
+
+      if (allowedChannels.length === 0) {
+        console.log('🛡️ SPAM PREVENTION: All channels blocked by rate limiting');
+        return {
+          success: false,
+          channels: 0,
+          results: [],
+          error: 'All channels blocked by spam prevention (rate limits exceeded)'
+        };
+      }
+
+      console.log(`✅ Spam check passed: ${allowedChannels.length}/${channels.length} channels allowed`);
+
       // Prepare content for sending
       const messageContent = contentFormatter.formatForTelegram(content, mode);
       const keyboard = this.createTelegramKeyboard(content, mode);
@@ -66,14 +94,30 @@ export class TelegramDistributor {
       // Handle image generation/retrieval
       let imageUrl = await this.handleImageGeneration(content, language, includeImages);
 
-      // Send content to channels
+      // Send content to allowed channels only
       const distributionResult = await this.distributeToChannels(
-        channels,
+        allowedChannels,
         messageContent,
         imageUrl,
         keyboard,
         content
       );
+
+      // 📊 TRACK SENT MESSAGES - Record successful sends for spam prevention
+      if (distributionResult.success) {
+        for (const result of distributionResult.results) {
+          if (result.success) {
+            const channel = allowedChannels.find(c => c.name === result.channelName);
+            if (channel) {
+              await contentSpamPreventer.recordSentMessage(
+                channel.id,
+                content.content_type || 'unknown',
+                result.messageId?.toString() || 'unknown'
+              );
+            }
+          }
+        }
+      }
 
       // Cleanup generated image after sending
       if (content._generatedImage && distributionResult.success) {

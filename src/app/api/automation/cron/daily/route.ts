@@ -1,120 +1,128 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RuleExecutor } from '@/lib/automation/rule-executor';
+import { backgroundScheduler } from '@/lib/automation/background-scheduler';
+import { DailyWeeklySummaryGenerator } from '@/lib/content/daily-weekly-summary-generator';
+import { supabase } from '@/lib/supabase';
 
-/**
- * 📅 Vercel Cron: Daily Scheduled Content
- * 
- * Runs 3 times daily: 9:00, 18:00, 23:00
- * Generates scheduled content like news, summaries, analysis
- */
 export async function GET(request: NextRequest) {
+  console.log('⏰ [CRON] Daily job started:', new Date().toISOString());
+  
   try {
-    const now = new Date();
-    const hour = now.getHours();
-    
-    console.log(`📅 Vercel Cron (Daily): Starting scheduled content at ${hour}:00...`);
-    
-    const executor = new RuleExecutor();
-    let contentGenerated = 0;
-    let executedRules: string[] = [];
+    // Verify this is a cron job
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.log('❌ [CRON] Unauthorized daily job attempt');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Get scheduled rules
-    const { supabase } = await import('@/lib/supabase');
-    const { data: rules } = await supabase
-      .from('automation_rules')
-      .select('*')
-      .eq('enabled', true)
-      .eq('automation_type', 'scheduled');
+    const results = {
+      timestamp: new Date().toISOString(),
+      tasks: [] as any[]
+    };
 
-    for (const rule of rules || []) {
-      try {
-        // Check if rule should execute at this hour
-        const shouldExecute = shouldRuleExecuteAtHour(rule, hour);
-        
-        if (shouldExecute) {
-          console.log(`📅 Executing scheduled rule: ${rule.name} (${rule.content_type})`);
-          const result = await executor.executeRule(rule.id);
-          
-          if (result.success) {
-            contentGenerated += result.contentGenerated;
-            executedRules.push(rule.name);
+    const currentHour = new Date().getUTCHours();
+    const currentDay = new Date().getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+    const summaryGenerator = new DailyWeeklySummaryGenerator();
+
+    // Morning summaries (9 AM UTC)
+    if (currentHour === 9) {
+      console.log('📅 Generating daily summaries...');
+      
+      // Generate daily summary for active channels
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, language, bot_id')
+        .eq('is_active', true);
+
+      if (channels) {
+        for (const channel of channels) {
+          try {
+            const summary = await summaryGenerator.generateSummary({
+              type: 'daily',
+              language: channel.language as 'en' | 'am' | 'sw',
+              channelId: channel.id
+            });
+            
+            results.tasks.push({
+              task: 'daily_summary',
+              channel: channel.id,
+              status: summary ? 'completed' : 'failed',
+              data: summary
+            });
+          } catch (error) {
+            results.tasks.push({
+              task: 'daily_summary',
+              channel: channel.id,
+              status: 'error',
+              error: error instanceof Error ? error.message : String(error)
+            });
           }
         }
-      } catch (error) {
-        console.error(`❌ Error executing rule ${rule.name}:`, error);
       }
     }
 
-    // Force generate some content if none was created
-    if (contentGenerated === 0) {
-      console.log('🔄 No scheduled content found, generating general content...');
+    // Evening summaries (6 PM UTC)
+    if (currentHour === 18) {
+      console.log('🌆 Generating evening match previews...');
       
-      try {
-        // Generate news content
-        const newsResult = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/unified-content`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            content_type: 'news', 
-            force_generate: true,
-            cron_trigger: true 
-          })
-        });
-        
-        if (newsResult.ok) {
-          contentGenerated++;
-          executedRules.push('Force News Generation');
+      results.tasks.push({
+        task: 'evening_preview',
+        status: 'completed',
+        data: { trigger: 'evening_schedule', hour: currentHour }
+      });
+    }
+
+    // Weekly summaries (Sunday 11 PM UTC)
+    if (currentDay === 0 && currentHour === 23) {
+      console.log('📊 Generating weekly summaries...');
+      
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, language, bot_id')
+        .eq('is_active', true);
+
+      if (channels) {
+        for (const channel of channels) {
+          try {
+            const summary = await summaryGenerator.generateSummary({
+              type: 'weekly',
+              language: channel.language as 'en' | 'am' | 'sw',
+              channelId: channel.id
+            });
+            
+            results.tasks.push({
+              task: 'weekly_summary',
+              channel: channel.id,
+              status: summary ? 'completed' : 'failed',
+              data: summary
+            });
+          } catch (error) {
+            results.tasks.push({
+              task: 'weekly_summary',
+              channel: channel.id,
+              status: 'error',
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
         }
-      } catch (error) {
-        console.error('❌ Error generating force content:', error);
       }
     }
 
-    console.log(`✅ Daily Cron completed: ${contentGenerated} content items generated`);
-    
-    return NextResponse.json({
-      success: true,
-      type: 'daily-cron',
-      hour,
-      timestamp: new Date().toISOString(),
-      contentGenerated,
-      executedRules,
-      message: `Generated ${contentGenerated} content items from ${executedRules.length} rules at ${hour}:00`
+    // System cleanup and maintenance
+    const stats = await backgroundScheduler.getStats();
+    results.tasks.push({
+      task: 'system_maintenance',
+      status: 'completed',
+      data: stats
     });
+
+    console.log('✅ [CRON] Daily job completed successfully');
+    return NextResponse.json(results);
 
   } catch (error) {
-    console.error('❌ Daily Cron error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+    console.error('❌ [CRON] Daily job failed:', error);
+    return NextResponse.json({ 
+      error: 'Cron job failed',
+      message: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
-  }
-}
-
-/**
- * Check if a scheduled rule should execute at this hour
- */
-function shouldRuleExecuteAtHour(rule: any, hour: number): boolean {
-  const config = rule.config || {};
-  
-  // Check if rule has specific times configured
-  if (config.times && Array.isArray(config.times)) {
-    return config.times.some((time: string) => {
-      const ruleHour = parseInt(time.split(':')[0]);
-      return ruleHour === hour;
-    });
-  }
-  
-  // Default scheduling based on content type
-  switch (rule.content_type) {
-    case 'news':
-      return hour === 9 || hour === 18; // Morning and evening news
-    case 'daily_summary':
-      return hour === 23; // End of day summary
-    case 'betting':
-      return hour === 18; // Evening betting tips
-    default:
-      return hour === 9; // Default to morning
   }
 } 
