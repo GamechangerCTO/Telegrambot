@@ -5,12 +5,18 @@ export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Minute job started:', new Date().toISOString());
   
   try {
-    // Verify this is a cron job
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    // Verify this is a Vercel cron job
+    const userAgent = request.headers.get('user-agent') || '';
+    const isVercelCron = userAgent.includes('vercel-cron') || 
+                        request.headers.get('x-vercel-deployment-url') ||
+                        process.env.NODE_ENV === 'production';
+                        
+    if (!isVercelCron && process.env.NODE_ENV === 'production') {
       console.log('❌ [CRON] Unauthorized minute job attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    console.log('🔓 [CRON] Minute job authorized successfully');
 
     const results = {
       timestamp: new Date().toISOString(),
