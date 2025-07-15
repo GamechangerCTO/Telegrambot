@@ -659,11 +659,25 @@ export class LiveUpdatesGenerator {
   }
 
   /**
-   * 🔴 Step 1: Get current live match (or create simulation)
+   * 🔴 Step 1: Get current live match from daily important matches
    */
   private async getCurrentLiveMatch(language: 'en' | 'am' | 'sw'): Promise<LiveMatchData | null> {
     try {
-      const bestMatch = await unifiedFootballService.getBestMatchForContent('live_update', language);
+      console.log(`🔴 Getting current live match from daily important matches`);
+      
+      let bestMatch = null;
+      
+      // First try to get live match from daily important matches
+      const dailyMatch = await this.getDailyLiveMatch();
+      if (dailyMatch) {
+        console.log(`✅ Using daily live match: ${dailyMatch.home_team} vs ${dailyMatch.away_team}`);
+        bestMatch = this.convertDailyMatchToUnifiedFormat(dailyMatch);
+      } else {
+        // Fallback to unified service if no daily live matches
+        console.log(`⚠️ No daily live matches found, falling back to unified service`);
+        bestMatch = await unifiedFootballService.getBestMatchForContent('live_update', language);
+      }
+      
       if (!bestMatch) return null;
 
       // Create live match simulation
@@ -1676,6 +1690,68 @@ export class LiveUpdatesGenerator {
         message: `Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
+  }
+
+  /**
+   * 📅 Get today's live match from database
+   */
+  private async getDailyLiveMatch() {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const now = new Date();
+      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2 hours ago
+      const twoHoursAhead = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours ahead
+
+      const { data: matches, error } = await supabase
+        .from('daily_important_matches')
+        .select('*')
+        .eq('discovery_date', new Date().toISOString().split('T')[0])
+        .gte('kickoff_time', twoHoursAgo.toISOString()) // Started within last 2 hours
+        .lte('kickoff_time', twoHoursAhead.toISOString()) // Or starting within next 2 hours
+        .order('importance_score', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('❌ Error fetching daily live matches:', error);
+        return null;
+      }
+
+      return matches && matches.length > 0 ? matches[0] : null;
+      
+    } catch (error) {
+      console.error('❌ Error accessing daily live matches database:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🔄 Convert daily match format to unified service format
+   */
+  private convertDailyMatchToUnifiedFormat(dailyMatch: any) {
+    return {
+      homeTeam: { 
+        name: dailyMatch.home_team,
+        id: dailyMatch.home_team_id
+      },
+      awayTeam: { 
+        name: dailyMatch.away_team,
+        id: dailyMatch.away_team_id
+      },
+      competition: { 
+        name: dailyMatch.competition 
+      },
+      kickoff: dailyMatch.kickoff_time,
+      venue: dailyMatch.venue,
+      importance_score: dailyMatch.importance_score,
+      external_match_id: dailyMatch.external_match_id,
+      content_opportunities: dailyMatch.content_opportunities,
+      source: 'daily_important_matches'
+    };
   }
 }
 

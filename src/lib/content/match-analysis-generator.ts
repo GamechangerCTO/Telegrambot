@@ -706,10 +706,85 @@ export class MatchAnalysisGenerator {
   }
 
   /**
-   * 🏆 Step 1: Get best match for analysis
+   * 🏆 Step 1: Get best match for analysis - from daily important matches
    */
   private async getBestMatchForAnalysis(language: 'en' | 'am' | 'sw') {
-    return await unifiedFootballService.getBestMatchForContent('analysis', language);
+    console.log(`🎯 Getting daily important match for analysis`);
+    
+    try {
+      // First try to get match from daily important matches table
+      const dailyMatch = await this.getDailyImportantMatch();
+      if (dailyMatch) {
+        console.log(`✅ Using daily important match: ${dailyMatch.home_team} vs ${dailyMatch.away_team}`);
+        return this.convertDailyMatchToUnifiedFormat(dailyMatch);
+      }
+
+      // Fallback to unified service if no daily matches available
+      console.log(`⚠️ No daily matches found, falling back to unified service`);
+      return await unifiedFootballService.getBestMatchForContent('analysis', language);
+      
+    } catch (error) {
+      console.error('❌ Error getting daily match, using fallback:', error);
+      return await unifiedFootballService.getBestMatchForContent('analysis', language);
+    }
+  }
+
+  /**
+   * 📅 Get today's most important match from database for analysis
+   */
+  private async getDailyImportantMatch() {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { data: matches, error } = await supabase
+        .from('daily_important_matches')
+        .select('*')
+        .eq('discovery_date', new Date().toISOString().split('T')[0])
+        .gte('kickoff_time', new Date().toISOString()) // Only future matches
+        .order('importance_score', { ascending: false })
+        .order('kickoff_time', { ascending: true })
+        .limit(1);
+
+      if (error) {
+        console.error('❌ Error fetching daily matches:', error);
+        return null;
+      }
+
+      return matches && matches.length > 0 ? matches[0] : null;
+      
+    } catch (error) {
+      console.error('❌ Error accessing daily matches database:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🔄 Convert daily match format to unified service format
+   */
+  private convertDailyMatchToUnifiedFormat(dailyMatch: any) {
+    return {
+      homeTeam: { 
+        name: dailyMatch.home_team,
+        id: dailyMatch.home_team_id
+      },
+      awayTeam: { 
+        name: dailyMatch.away_team,
+        id: dailyMatch.away_team_id
+      },
+      competition: { 
+        name: dailyMatch.competition 
+      },
+      kickoff: dailyMatch.kickoff_time,
+      venue: dailyMatch.venue,
+      importance_score: dailyMatch.importance_score,
+      external_match_id: dailyMatch.external_match_id,
+      content_opportunities: dailyMatch.content_opportunities,
+      source: 'daily_important_matches'
+    };
   }
 
   /**
