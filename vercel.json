@@ -21,6 +21,18 @@
       "schedule": "0 9,18,23 * * *"
     },
     {
+      "path": "/api/automation/cron/morning-discovery",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/automation/cron/news-only",
+      "schedule": "0 9,15,21 * * *"
+    },
+    {
+      "path": "/api/automation/cron/dynamic-content",
+      "schedule": "*/10 6-23 * * *"
+    },
+    {
       "path": "/api/automation/cron/live-updates",
       "schedule": "*/3 6-23 * * *"
     },

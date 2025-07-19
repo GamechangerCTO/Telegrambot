@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backgroundScheduler } from '@/lib/automation/background-scheduler';
 import { AutomationEngine } from '@/lib/automation/automation-engine';
-import { BettingTipsGenerator } from '@/lib/content/betting-tips-generator';
-import { OptimizedNewsContentGenerator } from '@/lib/content/news-content-generator';
-import { MatchAnalysisGenerator } from '@/lib/content/match-analysis-generator';
-import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
-  console.log('⏰ [CRON] Hourly job started:', new Date().toISOString());
+  console.log('⏰ [CRON] Hourly system tasks started:', new Date().toISOString());
   
   try {
     // Verify this is a Vercel cron job
@@ -21,18 +17,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    console.log('🔓 [CRON] Hourly job authorized successfully');
+    console.log('🔓 [CRON] Hourly system tasks authorized successfully');
 
     const results = {
       timestamp: new Date().toISOString(),
       tasks: [] as any[]
     };
 
-    // Execute hourly automation rules
+    // Execute general automation rules (non-content specific)
+    console.log('🤖 Executing general automation rules...');
     const automationEngine = new AutomationEngine();
     const automationResults = await automationEngine.executeActiveRules();
     results.tasks.push({
-      task: 'automation_execution',
+      task: 'general_automation_execution',
       status: 'completed',
       data: {
         rulesExecuted: automationResults.length,
@@ -40,151 +37,61 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Initialize generators
-    const bettingGenerator = new BettingTipsGenerator();
-    const newsGenerator = new OptimizedNewsContentGenerator();
-    const analysisGenerator = new MatchAnalysisGenerator();
-    
     const currentHour = new Date().getUTCHours();
 
-    // Betting tips generation (every hour during active time)
-    if (currentHour >= 8 && currentHour <= 22) {
-      try {
-        console.log('🎯 Generating betting tips...');
-        
-        // Get active channels for betting content
-        const { data: channels } = await supabase
-          .from('channels')
-          .select('id, language, bot_id')
-          .eq('is_active', true);
-
-        if (channels && channels.length > 0) {
-          // Generate betting tips for each channel
-          for (const channel of channels.slice(0, 2)) { // Limit to 2 channels per hour
-            const bettingResult = await bettingGenerator.generateBettingTips({
-              language: channel.language as 'en' | 'am' | 'sw',
-              channelId: channel.id,
-              maxPredictions: 3,
-              riskTolerance: 'moderate'
-            });
-
-            results.tasks.push({
-              task: 'betting_tips_generation',
-              channel: channel.id,
-              status: bettingResult ? 'completed' : 'failed',
-              data: bettingResult
-            });
-          }
-        }
-      } catch (error) {
-        results.tasks.push({
-          task: 'betting_tips_generation',
-          status: 'error',
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    }
-
-    // News content generation (every 2 hours)
-    if (currentHour % 2 === 0) {
-      try {
-        console.log('📰 Generating news content...');
-        
-        const { data: channels } = await supabase
-          .from('channels')
-          .select('id, language, bot_id')
-          .eq('is_active', true);
-
-        if (channels && channels.length > 0) {
-          for (const channel of channels.slice(0, 3)) { // Limit to 3 channels per hour
-            const newsResult = await newsGenerator.generateNewsContent({
-              language: channel.language as 'en' | 'am' | 'sw',
-              channelId: channel.id,
-              maxResults: 1,
-              excludeUsedContent: true
-            });
-
-            results.tasks.push({
-              task: 'news_generation',
-              channel: channel.id,
-              status: newsResult ? 'completed' : 'failed',
-              data: newsResult
-            });
-          }
-        }
-      } catch (error) {
-        results.tasks.push({
-          task: 'news_generation',
-          status: 'error',
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    }
-
-    // Match analysis generation (every 3 hours during peak time)
-    if ([9, 12, 15, 18, 21].includes(currentHour)) {
-      try {
-        console.log('⚽ Generating match analysis...');
-        
-        const { data: channels } = await supabase
-          .from('channels')
-          .select('id, language, bot_id')
-          .eq('is_active', true);
-
-        if (channels && channels.length > 0) {
-          // Generate match analysis for each channel
-          for (const channel of channels.slice(0, 2)) { // Limit to 2 channels
-            const analysisResult = await analysisGenerator.generateMatchAnalysis({
-              language: channel.language as 'en' | 'am' | 'sw',
-              channelId: channel.id,
-              analysisDepth: 'detailed',
-              focusAreas: ['statistics', 'predictions', 'h2h']
-            });
-
-            results.tasks.push({
-              task: 'match_analysis_generation',
-              channel: channel.id,
-              status: analysisResult ? 'completed' : 'failed',
-              data: analysisResult
-            });
-          }
-        }
-      } catch (error) {
-        results.tasks.push({
-          task: 'match_analysis_generation',
-          status: 'error',
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    }
-
-    // Check for pending content and smart push opportunities
-    
-    // Smart push during peak hours (9 AM, 3 PM, 7 PM UTC)
+    // Smart push triggers during peak hours (9 AM, 3 PM, 7 PM UTC)
     if ([9, 15, 19].includes(currentHour)) {
+      console.log(`💰 Triggering smart push at peak hour: ${currentHour}:00`);
       results.tasks.push({
         task: 'smart_push_trigger',
         status: 'scheduled',
-        data: { hour: currentHour, trigger: 'peak_hour' }
+        data: { 
+          hour: currentHour, 
+          trigger: 'peak_hour_automation',
+          message: 'Smart push scheduled for peak engagement time'
+        }
       });
     }
 
-    // Get system stats
+    // System health monitoring and statistics collection
+    console.log('📊 Collecting system statistics...');
     const stats = await backgroundScheduler.getStats();
     results.tasks.push({
-      task: 'system_stats',
+      task: 'system_health_monitoring',
       status: 'completed',
-      data: stats
+      data: {
+        timestamp: new Date().toISOString(),
+        systemStats: stats,
+        healthStatus: 'operational'
+      }
     });
 
-    console.log('✅ [CRON] Hourly job completed successfully');
+    // Log system resource usage
+    const memoryUsage = process.memoryUsage();
+    results.tasks.push({
+      task: 'resource_monitoring',
+      status: 'completed',
+      data: {
+        memoryUsage: {
+          rss: Math.round(memoryUsage.rss / 1024 / 1024) + ' MB',
+          heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + ' MB',
+          heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + ' MB'
+        },
+        uptime: Math.round(process.uptime()) + ' seconds'
+      }
+    });
+
+    console.log('✅ [CRON] Hourly system tasks completed successfully');
+    console.log(`📈 Tasks executed: ${results.tasks.length}`);
+    
     return NextResponse.json(results);
 
   } catch (error) {
-    console.error('❌ [CRON] Hourly job failed:', error);
+    console.error('❌ [CRON] Hourly system tasks failed:', error);
     return NextResponse.json({ 
-      error: 'Cron job failed',
-      message: error instanceof Error ? error.message : String(error)
+      error: 'Hourly system tasks failed',
+      message: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 } 
