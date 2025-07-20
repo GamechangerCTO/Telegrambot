@@ -35,8 +35,11 @@ interface Channel {
   language: string;
   is_active: boolean;
   telegram_channel_username?: string;
-  subscriber_count?: number;
-  last_message?: string;
+  member_count?: number;
+  subscriber_count?: number; // formatted field for display
+  last_post_at?: string;
+  last_message?: string; // formatted field for display
+  total_posts_sent?: number;
 }
 
 interface GenerationResult {
@@ -181,13 +184,24 @@ export default function ContentManagementPage() {
           language, 
           is_active, 
           telegram_channel_username,
-          subscriber_count,
-          last_message
+          member_count,
+          last_post_at,
+          total_posts_sent
         `)
         .eq('is_active', true)
         .order('name');
 
-      setChannels(channelsData || []);
+      // Convert the database format to the expected format
+      const formattedChannels = (channelsData || []).map(channel => ({
+        ...channel,
+        subscriber_count: channel.member_count,
+        last_message: channel.last_post_at ? 
+          `Last post: ${new Date(channel.last_post_at).toLocaleDateString()}` : 
+          'No posts yet'
+      }));
+
+      setChannels(formattedChannels);
+      console.log('Loaded channels:', formattedChannels);
     } catch (error) {
       console.error('Error loading data:', error);
       // Enhanced fallback data
