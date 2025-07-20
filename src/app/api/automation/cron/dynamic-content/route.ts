@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ContentRouter } from '@/lib/content/api-modules/content-router';
+import { TelegramDistributor } from '@/lib/content/api-modules/telegram-distributor';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +18,8 @@ const supabase = createClient(
  * 1. Check dynamic_content_schedule for due content
  * 2. Get match details from daily_important_matches
  * 3. Generate content using appropriate generators
- * 4. Update schedule status and analytics
+ * 4. Send content to Telegram channels
+ * 5. Update schedule status and analytics
  */
 
 export async function POST(req: NextRequest) {
@@ -168,6 +170,7 @@ async function executeScheduledContent(contentItem: any) {
   try {
     const match = contentItem.daily_important_matches;
     const contentRouter = new ContentRouter();
+    const telegramDistributor = new TelegramDistributor();
 
     // Prepare content request for ContentRouter
     const contentRequest = {
@@ -197,20 +200,62 @@ async function executeScheduledContent(contentItem: any) {
 
     console.log(`🎬 Generating ${contentItem.content_type} content for ${match.home_team} vs ${match.away_team}`);
 
-    // Route to appropriate content generator
+    // Step 1: Generate content using ContentRouter
     const result = await contentRouter.generateContent(contentRequest);
+
+    if (!result.contentItems || result.contentItems.length === 0) {
+      return {
+        success: false,
+        error: 'No content generated'
+      };
+    }
+
+    console.log(`✅ Generated ${contentItem.content_type} content successfully`);
+
+    // Step 2: Send content to Telegram channels
+    let telegramResults = null;
+    let sendingSuccess = false;
+
+    try {
+      const distributionResult = await telegramDistributor.sendContentToTelegram({
+        content: {
+          content_type: contentItem.content_type,
+          language: contentItem.language,
+          content_items: result.contentItems
+        },
+        language: contentItem.language as 'en' | 'am' | 'sw',
+        mode: contentItem.content_type,
+        targetChannels: contentItem.target_channels,
+        includeImages: true
+      });
+
+      sendingSuccess = distributionResult.success;
+      telegramResults = distributionResult.results;
+
+      if (distributionResult.success) {
+        console.log(`📤 Successfully sent ${contentItem.content_type} content to ${distributionResult.channels} channels`);
+      } else {
+        console.error(`❌ Failed to send ${contentItem.content_type} content:`, distributionResult.error);
+      }
+    } catch (sendingError) {
+      console.error('❌ Error sending content to Telegram:', sendingError);
+      sendingSuccess = false;
+    }
 
     return {
       success: true,
       content_items: result.contentItems?.length || 0,
       content_generated: result.contentItems,
+      content_sent: sendingSuccess,
+      telegram_results: telegramResults,
       processing_info: result.processingInfo,
       content_details: {
         type: contentItem.content_type,
         subtype: contentItem.content_subtype,
         match: `${match.home_team} vs ${match.away_team}`,
         language: contentItem.language,
-        scheduled_for: contentItem.scheduled_for
+        scheduled_for: contentItem.scheduled_for,
+        channels_sent: sendingSuccess ? (telegramResults?.length || 0) : 0
       }
     };
 

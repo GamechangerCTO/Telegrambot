@@ -30,7 +30,11 @@ import {
   Eye,
   MessageSquare,
   Target,
-  Workflow
+  Workflow,
+  StopCircle,
+  Search,
+  CalendarDays,
+  PlayCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -69,6 +73,34 @@ interface ContentType {
   performance: 'excellent' | 'good' | 'fair' | 'poor';
 }
 
+// New interfaces for daily matches and scheduling
+interface DailyMatch {
+  id: string;
+  home_team: string;
+  away_team: string;
+  competition: string;
+  kickoff_time: string;
+  venue?: string;
+  importance_score: number;
+  match_status: string;
+  content_opportunities: any;
+  scheduled_content_count?: number;
+  completed_content_count?: number;
+}
+
+interface ContentSchedule {
+  id: string;
+  content_type: string;
+  content_subtype?: string;
+  scheduled_for: string;
+  status: string;
+  priority: number;
+  language: string;
+  target_channels: string[];
+  match_id?: string;
+  match_title?: string;
+}
+
 export default function AutomationPage() {
   const { isAuthenticated, isManager, isSuperAdmin, loading: authLoading } = useAuth();
   
@@ -80,12 +112,19 @@ export default function AutomationPage() {
     contentGenerated24h: 0,
     successRate: 0
   });
+
+  // New state for daily matches and scheduling
+  const [dailyMatches, setDailyMatches] = useState<DailyMatch[]>([]);
+  const [contentSchedule, setContentSchedule] = useState<ContentSchedule[]>([]);
+  const [isAutomationRunning, setIsAutomationRunning] = useState(false);
+  const [discoveryLoading, setDiscoveryLoading] = useState(false);
+  const [schedulingLoading, setSchedulingLoading] = useState(false);
   const [isFullAutomationEnabled, setIsFullAutomationEnabled] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   
   // UI State
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'settings' | 'logs'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'matches' | 'schedule' | 'content' | 'settings' | 'logs'>('overview');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -110,8 +149,130 @@ export default function AutomationPage() {
   useEffect(() => {
     if (isAuthenticated && (isManager || isSuperAdmin)) {
       initializeAutomation();
+      loadDailyMatches();
     }
   }, [isAuthenticated, isManager, isSuperAdmin]);
+
+  // Load content schedule when daily matches change
+  useEffect(() => {
+    if (dailyMatches.length > 0) {
+      loadContentSchedule();
+    }
+  }, [dailyMatches]);
+
+  // New functions for daily matches and scheduling
+  const loadDailyMatches = async () => {
+    try {
+      const response = await fetch('/api/daily-matches');
+      if (!response.ok) throw new Error('Failed to load daily matches');
+      
+      const data = await response.json();
+      setDailyMatches(data.matches || []);
+    } catch (err) {
+      console.error('Error loading daily matches:', err);
+      showNotification('Failed to load daily matches', 'error');
+    }
+  };
+
+  const loadContentSchedule = async () => {
+    try {
+      // Load today's content schedule across all matches
+      const schedulePromises = dailyMatches.map(async (match) => {
+        try {
+          const response = await fetch(`/api/daily-matches/${match.id}/schedule`);
+          if (!response.ok) return [];
+          const data = await response.json();
+          return data.schedule?.map((item: ContentSchedule) => ({
+            ...item,
+            match_id: match.id,
+            match_title: `${match.home_team} vs ${match.away_team}`
+          })) || [];
+        } catch {
+          return [];
+        }
+      });
+
+      const schedules = await Promise.all(schedulePromises);
+      const allSchedule = schedules.flat().sort((a, b) => 
+        new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime()
+      );
+      
+      setContentSchedule(allSchedule);
+    } catch (err) {
+      console.error('Error loading content schedule:', err);
+    }
+  };
+
+  const triggerDailyDiscovery = async () => {
+    try {
+      setDiscoveryLoading(true);
+      const response = await fetch('/api/automation/cron/morning-discovery', {
+        method: 'POST'
+      });
+
+      if (!response.ok) throw new Error('Failed to trigger daily discovery');
+      
+      // Reload data after discovery
+      await loadDailyMatches();
+      showNotification('Daily discovery completed successfully!', 'success');
+    } catch (err) {
+      console.error('Error triggering discovery:', err);
+      showNotification('Failed to trigger daily discovery', 'error');
+    } finally {
+      setDiscoveryLoading(false);
+    }
+  };
+
+  const stopAutomation = async () => {
+    try {
+      setSchedulingLoading(true);
+      // Stop automation by disabling full automation
+      const response = await fetch('/api/automation/toggle-full-automation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: false })
+      });
+
+      if (!response.ok) throw new Error('Failed to stop automation');
+      
+      setIsFullAutomationEnabled(false);
+      setIsAutomationRunning(false);
+      showNotification('Automation stopped successfully', 'success');
+    } catch (err) {
+      console.error('Error stopping automation:', err);
+      showNotification('Failed to stop automation', 'error');
+    } finally {
+      setSchedulingLoading(false);
+    }
+  };
+
+  const getImportanceColor = (score: number) => {
+    if (score >= 25) return 'bg-red-500 text-white';
+    if (score >= 20) return 'bg-orange-500 text-white';
+    if (score >= 15) return 'bg-yellow-500 text-black';
+    return 'bg-gray-500 text-white';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'blue';
+      case 'executing': return 'green';
+      case 'completed': return 'gray';
+      case 'failed': return 'red';
+      case 'live': return 'green';
+      case 'finished': return 'gray';
+      default: return 'gray';
+    }
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(timeString).toLocaleString('he-IL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit'
+    });
+  };
 
   // Load content types from API
   const loadContentTypes = async () => {
@@ -595,6 +756,8 @@ export default function AutomationPage() {
       <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
+          { id: 'matches', label: 'Today\'s Matches', icon: CalendarDays },
+          { id: 'schedule', label: 'Content Schedule', icon: Clock },
           { id: 'content', label: 'Content Types', icon: Target },
           { id: 'settings', label: 'Settings', icon: Settings },
           { id: 'logs', label: 'Activity Logs', icon: Eye }
@@ -622,6 +785,45 @@ export default function AutomationPage() {
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Control Buttons */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlayCircle className="w-5 h-5" />
+                Automation Controls
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  onClick={triggerDailyDiscovery}
+                  disabled={discoveryLoading}
+                  className="h-16 flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700"
+                >
+                  {discoveryLoading ? <Loader2 className="w-6 h-6 animate-spin mb-1" /> : <Search className="w-6 h-6 mb-1" />}
+                  <span>Discover Today's Matches</span>
+                </Button>
+                
+                <Button
+                  onClick={stopAutomation}
+                  disabled={schedulingLoading}
+                  className="h-16 flex flex-col items-center justify-center bg-red-600 hover:bg-red-700"
+                >
+                  {schedulingLoading ? <Loader2 className="w-6 h-6 animate-spin mb-1" /> : <StopCircle className="w-6 h-6 mb-1" />}
+                  <span>Stop Automation</span>
+                </Button>
+                
+                <Button
+                  onClick={runAutomationCycle}
+                  className="h-16 flex flex-col items-center justify-center bg-green-600 hover:bg-green-700"
+                >
+                  <Play className="w-6 h-6 mb-1" />
+                  <span>Run Automation Cycle</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Actions */}
           <Card>
             <CardHeader>
@@ -683,6 +885,214 @@ export default function AutomationPage() {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Today's Matches Tab */}
+      {activeTab === 'matches' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="w-5 h-5" />
+                Today's Important Matches ({dailyMatches.length})
+              </CardTitle>
+              <Button
+                onClick={loadDailyMatches}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {dailyMatches.length === 0 ? (
+                <div className="text-center py-12">
+                  <CalendarDays className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                    No Important Matches Today
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Run daily discovery to find today's important matches
+                  </p>
+                  <Button
+                    onClick={triggerDailyDiscovery}
+                    disabled={discoveryLoading}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {discoveryLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
+                    Discover Matches
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {dailyMatches.map((match) => (
+                    <div key={match.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                      {/* Match Header */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {match.home_team} vs {match.away_team}
+                          </h3>
+                          <p className="text-gray-600">{match.competition}</p>
+                          {match.venue && (
+                            <p className="text-sm text-gray-500">{match.venue}</p>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={getImportanceColor(match.importance_score)}>
+                            {match.importance_score}/30
+                          </Badge>
+                          <Badge className={`badge-${getStatusColor(match.match_status)}`}>
+                            {match.match_status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Match Details */}
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Kickoff:</span>
+                          <span className="font-medium">{formatTime(match.kickoff_time)}</span>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Content Scheduled:</span>
+                          <span className="font-medium">
+                            {match.scheduled_content_count || 0} items
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Content Completed:</span>
+                          <span className="font-medium">
+                            {match.completed_content_count || 0} items
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content Opportunities */}
+                      {match.content_opportunities && (
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-600 mb-2">Content Opportunities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(match.content_opportunities)
+                              .filter(([_, enabled]) => enabled)
+                              .map(([type, _]) => (
+                                <Badge
+                                  key={type}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {type}
+                                </Badge>
+                              ))
+                            }
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Content Schedule Tab */}
+      {activeTab === 'schedule' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Today's Content Schedule ({contentSchedule.length} items)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {contentSchedule.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                    No Content Scheduled
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Schedule content for today's matches to see the timeline here
+                  </p>
+                  <Button
+                    onClick={() => setActiveTab('matches')}
+                    variant="outline"
+                  >
+                    <CalendarDays className="w-4 h-4 mr-2" />
+                    View Matches
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Timeline view */}
+                  <div className="relative">
+                    {contentSchedule.map((item, index) => (
+                      <div key={item.id} className="flex items-start gap-4 pb-6">
+                        {/* Timeline line */}
+                        <div className="flex flex-col items-center">
+                          <div className={`w-3 h-3 rounded-full ${
+                            item.status === 'completed' ? 'bg-green-500' :
+                            item.status === 'executing' ? 'bg-blue-500' :
+                            item.status === 'failed' ? 'bg-red-500' :
+                            'bg-gray-300'
+                          }`}></div>
+                          {index < contentSchedule.length - 1 && (
+                            <div className="w-0.5 h-16 bg-gray-200 mt-2"></div>
+                          )}
+                        </div>
+                        
+                        {/* Content details */}
+                        <div className="flex-1 border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="font-semibold text-lg">
+                                {item.content_type}
+                                {item.content_subtype && ` (${item.content_subtype})`}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {item.match_title}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`priority-${item.priority}`}>
+                                Priority {item.priority}
+                              </Badge>
+                              <Badge className={`badge-${getStatusColor(item.status)}`}>
+                                {item.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <div className="flex justify-between">
+                              <span>Scheduled for:</span>
+                              <span className="font-medium">{formatTime(item.scheduled_for)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Language:</span>
+                              <span className="font-medium">{item.language}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Channels:</span>
+                              <span className="font-medium">{item.target_channels.length} channels</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -643,15 +643,40 @@ export class LiveUpdatesGenerator {
    */
   private async sendUpdateToChannel(update: GeneratedLiveUpdate, channel: {id: string, language: 'en' | 'am' | 'sw'}): Promise<void> {
     try {
-      // Here you would implement the actual sending logic
-      // For now, we'll just log and save to database
       console.log(`📨 Sending live update to channel ${channel.id}: ${update.title}`);
       
-      // Save to database for tracking
-      await this.trackLiveUpdate(update.matchData, channel.id);
+      // Use TelegramDistributor for actual sending
+      const { TelegramDistributor } = await import('./api-modules/telegram-distributor');
+      const telegramDistributor = new TelegramDistributor();
       
-      // In production, send via Telegram API
-      // await telegramSender.sendMessage(channel.id, update.content, update.imageUrl);
+      const distributionResult = await telegramDistributor.sendContentToTelegram({
+        content: {
+          content_type: 'live',
+          language: channel.language,
+          content_items: [{
+            id: update.metadata?.contentId || `live_${Date.now()}`,
+            type: 'live',
+            title: update.title,
+            content: update.content,
+            language: channel.language,
+            imageUrl: update.imageUrl,
+            metadata: update.metadata
+          }]
+        },
+        language: channel.language,
+        mode: 'live',
+        targetChannels: [channel.id],
+        includeImages: true
+      });
+
+      if (distributionResult.success) {
+        console.log(`✅ Successfully sent live update to channel ${channel.id}`);
+        
+        // Save to database for tracking
+        await this.trackLiveUpdate(update.matchData, channel.id);
+      } else {
+        console.error(`❌ Failed to send live update to channel ${channel.id}:`, distributionResult.error);
+      }
       
     } catch (error) {
       console.error(`❌ Error sending update to channel ${channel.id}:`, error);
