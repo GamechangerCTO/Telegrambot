@@ -8,7 +8,7 @@ import { Language } from './content-config';
 // Import all content generators
 import { liveUpdatesGenerator } from '@/lib/content/live-updates-generator';
 import { bettingTipsGenerator } from '@/lib/content/betting-tips-generator';
-import { newsContentGenerator } from '@/lib/content/news-content-generator';
+import { OptimizedNewsContentGenerator } from '@/lib/content/news-content-generator';
 import { pollsGenerator } from '@/lib/content/polls-generator';
 import { matchAnalysisGenerator } from '@/lib/content/match-analysis-generator';
 import { smartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
@@ -198,7 +198,8 @@ export class ContentRouter {
   private async generateNewsContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
     try {
       console.log(`📰 Using news content generator for ${language}`);
-      const result = await newsContentGenerator.generateNewsContent({
+      const newsGenerator = new OptimizedNewsContentGenerator();
+      const result = await newsGenerator.generateNewsContent({
         language,
         channelId
       });
@@ -536,7 +537,7 @@ export class ContentRouter {
   /**
    * Generate fallback content when no real data is available
    */
-  async generateFallbackContent(contentType: string, language: Language, maxItems: number): Promise<ContentGenerationResult> {
+  async generateFallbackContent(contentType: ContentType | string, language: Language, maxItems: number): Promise<ContentGenerationResult> {
     console.log(`📰 Using fallback content for ${contentType} in ${language} (last month's news)`);
     
     // תוכן מותאם לשפה
@@ -547,7 +548,7 @@ export class ContentRouter {
       },
       am: {
         title: `📰 ${contentType.toUpperCase()}: የእግር ኳስ ዝማኔ`,
-        content: this.getAmharicContent(contentType)
+        content: this.getAmharicContent(contentType as ContentType)
       },
       sw: {
         title: `📰 ${contentType.toUpperCase()}: Masasisho ya Hivi Karibuni ya Mpira wa Miguu`,
