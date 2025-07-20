@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { BettingTipsGenerator } from '@/lib/content/betting-tips-generator'
-import { newsContentGenerator } from '@/lib/content/news-content-generator'
+import { OptimizedNewsContentGenerator } from '@/lib/content/news-content-generator'
 import { matchAnalysisGenerator } from '@/lib/content/match-analysis-generator'
 import { TelegramSender } from '@/lib/content/telegram-sender'
 // Using specialized content generators instead
@@ -264,7 +264,8 @@ export class RuleExecutor {
       // Fallback to news content
       console.log(`🔄 Falling back to news content for ${contentType}`);
       try {
-        const newsResult = await newsContentGenerator.generateNewsContent({
+        const newsGenerator = new OptimizedNewsContentGenerator();
+        const newsResult = await newsGenerator.generateNewsContent({
           language,
           channelId: channelDetails.telegram_channel_id
         });

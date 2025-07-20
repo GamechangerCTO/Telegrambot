@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { BettingTipsGenerator } from '@/lib/content/betting-tips-generator'
-import { NewsContentGenerator } from '@/lib/content/news-content-generator'
+import { OptimizedNewsContentGenerator } from '@/lib/content/news-content-generator'
 import { matchAnalysisGenerator } from '@/lib/content/match-analysis-generator'
 // Using specialized content generators instead
 
@@ -33,11 +33,11 @@ export interface ExecutionResult {
 
 export class AutomationEngine {
   private bettingGenerator: BettingTipsGenerator
-  private newsGenerator: NewsContentGenerator
+  private newsGenerator: OptimizedNewsContentGenerator
 
   constructor() {
     this.bettingGenerator = new BettingTipsGenerator()
-    this.newsGenerator = new NewsContentGenerator()
+    this.newsGenerator = new OptimizedNewsContentGenerator()
   }
 
   /**
