@@ -16,7 +16,9 @@
       "Bash(npm run build:*)",
       "Bash(mv:*)",
       "Bash(npx supabase db dump:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "WebFetch(domain:telegrambot-nine-umber.vercel.app)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
