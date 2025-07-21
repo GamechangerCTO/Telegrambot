@@ -178,14 +178,19 @@ export class AIImageGenerator {
         }
       })();
       
-      const response = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt: fullPrompt,
-        n: 1,
-        size: options.size || "1024x1024",
-        quality: gptQuality
-        // GPT-Image-1 doesn't support response_format parameter - always returns b64_json
-      });
+      const response = await Promise.race([
+        openai.images.generate({
+          model: "gpt-image-1",
+          prompt: fullPrompt,
+          n: 1,
+          size: options.size || "1024x1024",
+          quality: gptQuality
+          // GPT-Image-1 doesn't support response_format parameter - always returns b64_json
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Image generation timeout')), 15000)
+        )
+      ]) as any;
       
       if (response.data && response.data[0]) {
         const imageData = response.data[0];

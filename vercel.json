@@ -4,7 +4,10 @@
   },
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 60
+      "maxDuration": 120
+    },
+    "src/app/api/automation/cron/**/*.ts": {
+      "maxDuration": 180
     }
   },
   "crons": [

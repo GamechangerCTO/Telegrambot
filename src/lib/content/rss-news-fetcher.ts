@@ -201,7 +201,7 @@ export class RSSNewsFetcher {
         console.log(`🔄 Trying proxy ${i + 1}/${proxyServices.length} for ${sourceName}`);
         
         const proxyController = new AbortController();
-        const proxyTimeoutId = setTimeout(() => proxyController.abort(), 15000);
+        const proxyTimeoutId = setTimeout(() => proxyController.abort(), 8000);
         
         const proxyResponse = await fetch(proxyUrl, { signal: proxyController.signal });
         clearTimeout(proxyTimeoutId);
@@ -231,7 +231,7 @@ export class RSSNewsFetcher {
         
         // Wait before trying next proxy
         if (i < proxyServices.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
