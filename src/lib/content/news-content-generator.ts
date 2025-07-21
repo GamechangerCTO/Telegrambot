@@ -405,22 +405,27 @@ export class OptimizedNewsContentGenerator {
 
       const systemPrompts = {
         'en': `Football journalist. Create 4-5 line summary with emojis. End with hashtags.`,
-        'am': `Football journalist writing ONLY in Amharic. 4-5 lines. End with Amharic & English hashtags.`,
+        'am': `You are a football journalist writing for Ethiopian readers. Write ONLY in proper Amharic language. Create a natural, flowing 4-5 line news summary. Use ⚽ emoji. End with Amharic hashtags: #እግርኳስዜና #ስፖርት`,
         'sw': `Football journalist writing ONLY in Swahili. 4-5 lines. End with Swahili & English hashtags.`
       };
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Faster model
-        messages: [
-          { role: "system", content: systemPrompts[language] },
-          { 
-            role: "user", 
-            content: `Summarize in ${language === 'en' ? 'English' : language === 'am' ? 'Amharic' : 'Swahili'}:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.7
-      });
+      const response = await Promise.race([
+        openai.chat.completions.create({
+          model: "gpt-4o", // Faster model
+          messages: [
+            { role: "system", content: systemPrompts[language] },
+            { 
+              role: "user", 
+              content: `Summarize in ${language === 'en' ? 'English' : language === 'am' ? 'Amharic' : 'Swahili'}:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
+            }
+          ],
+          max_tokens: 200,
+          temperature: 0.7
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('AI timeout')), 10000)
+        )
+      ]) as any;
 
       return response.choices[0]?.message?.content?.trim() || this.createTemplateNewsContent(news, language);
       
@@ -483,8 +488,39 @@ export class OptimizedNewsContentGenerator {
       return 'ዝርዝር መረጃ በቅርቡ ይመጣል። ለተጨማሪ ዝማኔ ይከተሉን።';
     }
     
-    // For longer content, add Amharic context
-    return `ከአለም አቀፍ እግር ኳስ ዓለም የደረሰ ወቅታዊ ዜና፡\n\n"${content.substring(0, 150)}..."\n\nለሙሉ ዝርዝር የእንግሊዝኛ ምንጭ ይመልከቱ።`;
+    // Clean up content and provide better Amharic context
+    const cleanContent = content
+      .replace(/[<>]/g, '') // Remove any HTML
+      .replace(/\s+/g, ' ') // Clean whitespace
+      .trim();
+    
+    // Extract key team/player names for better context
+    const teamNames = this.extractTeamNames(cleanContent);
+    let contextualContent = cleanContent.substring(0, 200);
+    
+    // Make sure we don't cut in the middle of a word
+    const lastSpace = contextualContent.lastIndexOf(' ');
+    if (lastSpace > 150) {
+      contextualContent = contextualContent.substring(0, lastSpace);
+    }
+    
+    // Add proper Amharic context
+    if (teamNames.length > 0) {
+      return `የ${teamNames[0]} እና ተያያዥ ክለቦች ዜና፡\n\n${contextualContent}...\n\nተጨማሪ ዝርዝሮች ከምንጩ ይመልከቱ።`;
+    }
+    
+    return `ከአለም አቀፍ እግር ኳስ ዓለም የደረሰ ወቅታዊ ዜና፡\n\n${contextualContent}...\n\nለሙሉ ዝርዝር ምንጩን ይመልከቱ።`;
+  }
+  
+  /**
+   * Extract team names from content for better context
+   */
+  private extractTeamNames(content: string): string[] {
+    const commonTeams = ['Tottenham', 'Arsenal', 'Chelsea', 'Liverpool', 'Manchester', 'City', 'United', 'Real Madrid', 'Barcelona', 'Bayern', 'PSG'];
+    const foundTeams = commonTeams.filter(team => 
+      content.toLowerCase().includes(team.toLowerCase())
+    );
+    return foundTeams.slice(0, 2); // Max 2 teams
   }
 
   /**
