@@ -188,7 +188,7 @@ export class AIImageGenerator {
           // GPT-Image-1 doesn't support response_format parameter - always returns b64_json
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Image generation timeout')), 15000)
+          setTimeout(() => reject(new Error('Image generation timeout')), 60000)
         )
       ]) as any;
       
@@ -767,10 +767,10 @@ Create an image that directly relates to and enhances the specific content being
   getFallbackImage(type: string): string {
     const fallbacks = {
       match: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1024',
-      news: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1024',
+      news: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1035&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       betting: 'https://images.unsplash.com/photo-1569163139394-de4798d9c2c3?w=1024',
       poll: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1024',
-      generic: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=1024'
+      generic: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1035&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     };
     
     return fallbacks[type as keyof typeof fallbacks] || fallbacks.generic;

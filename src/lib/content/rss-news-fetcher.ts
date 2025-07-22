@@ -50,14 +50,6 @@ export class RSSNewsFetcher {
       name: 'The Guardian Football'
     },
     {
-      url: 'https://www.skysports.com/rss/football',
-      name: 'Sky Sports Football'
-    },
-    {
-      url: 'http://feeds.feedburner.com/SoccerNews',
-      name: 'ESPN Soccer'
-    },
-    {
       url: 'https://talksport.com/football/feed/',
       name: 'TalkSport'
     }
@@ -452,11 +444,12 @@ export class RSSNewsFetcher {
   async getTopNewsByPriority(limit: number = 10): Promise<RSSItem[]> {
     const allItems = await this.fetchAllFeeds();
     
-    // Create source priority map
-    const sourcePriority: { [key: string]: number } = {};
-    this.FOOTBALL_RSS_FEEDS.forEach(feed => {
-      sourcePriority[feed.name] = feed.priority;
-    });
+    // Create source priority map (BBC and Guardian have higher priority)
+    const sourcePriority: { [key: string]: number } = {
+      'BBC Sport Football': 3,
+      'The Guardian Football': 2,
+      'TalkSport': 1
+    };
     
     // Sort by source priority then by date
     return allItems
