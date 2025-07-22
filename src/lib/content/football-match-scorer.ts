@@ -654,16 +654,16 @@ export class FootballMatchScorer {
   ): Promise<ScoredMatch[]> {
     const options: MatchScoringOptions = {
       content_type: contentType,
-      min_score_threshold: contentType === 'live_update' ? 15 : 20,
+      min_score_threshold: contentType === 'live_update' ? 8 : 12, // הפחתת הפילטרים מ-15/20 ל-8/12
       max_future_days: contentType === 'news' ? 60 : 14 // חדשות יכולות להיות על משחקים רחוקים יותר
     };
     
     const scoredMatches = await this.scoreMatches(matches, options);
     
-    // סינון נוסף לפי התאמה לסוג התוכן
+    // סינון נוסף לפי התאמה לסוג התוכן - הפחתת הסף מ-50 ל-30
     const filtered = scoredMatches.filter(match => {
       const suitability = match.content_suitability[contentType];
-      return suitability >= 50; // סף מינימלי להתאמה
+      return suitability >= 30; // הפחתת סף מינימלי מ-50 ל-30
     });
     
     return filtered.slice(0, limit);

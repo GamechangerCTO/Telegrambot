@@ -259,7 +259,7 @@ export class LiveUpdatesGenerator {
       // Step 2: Score matches to find interesting ones
       const scoredMatches = await this.matchScorer.scoreMatches(todayMatches, {
         content_type: 'live_update',
-        min_score_threshold: 15, // Only high-quality matches
+        min_score_threshold: 8, // Reduced threshold to allow more matches
         language: 'en'
       });
 

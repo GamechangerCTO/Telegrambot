@@ -371,7 +371,7 @@ OUTPUT: Return ONLY the image prompt (no explanations, no quotes, just the promp
   }
 
   /**
-   * 📄 Build user prompt with content analysis
+   * Build user prompt with enhanced content analysis
    */
   private buildUserPrompt(options: ContentAnalysisOptions): string {
     let prompt = `Analyze this football content and generate a detailed photorealistic image prompt:
@@ -388,19 +388,60 @@ LANGUAGE: ${options.language || 'en'}`;
       prompt += `\nCOMPETITION: ${options.competition}`;
     }
 
+    // Extract key elements from content
+    const content = options.content || '';
+    const keyTerms = this.extractVisualKeywords(content);
+    if (keyTerms.length > 0) {
+      prompt += `\nKEY VISUAL ELEMENTS: ${keyTerms.join(', ')}`;
+    }
+
     prompt += `\n\nCONTENT TO ANALYZE:
-"${options.content}"
+"${content.substring(0, 300)}"
 
 Generate a detailed, photorealistic image prompt that captures the essence of this football content. Focus on:
-1. Key visual elements mentioned in the content
-2. Appropriate stadium/football setting
-3. Realistic sports photography style
-4. Cultural context for the language/region
-5. Specific moments or scenarios described
+1. Specific visual elements and scenarios mentioned in the content
+2. Match situation, atmosphere, or football context described
+3. Team colors, stadium atmosphere, and authentic football environment
+4. Professional sports photography style that matches the content tone
+5. Cultural context appropriate for the target audience
 
-The prompt should create an image that perfectly complements this content for social media sharing.`;
+Create an image that directly relates to and enhances the specific content being shared.`;
 
     return prompt;
+  }
+
+  /**
+   * Extract visual keywords from content for better image relevance
+   */
+  private extractVisualKeywords(content: string): string[] {
+    const keywords: string[] = [];
+    const contentLower = content.toLowerCase();
+
+    // Match situations
+    if (contentLower.includes('goal') || contentLower.includes('score')) keywords.push('goal celebration');
+    if (contentLower.includes('penalty')) keywords.push('penalty kick');
+    if (contentLower.includes('red card')) keywords.push('referee showing card');
+    if (contentLower.includes('corner') || contentLower.includes('free kick')) keywords.push('set piece');
+    if (contentLower.includes('tackle') || contentLower.includes('foul')) keywords.push('tackle action');
+    if (contentLower.includes('save') || contentLower.includes('goalkeeper')) keywords.push('goalkeeper save');
+    
+    // Emotions and atmosphere
+    if (contentLower.includes('celebrate') || contentLower.includes('celebration')) keywords.push('team celebration');
+    if (contentLower.includes('fans') || contentLower.includes('crowd')) keywords.push('stadium crowd');
+    if (contentLower.includes('atmosphere')) keywords.push('stadium atmosphere');
+    if (contentLower.includes('derby') || contentLower.includes('rivalry')) keywords.push('intense rivalry atmosphere');
+    
+    // Match context
+    if (contentLower.includes('final') || contentLower.includes('cup')) keywords.push('cup final atmosphere');
+    if (contentLower.includes('champions league')) keywords.push('Champions League atmosphere');
+    if (contentLower.includes('premier league')) keywords.push('Premier League setting');
+    
+    // Action terms
+    if (contentLower.includes('attack') || contentLower.includes('counter')) keywords.push('attacking play');
+    if (contentLower.includes('defend') || contentLower.includes('block')) keywords.push('defensive action');
+    if (contentLower.includes('dribble') || contentLower.includes('skill')) keywords.push('skillful play');
+    
+    return keywords.slice(0, 5); // Limit to most relevant terms
   }
 
   /**
@@ -523,15 +564,53 @@ The prompt should create an image that perfectly complements this content for so
    * Extract key terms from content for better image generation
    */
   private extractKeyTermsFromContent(content: string): string {
-    // Extract team names, competition names, and key football terms
-    const footballTerms = ['goal', 'match', 'stadium', 'player', 'team', 'football', 'soccer', 'league', 'championship', 'tournament'];
-    const words = content.toLowerCase().split(/\s+/);
-    const relevantTerms = words.filter(word => 
-      footballTerms.some(term => word.includes(term)) ||
-      word.length > 6 // Likely team or competition names
-    ).slice(0, 5);
+    const keyTerms = [];
+    const contentLower = content.toLowerCase();
     
-    return relevantTerms.join(', ') || 'football match action, stadium atmosphere';
+    // Teams - expanded detection
+    const teams = [
+      'manchester city', 'manchester united', 'liverpool', 'arsenal', 'chelsea', 'tottenham',
+      'real madrid', 'barcelona', 'atletico madrid', 'bayern munich', 'borussia dortmund',
+      'psg', 'juventus', 'ac milan', 'inter milan', 'napoli', 'roma'
+    ];
+    
+    teams.forEach(team => {
+      if (contentLower.includes(team)) {
+        keyTerms.push(team.split(' ').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+      }
+    });
+    
+    // Match events and situations
+    const events = [
+      { keywords: ['goal', 'scored'], term: 'goal celebration' },
+      { keywords: ['penalty'], term: 'penalty kick' },
+      { keywords: ['red card'], term: 'red card incident' },
+      { keywords: ['save', 'keeper'], term: 'goalkeeper save' },
+      { keywords: ['corner'], term: 'corner kick action' },
+      { keywords: ['tackle'], term: 'tackle moment' },
+      { keywords: ['celebration'], term: 'team celebration' },
+      { keywords: ['crowd', 'fans'], term: 'stadium crowd' },
+      { keywords: ['derby', 'rivalry'], term: 'rivalry atmosphere' }
+    ];
+    
+    events.forEach(event => {
+      if (event.keywords.some(keyword => contentLower.includes(keyword))) {
+        keyTerms.push(event.term);
+      }
+    });
+    
+    // Competitions
+    if (contentLower.includes('premier league')) keyTerms.push('Premier League atmosphere');
+    if (contentLower.includes('champions league')) keyTerms.push('Champions League setting');
+    if (contentLower.includes('world cup')) keyTerms.push('World Cup tournament');
+    
+    // Default if nothing specific found
+    if (keyTerms.length === 0) {
+      keyTerms.push('professional football match', 'stadium atmosphere');
+    }
+    
+    return keyTerms.slice(0, 4).join(', ');
   }
   
   /**
