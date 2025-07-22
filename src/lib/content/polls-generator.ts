@@ -178,8 +178,8 @@ export class PollsGenerator {
       // Step 1: Get best match for poll content
       const bestMatch = await this.getBestMatchForPoll(request.language);
       if (!bestMatch) {
-        console.log(`❌ No suitable match found for poll`);
-        return null;
+        console.log(`📊 No suitable match found for poll, generating non-match poll instead`);
+        return await this.generateNonMatchPoll(request);
       }
 
       console.log(`✅ Selected match: ${bestMatch.homeTeam.name} vs ${bestMatch.awayTeam.name}`);
@@ -249,13 +249,707 @@ export class PollsGenerator {
       }
 
       // Fallback to unified service if no daily matches available
-      console.log(`⚠️ No daily matches found, falling back to unified service`);
-      return await unifiedFootballService.getBestMatchForContent('analysis', language);
+      console.log(`⚠️ No daily matches found, trying unified service...`);
+      const unifiedMatch = await unifiedFootballService.getBestMatchForContent('analysis', language);
+      
+      if (unifiedMatch) {
+        console.log(`✅ Using unified service match: ${unifiedMatch.homeTeam.name} vs ${unifiedMatch.awayTeam.name}`);
+        return unifiedMatch;
+      }
+
+      // If no matches available, return null - we'll handle this with non-match polls
+      console.log(`📊 No matches available - will generate non-match poll instead`);
+      return null;
       
     } catch (error) {
-      console.error('❌ Error getting daily match, using fallback:', error);
-      return await unifiedFootballService.getBestMatchForContent('analysis', language);
+      console.error('❌ Error getting matches, using non-match polls:', error);
+      return null;
     }
+  }
+
+  /**
+   * 🎪 Generate engaging polls for days without matches
+   */
+  private async generateNonMatchPoll(request: PollGenerationRequest): Promise<GeneratedPoll | null> {
+    console.log(`🎪 Generating non-match poll for ${request.language} - No matches available today`);
+    
+    try {
+      // Choose from various non-match poll types
+      const nonMatchPollTypes = [
+        'general_football_opinion',
+        'historical_moments',
+        'player_rankings', 
+        'league_predictions',
+        'football_trivia',
+        'team_comparisons',
+        'football_culture',
+        'weekend_preview'
+      ];
+      
+      const pollType = nonMatchPollTypes[Math.floor(Math.random() * nonMatchPollTypes.length)];
+      console.log(`🎯 Selected non-match poll type: ${pollType}`);
+      
+      // Generate poll content based on type
+      const pollContent = await this.generateNonMatchPollContent(pollType, request.language);
+      
+      // Create Telegram poll configuration
+      const telegramPollPayload = {
+        question: pollContent.question,
+        options: pollContent.options,
+        is_anonymous: true,
+        type: 'regular' as const,
+        allows_multiple_answers: pollContent.allowsMultiple || false,
+        open_period: 43200 // 12 hours for non-match polls
+      };
+      
+      // Generate AI-enhanced content
+      const content = this.buildNonMatchPollContent(pollContent, request.language);
+      const aiEditedContent = await this.aiEditNonMatchPollContent(content, pollContent, request.language);
+      
+      // Calculate engagement scores
+      const engagementScore = this.calculateNonMatchEngagementScore(pollType);
+      const educationalScore = this.calculateNonMatchEducationalScore(pollType);
+      
+      return {
+        title: `📊 ${pollContent.title}`,
+        content: aiEditedContent || content,
+        imageUrl: undefined, // No image for polls
+        pollContent: {
+          telegramPoll: telegramPollPayload,
+          introText: pollContent.introText,
+          analysisText: pollContent.analysisText,
+          engagementText: pollContent.engagementText,
+          funFact: pollContent.funFact,
+          pollType: 'fan_opinion' as PollType,
+          difficulty: pollContent.difficulty,
+          expectedEngagement: pollContent.expectedEngagement,
+          educationalValue: pollContent.educationalValue,
+          viralPotential: pollContent.viralPotential
+        },
+        analysis: this.createMockAnalysisForNonMatch(pollContent, request.language),
+        aiEditedContent,
+        telegramPollPayload,
+        metadata: {
+          language: request.language,
+          generatedAt: new Date().toISOString(),
+          contentId: `nonmatch_poll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          pollType,
+          expectedParticipants: this.estimateNonMatchParticipants(pollContent.expectedEngagement),
+          engagementScore,
+          educationalScore
+        }
+      };
+      
+    } catch (error) {
+      console.error(`❌ Error generating non-match poll:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 🎨 Generate content for different non-match poll types
+   */
+  private async generateNonMatchPollContent(pollType: string, language: 'en' | 'am' | 'sw'): Promise<any> {
+    switch (pollType) {
+      case 'general_football_opinion':
+        return this.generateGeneralFootballOpinionPoll(language);
+      case 'historical_moments':
+        return this.generateHistoricalMomentsPoll(language);
+      case 'player_rankings':
+        return this.generatePlayerRankingsPoll(language);
+      case 'league_predictions':
+        return this.generateLeaguePredictionsPoll(language);
+      case 'football_trivia':
+        return this.generateFootballTriviaPoll(language);
+      case 'team_comparisons':
+        return this.generateTeamComparisonsPoll(language);
+      case 'football_culture':
+        return this.generateFootballCulturePoll(language);
+      case 'weekend_preview':
+        return this.generateWeekendPreviewPoll(language);
+      default:
+        return this.generateGeneralFootballOpinionPoll(language);
+    }
+  }
+
+  /**
+   * 💭 Generate general football opinion polls
+   */
+  private generateGeneralFootballOpinionPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Football Philosophy Debate",
+          question: "🤔 What makes football truly beautiful?",
+          options: [
+            { text: "⚡ Lightning-fast attacking play" },
+            { text: "🧠 Tactical masterclasses" },
+            { text: "💪 Passion and fighting spirit" },
+            { text: "🎯 Individual moments of genius" },
+            { text: "🤝 Perfect team chemistry" }
+          ],
+          introText: "🤔 Time for some football philosophy!",
+          analysisText: "Football fans are divided on what makes the beautiful game truly special. Some love attacking football, others appreciate tactical nuance, and many value the human drama.",
+          engagementText: "What captures your heart about football? Share your philosophy! ⚽💭",
+          funFact: "Did you know that 'The Beautiful Game' was popularized by Pelé?",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'MEDIUM' as const,
+          viralPotential: 'HIGH' as const
+        },
+        {
+          title: "Dream Football Scenario",
+          question: "🌟 Pick your ultimate football weekend:",
+          options: [
+            { text: "🏟️ Attend El Clásico live" },
+            { text: "⚽ Play 5-a-side with friends" },
+            { text: "📺 Watch Premier League marathon" },
+            { text: "🎮 FIFA tournament all day" },
+            { text: "🏆 Local team winning big match" }
+          ],
+          introText: "🌟 Dream football weekend time!",
+          analysisText: "Every football fan has different dreams - some want the biggest stages, others prefer intimate local moments, and many just want good football with good people.",
+          engagementText: "What's your perfect football weekend? Dream big! 🏆",
+          funFact: "El Clásico has been called 'the most watched annual sporting event worldwide'",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'LOW' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    if (language === 'am') {
+      const questions = [
+        {
+          title: "የእግር ኳስ ፍልስፍና",
+          question: "🤔 እግር ኳስን ልዩ የሚያደርገው ምንድን ነው?",
+          options: [
+            { text: "⚡ ፈጣን የጥቃት ጨዋታ" },
+            { text: "🧠 ስልቶ እና እቅድ" },
+            { text: "💪 ፍቅር እና መታገል" },
+            { text: "🎯 የግለሰብ ችሎታ" },
+            { text: "🤝 የቡድን አብሮነት" }
+          ],
+          introText: "🤔 የእግር ኳስ ፍልስፍና ጊዜ!",
+          analysisText: "የእግር ኳስ ወዳጆች በሚያሳዩ ስሜት ይለያያሉ። አንዳንዶች ፈጣን ጨዋታን ይወዳሉ፣ ሌሎች ስልት ያደንቃሉ፣ ብዙዎች ደግሞ የሰው ልጅ ታሪክ ያስኬዳሉ።",
+          engagementText: "እግር ኳስ ልብዎን የሚመታው ምንድን ነው? ፍልስፍናዎን ያካፍሉ! ⚽💭",
+          funFact: "ያውቃሉ ወይ? 'ውብ ጨዋታ' የሚለው ቃል በፔሌ ዝነኛ ሆነ",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'MEDIUM' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    if (language === 'sw') {
+      const questions = [
+        {
+          title: "Falsafa ya Mpira wa Miguu",
+          question: "🤔 Ni nini kinachofanya mpira wa miguu kuwa wa kipekee?",
+          options: [
+            { text: "⚡ Mchezo wa haraka wa mashambulizi" },
+            { text: "🧠 Mikakati na mipango" },
+            { text: "💪 Shauku na mapigano" },
+            { text: "🎯 Uongozi wa kibinafsi" },
+            { text: "🤝 Umoja wa timu" }
+          ],
+          introText: "🤔 Wakati wa falsafa ya mpira wa miguu!",
+          analysisText: "Mashabiki wa mpira wa miguu wanapendezwa na mambo tofauti. Wengine wanapenda mchezo wa haraka, wengine wanathamini mikakati, na wengi wanapenda hadithi za kibinadamu.",
+          engagementText: "Ni nini kinachoshika moyo wako kuhusu mpira wa miguu? Shiriki falsafa yako! ⚽💭",
+          funFact: "Je, ulijua kwamba 'Mchezo Mzuri' ulifanywa maarufu na Pelé?",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'MEDIUM' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    // Fallback
+    return this.generateGeneralFootballOpinionPoll('en');
+  }
+
+  /**
+   * 🏆 Generate historical moments polls
+   */
+  private generateHistoricalMomentsPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Greatest Football Moments",
+          question: "🏆 Which is the greatest World Cup moment ever?",
+          options: [
+            { text: "🇧🇷 Pelé's 1970 Brazil team perfection" },
+            { text: "🇦🇷 Maradona's 1986 magic in Mexico" },
+            { text: "🇫🇷 Zidane's 1998 France triumph" },
+            { text: "🇩🇪 Germany's 2014 Brazil demolition" },
+            { text: "🤔 Something else entirely" }
+          ],
+          introText: "🏆 Time to settle the greatest moments debate!",
+          analysisText: "Football history is filled with magical moments that transcend the sport. From individual brilliance to team perfection, these moments define generations of fans.",
+          engagementText: "Which moment gives you goosebumps every time? 🔥",
+          funFact: "The 1970 Brazil team is the only squad to win the World Cup with 100% victories",
+          difficulty: 'MEDIUM' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'HIGH' as const,
+          viralPotential: 'HIGH' as const
+        },
+        {
+          title: "Legendary Comebacks",
+          question: "💥 Most incredible comeback in football history?",
+          options: [
+            { text: "🔴 Liverpool 3-3 AC Milan (2005 UCL)" },
+            { text: "🔵 Barcelona 6-1 PSG (2017)" },
+            { text: "⚪ Real Madrid vs Atletico (2014 UCL)" },
+            { text: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Leicester City 2015-16 season" },
+            { text: "🔄 Another epic comeback" }
+          ],
+          introText: "💥 Football's most incredible turnarounds!",
+          analysisText: "Comebacks define football's magic - the moments when everything seems lost, yet hope refuses to die. These moments remind us why we never leave early.",
+          engagementText: "Which comeback still gives you chills? 🤯",
+          funFact: "Liverpool's 2005 Champions League final comeback is called 'The Miracle of Istanbul'",
+          difficulty: 'MEDIUM' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'HIGH' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    // Add Amharic and Swahili versions...
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * ⭐ Generate player rankings polls  
+   */
+  private generatePlayerRankingsPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Current Best Players",
+          question: "⭐ Who's the most complete footballer right now?",
+          options: [
+            { text: "🐐 Lionel Messi - Pure genius" },
+            { text: "👑 Cristiano Ronaldo - Ultimate professional" },
+            { text: "🥇 Kylian Mbappé - Future GOAT" },
+            { text: "⚡ Erling Haaland - Goal machine" },
+            { text: "🎭 Someone else deserves recognition" }
+          ],
+          introText: "⭐ Current football royalty debate!",
+          analysisText: "The GOAT debate continues to evolve. While Messi and Ronaldo defined an era, new stars like Mbappé and Haaland are writing their own legends.",
+          engagementText: "Who gets your vote for football perfection? 👑",
+          funFact: "Messi and Ronaldo have won 12 of the last 13 Ballon d'Or awards between them",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'MEDIUM' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * 🔮 Generate league predictions polls
+   */
+  private generateLeaguePredictionsPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Premier League Predictions",
+          question: "🏆 Who wins the Premier League this season?",
+          options: [
+            { text: "🔵 Manchester City - Experience" },
+            { text: "🔴 Arsenal - Hungry for glory" },
+            { text: "⚫ Liverpool - Never count them out" },
+            { text: "🟡 Someone unexpected surprises" },
+            { text: "🤔 Too close to call right now" }
+          ],
+          introText: "🏆 Premier League title race predictions!",
+          analysisText: "The Premier League remains the most competitive league in the world. With multiple title contenders, every season brings surprises and drama.",
+          engagementText: "Who's lifting the trophy in May? Make your prediction! 🏆",
+          funFact: "Only 7 different teams have won the Premier League since 1992",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'MEDIUM' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * 🧠 Generate football trivia polls
+   */
+  private generateFootballTriviaPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Football Trivia Challenge",
+          question: "🧠 Which country has never won the World Cup but deserves one?",
+          options: [
+            { text: "🇳🇱 Netherlands - Total Football pioneers" },
+            { text: "🇧🇪 Belgium - Golden generation talent" },
+            { text: "🇵🇹 Portugal - Beyond Ronaldo's era" },
+            { text: "🇲🇽 Mexico - Consistent performers" },
+            { text: "🇩🇰 Denmark - Dark horse potential" }
+          ],
+          introText: "🧠 Time to test your football knowledge!",
+          analysisText: "Some of football's most beautiful teams have never captured the ultimate prize. The World Cup can be cruel to even the most talented nations.",
+          engagementText: "Which footballing nation deserves World Cup glory? 🌍⚽",
+          funFact: "The Netherlands reached 3 World Cup finals (1974, 1978, 2010) but never won",
+          difficulty: 'MEDIUM' as const,
+          expectedEngagement: 'MEDIUM' as const,
+          educationalValue: 'HIGH' as const,
+          viralPotential: 'MEDIUM' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * 🏟️ Generate team comparisons polls
+   */
+  private generateTeamComparisonsPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Classic Team Rivalries",
+          question: "⚔️ Greatest football rivalry of all time?",
+          options: [
+            { text: "🇪🇸 El Clásico (Real vs Barca)" },
+            { text: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Manchester United vs Liverpool" },
+            { text: "🇮🇹 AC Milan vs Inter Milan" },
+            { text: "🇦🇷 Boca Juniors vs River Plate" },
+            { text: "⚡ Local derby in my area" }
+          ],
+          introText: "⚔️ The ultimate rivalry debate!",
+          analysisText: "Football rivalries create the sport's most passionate moments. From El Clásico's global stage to local derbies' intimate intensity, rivalries define football culture.",
+          engagementText: "Which rivalry gets your blood pumping? 🔥",
+          funFact: "El Clásico is watched by over 650 million people worldwide",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'MEDIUM' as const,
+          viralPotential: 'HIGH' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * 🌍 Generate football culture polls
+   */
+  private generateFootballCulturePoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Football Culture Around the World",
+          question: "🌍 Best football atmosphere in the world?",
+          options: [
+            { text: "🇩🇪 Borussia Dortmund - Yellow Wall" },
+            { text: "🇹🇷 Galatasaray - Hell atmosphere" },
+            { text: "🇦🇷 Boca Juniors - La Bombonera" },
+            { text: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Liverpool - You'll Never Walk Alone" },
+            { text: "🏠 My local team's ground" }
+          ],
+          introText: "🌍 Football atmosphere around the globe!",
+          analysisText: "Football stadiums create unique atmospheres that reflect local culture. From Germany's organized chanting to South America's passionate chaos, each region brings magic.",
+          engagementText: "Where would you most want to experience football? 🏟️",
+          funFact: "Dortmund's Yellow Wall holds 24,454 standing fans - the largest terrace in European football",
+          difficulty: 'MEDIUM' as const,
+          expectedEngagement: 'MEDIUM' as const,
+          educationalValue: 'HIGH' as const,
+          viralPotential: 'MEDIUM' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * 📅 Generate weekend preview polls
+   */
+  private generateWeekendPreviewPoll(language: 'en' | 'am' | 'sw'): any {
+    if (language === 'en') {
+      const questions = [
+        {
+          title: "Weekend Football Plans",
+          question: "⚽ How are you spending your football weekend?",
+          options: [
+            { text: "📺 Watching multiple matches at home" },
+            { text: "🏟️ Going to see my team live" },
+            { text: "🍺 Pub with friends for the big games" },
+            { text: "⚽ Playing football myself" },
+            { text: "📱 Following scores on my phone" }
+          ],
+          introText: "⚽ Weekend football vibes incoming!",
+          analysisText: "Football weekends bring different joys - the stadium atmosphere, the pub camaraderie, the home comfort, or the pure joy of playing the beautiful game yourself.",
+          engagementText: "How do you get your football fix? Share your weekend plans! 📅",
+          funFact: "Saturday 3pm kickoffs in England have been protected since 1960",
+          difficulty: 'EASY' as const,
+          expectedEngagement: 'HIGH' as const,
+          educationalValue: 'LOW' as const,
+          viralPotential: 'MEDIUM' as const
+        }
+      ];
+      
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+    
+    return this.generateGeneralFootballOpinionPoll(language);
+  }
+
+  /**
+   * 📄 Build content for non-match polls
+   */
+  private buildNonMatchPollContent(pollContent: any, language: 'en' | 'am' | 'sw'): string {
+    if (language === 'en') {
+      let content = `📊 FOOTBALL COMMUNITY POLL 🔥\n\n`;
+      content += `${pollContent.introText}\n\n`;
+      content += `❓ ${pollContent.question}\n\n`;
+      content += `${pollContent.analysisText}\n\n`;
+      if (pollContent.funFact) {
+        content += `${pollContent.funFact}\n\n`;
+      }
+      content += `${pollContent.engagementText}\n\n`;
+      content += `📈 Join the conversation with football fans worldwide! 🌍`;
+      
+      return content;
+    }
+    
+    if (language === 'am') {
+      let content = `📊 የእግር ኳስ ማህበረሰብ ሕዝብ ጥያቄ 🔥\n\n`;
+      content += `${pollContent.introText}\n\n`;
+      content += `❓ ${pollContent.question}\n\n`;
+      content += `${pollContent.analysisText}\n\n`;
+      if (pollContent.funFact) {
+        content += `${pollContent.funFact}\n\n`;
+      }
+      content += `${pollContent.engagementText}\n\n`;
+      content += `📈 በዓለም ዙሪያ ካሉ የእግር ኳስ ወዳጆች ጋር ይቀላቀሉ! 🌍`;
+      
+      return content;
+    }
+    
+    if (language === 'sw') {
+      let content = `📊 UCHAGUZI WA JAMII YA MPIRA WA MIGUU 🔥\n\n`;
+      content += `${pollContent.introText}\n\n`;
+      content += `❓ ${pollContent.question}\n\n`;
+      content += `${pollContent.analysisText}\n\n`;
+      if (pollContent.funFact) {
+        content += `${pollContent.funFact}\n\n`;
+      }
+      content += `${pollContent.engagementText}\n\n`;
+      content += `📈 Jiunge na mazungumzo na mashabiki wa mpira wa miguu ulimwenguni! 🌍`;
+      
+      return content;
+    }
+    
+    return pollContent.introText;
+  }
+
+  /**
+   * 🤖 AI edit non-match poll content
+   */
+  private async aiEditNonMatchPollContent(content: string, pollContent: any, language: 'en' | 'am' | 'sw'): Promise<string> {
+    try {
+      const openai = await getOpenAIClient();
+      if (!openai) {
+        console.log('❌ OpenAI client not available for non-match poll enhancement');
+        return this.enhanceNonMatchPollContentManually(content, language);
+      }
+
+      const languagePrompts = {
+        'en': `Enhance this football community poll to be more engaging and viral. Keep it conversational and fun. Add relevant emojis naturally. Make it feel like a genuine community discussion. Include hashtags at the end:`,
+        'am': `ይህን የእግር ኳስ ማህበረሰብ ጥያቄ የበለጠ አሳታፊ እና ተወዳጅ እንዲሆን ያሻሽሉት። እንደ እውነተኛ ማህበረሰብ ውይይት ያድርጉት። በመጨረሻ የሃሽታግ ይጨምሩ። IMPORTANT: Write entire response in AMHARIC only:`,
+        'sw': `Boresha uchaguzi huu wa jamii ya mpira wa miguu uwe wa kuvutia zaidi. Ufanye uwe kama mazungumzo halisi ya jamii. Ongeza hashtags mwishoni. IMPORTANT: Write entire response in SWAHILI only:`
+      };
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { 
+            role: "system", 
+            content: `You are a social media expert specializing in football community content. Make polls engaging, conversational, and community-focused.`
+          },
+          { 
+            role: "user", 
+            content: `${languagePrompts[language]}\n\n${content}` 
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.8
+      });
+
+      const enhancedContent = response.choices[0]?.message?.content?.trim();
+      
+      if (enhancedContent) {
+        console.log(`✅ AI enhanced non-match poll content in ${language}`);
+        return enhancedContent;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error enhancing non-match poll content with AI:', error);
+    }
+    
+    return this.enhanceNonMatchPollContentManually(content, language);
+  }
+
+  /**
+   * ✨ Manually enhance non-match poll content  
+   */
+  private enhanceNonMatchPollContentManually(content: string, language: 'en' | 'am' | 'sw'): string {
+    const languageHashtags = {
+      'en': `#FootballPoll #CommunityVote #Football #SoccerTalk #YourOpinion #FootballFans`,
+      'am': `#የእግርኳስጥያቄ #ማህበረሰብድምጽ #እግርኳስ #FootballPoll #Community`,
+      'sw': `#UchaguziMpira #JamiiSauti #MpiraMiguu #FootballPoll #Community`
+    };
+    
+    const engagementText = {
+      'en': '🗳️ Your voice matters in the football community! Vote and spark the debate! ⚽🔥',
+      'am': '🗳️ የእርስዎ ድምጽ በእግር ኳስ ማህበረሰብ ውስጥ ይቆጠራል! ድምጽ ይስጡ እና ውይይቱን ይጀምሩ! ⚽🔥',
+      'sw': '🗳️ Sauti yako inahitajika katika jamii ya mpira wa miguu! Piga kura na anzisha mjadala! ⚽🔥'
+    };
+    
+    return `${content}\n\n${engagementText[language]}\n\n${languageHashtags[language]}`;
+  }
+
+  /**
+   * 📊 Calculate engagement score for non-match polls
+   */
+  private calculateNonMatchEngagementScore(pollType: string): number {
+    const baseScores: Record<string, number> = {
+      'general_football_opinion': 85,
+      'historical_moments': 75,
+      'player_rankings': 90,
+      'league_predictions': 80,
+      'football_trivia': 65,
+      'team_comparisons': 85,
+      'football_culture': 70,
+      'weekend_preview': 75
+    };
+    
+    return baseScores[pollType] || 70;
+  }
+
+  /**
+   * 🎓 Calculate educational score for non-match polls
+   */
+  private calculateNonMatchEducationalScore(pollType: string): number {
+    const eduScores: Record<string, number> = {
+      'general_football_opinion': 40,
+      'historical_moments': 85,
+      'player_rankings': 60,
+      'league_predictions': 70,
+      'football_trivia': 90,
+      'team_comparisons': 75,
+      'football_culture': 80,
+      'weekend_preview': 30
+    };
+    
+    return eduScores[pollType] || 50;
+  }
+
+  /**
+   * 👥 Estimate participants for non-match polls
+   */
+  private estimateNonMatchParticipants(engagement: string): number {
+    const baseParticipants = {
+      'HIGH': 250,
+      'MEDIUM': 150,
+      'LOW': 80
+    };
+    
+    return baseParticipants[engagement as keyof typeof baseParticipants] || 100;
+  }
+
+  /**
+   * 🎭 Create mock analysis for non-match polls
+   */
+  private createMockAnalysisForNonMatch(pollContent: any, language: 'en' | 'am' | 'sw'): EnhancedPollAnalysis {
+    return {
+      homeTeam: 'Football',
+      awayTeam: 'Community',
+      competition: 'Global Football Discussion',
+      matchImportance: 'MEDIUM' as const,
+      teamComparison: {
+        homeWinProbability: 40,
+        awayWinProbability: 35,
+        drawProbability: 25,
+        homeStrengths: ['Community engagement'],
+        awayStrengths: ['Diverse opinions'],
+        keyFactors: ['Fan participation', 'Cultural differences', 'Football knowledge'],
+        surpriseFactor: 30,
+        tacticalEdge: 'NEUTRAL' as const
+      },
+      headToHead: {
+        recentMeetings: 0,
+        homeAdvantage: 'N/A',
+        goalTrends: 'N/A',
+        competitiveBalance: 'Community poll',
+        memorableMoments: ['Football brings people together'],
+        lastMeetingScore: 'N/A',
+        biggestWin: { team: 'Football fans', score: 'Everyone wins' }
+      },
+      formAnalysis: {
+        homeForm: 'GOOD',
+        awayForm: 'GOOD',
+        momentum: 'Community engagement growing',
+        keyPlayers: {
+          home: [{ name: 'Football fans', role: 'Participants', form: 'Active' }],
+          away: [{ name: 'Community', role: 'Engagement', form: 'Strong' }]
+        },
+        injuries: { home: [], away: [] },
+        suspensions: { home: [], away: [] }
+      },
+      contextFactors: {
+        venue: 'Global Football Community',
+        weather: 'Perfect for discussion',
+        crowdFactor: 85,
+        refereeInfluence: 'LOW' as const,
+        mediaAttention: 'MEDIUM' as const,
+        stakes: ['Community engagement', 'Football discussion', 'Shared passion']
+      },
+      narrativeElements: {
+        mainStoryline: 'Football fans coming together to share opinions',
+        subPlots: ['Different perspectives', 'Cultural diversity', 'Shared passion'],
+        rivalryLevel: 'NONE' as const,
+        fanExpectations: {
+          home: 'Engaging discussion',
+          away: 'Diverse opinions shared'
+        },
+        pressurePoints: ['Respectful debate', 'Inclusive discussion']
+      }
+    };
   }
 
   /**

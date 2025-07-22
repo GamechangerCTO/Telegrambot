@@ -20,6 +20,14 @@
       "schedule": "0 9,15,21 * * *"
     },
     {
+      "path": "/api/automation/cron/polls-only",
+      "schedule": "0 7,13,19 * * *"
+    },
+    {
+      "path": "/api/automation/cron/coupons-only",
+      "schedule": "0 11,17 * * *"
+    },
+    {
       "path": "/api/automation/cron/dynamic-content",
       "schedule": "*/15 6-23 * * *"
     },
