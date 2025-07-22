@@ -843,44 +843,69 @@ export class BettingTipsGenerator {
       const systemPrompts = {
         'en': `You are a friendly football betting expert who knows how to give practical tips. Write a short, natural betting tips post (4-6 lines) that sounds like you're talking to a friend. Keep it conversational and helpful. Include specific predictions with confidence levels and odds estimates. Add emojis naturally. End with a responsible gambling reminder and hashtags.`,
         
-        'am': `እርስዎ ወዳጃዊ የእግር ኳስ ውርርድ ባለሙያ ነዎት። በተፈጥሮ እና በቀላሉ የሚነበብ፣ ለወዳጅ እንደምትመክር የውርርድ ምክር ይፃፉ። 4-6 መስመሮች ብቻ። ግልጽ ትንበያዎች ከውስመት ደረጃ እና የዕድል ሁኔታ ይጨምሩ። ተፈጥሯዊ ስሜቶች ይጠቀሙ። በኃላፊነት ውርርድ ጥሪ እና ሃሽታግ ያጠናቅቁ።`,
+        'am': `እርስዎ የእግር ኳስ ውርርድ ባለሙያ ነዎት። ለዚህ ጨዋታ በጣም የተለዩ እና የተወሰኑ የውርርድ ምክሮች ይፃፉ። እያንዳንዱ ምክር መሆን አለበት:
+        - የተወሰነ የውርርድ አይነት (የቤት ድል፣ ከ2.5 ጎሎች በላይ፣ ሁለቱም ቡድኖች ያስገባሉ፣ ወዘተ)
+        - የውርርድ ዕድል (ለምሳሌ: 1.85፣ 2.10፣ 1.65)
+        - የእምነት መቶኛ (ለምሳሌ: 75%፣ 80%፣ 65%)
+        - ለምን ይህ ውርርድ ጥሩ እንደሆነ አጭር ምክንያት
+        - የአደጋ ደረጃ (ዝቅተኛ፣ መካከለኛ፣ ከፍተኛ)
+        
+        ለምሳሌ: "🏆 የቤት ድል: ዕድል 1.85 | እምነት 80% | በቤት ጥሩ ውጤት አላቸው"
+        
+        በኃላፊነት ውርርድ ጥሪ ያካትቱ።`,
         
         'sw': `Wewe ni mtaalamu rafiki wa kamari za mpira wa miguu. Andika mapendekezo ya kamari kwa njia ya kirafiki na rahisi kuelewa, kama unavyozungumza na rafiki. Mistari 4-6 tu. Ongeza utabiri wazi na viwango vya ujasiri na uwezekano. Tumia emoji kwa kawaida. Malizia kwa onyo la kamari zenye uwajibikaji na hashtags.`
       };
 
-      // Build simplified analysis data for AI
+      // Build detailed analysis data for AI
       const analysisData = {
         match: `${analysis.homeTeam} vs ${analysis.awayTeam}`,
         competition: analysis.competition,
-        confidence: `${analysis.matchAssessment.overallConfidence}%`,
+        kickoff: analysis.kickoff,
+        venue: analysis.venue,
+        overallConfidence: `${analysis.matchAssessment.overallConfidence}%`,
+        predictability: analysis.matchAssessment.predictability,
         
         homeTeam: {
+          name: analysis.homeTeam,
           form: analysis.teamStats.home.form,
           winRate: `${analysis.teamStats.home.winRate}%`,
           homeAdvantage: `${analysis.teamStats.home.homeAdvantage}%`,
-          goalsAvg: analysis.teamStats.home.goalsFor
+          goalsFor: analysis.teamStats.home.goalsFor,
+          goalsAgainst: analysis.teamStats.home.goalsAgainst,
+          last5Games: analysis.teamStats.home.last5Games || [],
+          injuries: analysis.teamStats.home.keyInjuries || []
         },
         
         awayTeam: {
+          name: analysis.awayTeam,
           form: analysis.teamStats.away.form,
           winRate: `${analysis.teamStats.away.winRate}%`,
           awayForm: `${analysis.teamStats.away.awayForm}%`,
-          goalsAvg: analysis.teamStats.away.goalsFor
+          goalsFor: analysis.teamStats.away.goalsFor,
+          goalsAgainst: analysis.teamStats.away.goalsAgainst,
+          last5Games: analysis.teamStats.away.last5Games || [],
+          injuries: analysis.teamStats.away.keyInjuries || []
         },
         
         headToHead: {
-          meetings: analysis.headToHead.totalMeetings,
+          totalMeetings: analysis.headToHead.totalMeetings,
           homeWins: analysis.headToHead.homeWins,
           awayWins: analysis.headToHead.awayWins,
+          draws: analysis.headToHead.draws,
           avgGoals: analysis.headToHead.avgGoals,
-          trend: analysis.headToHead.recentTrend
+          recentTrend: analysis.headToHead.recentTrend,
+          lastMeeting: analysis.headToHead.lastMeeting
         },
         
-        topPredictions: analysis.predictions.slice(0, 3).map(pred => ({
-          tip: pred.prediction,
+        predictions: analysis.predictions.map(pred => ({
+          type: pred.type,
+          prediction: pred.prediction,
           confidence: `${pred.confidence}%`,
-          odds: pred.expectedOdds || 'TBD',
-          reason: pred.reasoning
+          odds: pred.expectedOdds || pred.odds_estimate || 'TBD',
+          reasoning: pred.reasoning,
+          riskLevel: pred.risk_level,
+          valueRating: pred.valueRating
         }))
       };
 
@@ -894,14 +919,22 @@ export class BettingTipsGenerator {
         
         Write it naturally, not like a formal report. Use emojis where they feel right.`,
       
-        'am': `ለዚህ ጨዋታ ተፈጥሯዊ እና ወዳጃዊ የውርርድ ምክሮች ይፃፉ። አጭር እና እንደ ለወዳጅ እንደምትመክር አድርጉት። ያካትቱ:
-        - 2-3 ስፔሲፊክ የውርርድ ምክሮች
-        - ለምን ጥሩ ውርርድ እንደሆኑ ምክንያት
-        - የእምነት ደረጃዎች (እንደ "80% እምነት አለኝ" ወይም "ጠንካራ እድል")
-        - የሚጠበቁ የዕድል ክልሎች
-        - የኃላፊነት ውርርድ አስታዋሽ
+        'am': `ለዚህ ጨዋታ በጣም የተለዩ እና የተወሰኑ የውርርድ ምክሮች ይፃፉ። እያንዳንዱ ምክር መሆን አለበት:
         
-        በተፈጥሮ ይፃፉ፣ እንደ ይፋዊ ሪፖርት አይደለም። የሚስማሙበት ቦታ ስሜቶችን ይጠቀሙ።`,
+        🎯 የተወሰነ የውርርድ አይነት:
+        - የቤት ድል / የጉዞ ድል / እርቅ
+        - ከ2.5 ጎሎች በላይ / ከ2.5 ጎሎች በታች
+        - ሁለቱም ቡድኖች ያስገባሉ / አንዱ ብቻ ያስገባል
+        - የመጀመሪያ ግማሽ ድል
+        
+        💰 የውርርድ ዕድል: ለምሳሌ 1.85, 2.10, 1.65
+        📊 የእምነት መቶኛ: ለምሳሌ 75%, 80%, 65%
+        🔍 አጭር ምክንያት: ለምን ይህ ውርርድ ጥሩ እንደሆነ
+        ⚠️ የአደጋ ደረጃ: ዝቅተኛ/መካከለኛ/ከፍተኛ
+        
+        ለምሳሌ: "🏆 የቤት ድል: ዕድል 1.85 | እምነት 80% | በቤት ጥሩ ውጤት አላቸው"
+        
+        በኃላፊነት ውርርድ ጥሪ ያካትቱ።`,
       
         'sw': `Andika mapendekezo ya kamari yanayoonekana ya kawaida na ya kirafiki kwa mechi hii. Ifupishe na iwe ya mazungumzo - kama unavyompa ushauri rafiki. Jumuisha:
         - Mapendekezo 2-3 mahususi ya kamari
@@ -922,11 +955,24 @@ export class BettingTipsGenerator {
           },
           { 
             role: "user", 
-            content: `${languageInstructions[language]}\n\nMatch Data:\n${JSON.stringify(analysisData, null, 2)}` 
+            content: `${languageInstructions[language]}
+
+MATCH ANALYSIS DATA:
+${JSON.stringify(analysisData, null, 2)}
+
+INSTRUCTIONS:
+1. Use the EXACT predictions from the data above
+2. Include the SPECIFIC odds and confidence levels provided
+3. Reference the actual team statistics and head-to-head data
+4. Make each betting tip specific and actionable
+5. Use the team names, competition, and venue information
+6. Include risk levels and value ratings where available
+
+Create betting tips that are specific to this exact match with the provided data.` 
           }
         ],
-        max_tokens: 300, // Shorter, more natural content
-        temperature: 0.8 // More natural variation
+        max_tokens: 400, // More space for detailed content
+        temperature: 0.7 // Balanced creativity and accuracy
       });
 
       const enhancedContent = response.choices[0]?.message?.content?.trim();
