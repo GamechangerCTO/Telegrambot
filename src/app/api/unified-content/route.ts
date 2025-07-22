@@ -323,6 +323,13 @@ async function triggerSmartCouponSystem(contentType: ContentType, language: Lang
       })
     });
 
+    // Check if response is valid JSON
+    const responseContentType = couponTriggerResponse.headers.get('content-type');
+    if (!responseContentType || !responseContentType.includes('application/json')) {
+      console.log(`⚠️ Smart coupon system returned non-JSON response: ${responseContentType}`);
+      return;
+    }
+
     const couponResult = await couponTriggerResponse.json();
     
     if (couponResult.success) {

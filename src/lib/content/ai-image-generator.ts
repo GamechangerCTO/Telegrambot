@@ -188,7 +188,7 @@ export class AIImageGenerator {
           // GPT-Image-1 doesn't support response_format parameter - always returns b64_json
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Image generation timeout')), 60000)
+          setTimeout(() => reject(new Error('Image generation timeout')), 90000)
         )
       ]) as any;
       
