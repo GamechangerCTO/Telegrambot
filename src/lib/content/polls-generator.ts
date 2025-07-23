@@ -729,13 +729,12 @@ export class PollsGenerator {
   }
 
   /**
-   * 📄 Build content for non-match polls
+   * 📄 Build content for non-match polls - Only intro/context, NOT the poll question
    */
   private buildNonMatchPollContent(pollContent: any, language: 'en' | 'am' | 'sw'): string {
     if (language === 'en') {
       let content = `📊 FOOTBALL COMMUNITY POLL 🔥\n\n`;
       content += `${pollContent.introText}\n\n`;
-      content += `❓ ${pollContent.question}\n\n`;
       content += `${pollContent.analysisText}\n\n`;
       if (pollContent.funFact) {
         content += `${pollContent.funFact}\n\n`;
@@ -749,7 +748,6 @@ export class PollsGenerator {
     if (language === 'am') {
       let content = `📊 የእግር ኳስ ማህበረሰብ ሕዝብ ጥያቄ 🔥\n\n`;
       content += `${pollContent.introText}\n\n`;
-      content += `❓ ${pollContent.question}\n\n`;
       content += `${pollContent.analysisText}\n\n`;
       if (pollContent.funFact) {
         content += `${pollContent.funFact}\n\n`;
@@ -763,7 +761,6 @@ export class PollsGenerator {
     if (language === 'sw') {
       let content = `📊 UCHAGUZI WA JAMII YA MPIRA WA MIGUU 🔥\n\n`;
       content += `${pollContent.introText}\n\n`;
-      content += `❓ ${pollContent.question}\n\n`;
       content += `${pollContent.analysisText}\n\n`;
       if (pollContent.funFact) {
         content += `${pollContent.funFact}\n\n`;
@@ -1653,18 +1650,16 @@ export class PollsGenerator {
   }
 
   /**
-   * 📄 Build enhanced poll content
+   * 📄 Build enhanced poll content - Only intro/context, NOT the poll question itself
    */
   private buildEnhancedPollContent(pollContent: EnhancedPollContent, analysis: EnhancedPollAnalysis, language: 'en' | 'am' | 'sw'): string {
     const { homeTeam, awayTeam, competition } = analysis;
     
     if (language === 'en') {
-      let content = `📊 INTERACTIVE POLL 🔥\n\n`;
+      let content = `📊 MATCH POLL 🔥\n\n`;
       content += `${pollContent.introText}\n\n`;
       content += `🏆 ${homeTeam} vs ${awayTeam}\n`;
-      content += `📍 ${competition}\n`;
-      content += `🎯 Match Importance: ${analysis.matchImportance}\n\n`;
-      content += `❓ ${pollContent.telegramPoll.question}\n\n`;
+      content += `📍 ${competition}\n\n`;
       
       if (pollContent.analysisText) {
         content += `${pollContent.analysisText}\n\n`;
@@ -1674,27 +1669,49 @@ export class PollsGenerator {
         content += `${pollContent.funFact}\n\n`;
       }
       
-      content += `${pollContent.engagementText}\n\n`;
-      
-      // Add enhanced poll instructions
-      if (pollContent.telegramPoll.allows_multiple_answers) {
-        content += `ℹ️ Multiple answers allowed - select all that apply!\n`;
-      } else {
-        content += `ℹ️ Choose your best answer!\n`;
-      }
-      
-      if (pollContent.telegramPoll.type === 'quiz') {
-        content += `🎓 Quiz mode - test your football IQ!\n`;
-      }
-      
-      // Add engagement metrics
-      content += `📈 Expected participants: ${this.estimateParticipants(pollContent.expectedEngagement, analysis.matchImportance)}+\n`;
-      content += `🔥 Viral potential: ${pollContent.viralPotential}\n`;
+      content += `${pollContent.engagementText}`;
       
       return content;
     }
     
-    // Similar implementations for 'am' and 'sw' would follow...
+    if (language === 'am') {
+      let content = `📊 የግጥሚያ ሕዝብ አስተያየት 🔥\n\n`;
+      content += `${pollContent.introText}\n\n`;
+      content += `🏆 ${homeTeam} በተቃወመ ${awayTeam}\n`;
+      content += `📍 ${competition}\n\n`;
+      
+      if (pollContent.analysisText) {
+        content += `${pollContent.analysisText}\n\n`;
+      }
+      
+      if (pollContent.funFact) {
+        content += `${pollContent.funFact}\n\n`;
+      }
+      
+      content += `${pollContent.engagementText}`;
+      
+      return content;
+    }
+    
+    if (language === 'sw') {
+      let content = `📊 UCHAGUZI WA MCHEZO 🔥\n\n`;
+      content += `${pollContent.introText}\n\n`;
+      content += `🏆 ${homeTeam} dhidi ya ${awayTeam}\n`;
+      content += `📍 ${competition}\n\n`;
+      
+      if (pollContent.analysisText) {
+        content += `${pollContent.analysisText}\n\n`;
+      }
+      
+      if (pollContent.funFact) {
+        content += `${pollContent.funFact}\n\n`;
+      }
+      
+      content += `${pollContent.engagementText}`;
+      
+      return content;
+    }
+    
     return this.buildBasicPollContent(pollContent, analysis, language);
   }
 
@@ -1848,7 +1865,7 @@ export class PollsGenerator {
 
   // Continue with remaining methods...
   private buildBasicPollContent(pollContent: EnhancedPollContent, analysis: EnhancedPollAnalysis, language: 'en' | 'am' | 'sw'): string {
-    return `📊 ${pollContent.telegramPoll.question}\n\n${pollContent.introText}\n\n${pollContent.engagementText}`;
+    return `📊 ${pollContent.introText}\n\n${pollContent.engagementText}`;
   }
 
   private calculateEngagementScore(pollContent: EnhancedPollContent, analysis: EnhancedPollAnalysis): number {
