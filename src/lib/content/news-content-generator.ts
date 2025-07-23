@@ -404,9 +404,9 @@ export class OptimizedNewsContentGenerator {
       }
 
       const systemPrompts = {
-        'en': `Football journalist. Create 4-5 line summary with emojis. End with hashtags.`,
-        'am': `You are a football journalist writing for Ethiopian readers. Write ONLY in proper Amharic language. Create a natural, flowing 4-5 line news summary. Use ⚽ emoji. End with Amharic hashtags: #እግርኳስዜና #ስፖርት`,
-        'sw': `Football journalist writing ONLY in Swahili. 4-5 lines. End with Swahili & English hashtags.`
+        'en': `You are a football journalist. Create a complete 4-5 line summary with emojis. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with hashtags.`,
+        'am': `You are a football journalist writing for Ethiopian readers. Write ONLY in proper Amharic language. Create a natural, flowing 4-5 line news summary. CRITICAL: Always complete your sentences fully - never stop in the middle of a word or sentence. Use ⚽ emoji. End with Amharic hashtags: #እግርኳስዜና #ስፖርት`,
+        'sw': `You are a football journalist writing ONLY in Swahili. Create 4-5 complete lines. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with Swahili & English hashtags.`
       };
 
       const response = await Promise.race([
@@ -416,10 +416,10 @@ export class OptimizedNewsContentGenerator {
             { role: "system", content: systemPrompts[language] },
             { 
               role: "user", 
-              content: `Summarize in ${language === 'en' ? 'English' : language === 'am' ? 'Amharic' : 'Swahili'}:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
+              content: `Create a complete news summary in ${language === 'en' ? 'English' : language === 'am' ? 'Amharic' : 'Swahili'}. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
             }
           ],
-          max_tokens: 200,
+          max_tokens: 450,
           temperature: 0.7
         }),
         new Promise((_, reject) => 
