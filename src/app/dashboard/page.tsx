@@ -410,15 +410,27 @@ export default function DashboardPage() {
               </select>
             </div>
             
-            {/* Super Admin Navigation - Show only for super_admin */}
-            {user?.role === 'super_admin' && (
-              <Link 
-                href="/super-admin"
-                className="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
-              >
-                <span className="text-sm">⚡</span>
-                <span className="text-sm font-medium">Super Admin</span>
-              </Link>
+            {/* Admin Navigation - Show for super_admin and admin */}
+            {(user?.role === 'super_admin' || user?.role === 'admin') && (
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Link 
+                  href="/dashboard/admin/managers"
+                  className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex-1 sm:flex-initial"
+                >
+                  <span className="text-sm">👥</span>
+                  <span className="text-sm font-medium">Manage Users</span>
+                </Link>
+                
+                {user?.role === 'super_admin' && (
+                  <Link 
+                    href="/super-admin"
+                    className="flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex-1 sm:flex-initial"
+                  >
+                    <span className="text-sm">⚡</span>
+                    <span className="text-sm font-medium">Super Admin</span>
+                  </Link>
+                )}
+              </div>
             )}
           </div>
         </div>

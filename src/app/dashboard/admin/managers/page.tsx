@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -32,10 +33,14 @@ interface User {
 }
 
 export default function AdminManagersPage() {
+  const searchParams = useSearchParams()
   const [managers, setManagers] = useState<Manager[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'create'>('pending')
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'create'>(() => {
+    const tabParam = searchParams.get('tab')
+    return tabParam === 'create' ? 'create' : 'pending'
+  })
   const [currentUser] = useState<User>({
     id: '00000000-0000-0000-0000-000000000002', // Super Admin ID
     name: 'Super Admin',
@@ -59,8 +64,13 @@ export default function AdminManagersPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
+    // Check for tab parameter in URL
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'create') {
+      setActiveTab('create')
+    }
     fetchData()
-  }, [activeTab])
+  }, [activeTab, searchParams])
 
   const fetchData = async () => {
     try {
