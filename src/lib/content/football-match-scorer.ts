@@ -237,13 +237,23 @@ export class FootballMatchScorer {
       
       // 🚨 STRICT FILTER: Content-specific time limits
       const hoursAgo = Math.abs(daysDiff) * 24;
-      let maxHoursBack = 48; // Default: 48 hours for polls and daily summaries
+      let maxHoursBack = 48;
       
-      // Adjust max hours based on content type
+      // 🎯 IMPROVED: Smart time limits based on content type AND match timing
       if (options.content_type === 'betting_tip') {
         maxHoursBack = 0; // No past matches for betting
       } else if (options.content_type === 'live_update') {
-        maxHoursBack = 12; // 12 hours for live updates
+        // 🔧 FIX: Allow live updates for matches that occurred today
+        const matchDate = match.kickoff.toISOString().split('T')[0];
+        const todayDate = now.toISOString().split('T')[0];
+        
+        if (matchDate === todayDate) {
+          // Same day match - allow up to 24 hours (covers late evening games)
+          maxHoursBack = 24;
+        } else {
+          // Different day - stricter limit
+          maxHoursBack = 12;
+        }
       } else if (options.content_type === 'news') {
         maxHoursBack = 168; // 7 days for news
       } else if (options.content_type === 'analysis') {

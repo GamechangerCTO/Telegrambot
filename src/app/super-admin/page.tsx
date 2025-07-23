@@ -442,10 +442,7 @@ export default function SuperAdminPage() {
     projections: { monthlyCost: 0, dailyAverage: 0, daysRemaining: 0 },
     summary: { status: 'within_budget', budgetUsed: 0, efficiency: 0 }
   });
-  const [language] = useState<'en'>('en');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-
-  const t = translations[language];
 
   // Load real data from APIs
   const loadStats = async () => {
@@ -487,9 +484,9 @@ export default function SuperAdminPage() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return t.greeting.morning;
-    if (hour < 17) return t.greeting.afternoon;
-    return t.greeting.evening;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const getHealthColor = (score: number) => {
@@ -515,11 +512,11 @@ export default function SuperAdminPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'healthy':
-        return t.healthy;
+        return 'Healthy';
       case 'warning':
-        return t.warning;
+        return 'Warning';
       case 'critical':
-        return t.critical;
+        return 'Critical';
       default:
         return status;
     }

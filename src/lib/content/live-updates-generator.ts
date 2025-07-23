@@ -247,39 +247,58 @@ export class LiveUpdatesGenerator {
     try {
       console.log('🔍 Scanning for live matches...');
 
-      // Step 1: Get all today's matches from API
-      const today = new Date().toISOString().split('T')[0];
-      const todayMatches = await unifiedFootballService.getMatchesByDate(today);
+      // Step 1: Get matches from today and recent days
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
       
-      if (!todayMatches || todayMatches.length === 0) {
-        console.log('📝 No matches found for today');
+      console.log(`📅 Getting matches for date range around: ${todayStr}`);
+      
+      // Get recent matches with broader date range for live updates
+      const recentMatches = await unifiedFootballService.getSmartMatches({
+        type: 'live_update',
+        language: 'en',
+        maxResults: 20
+      });
+      
+      if (!recentMatches || recentMatches.length === 0) {
+        console.log('📝 No recent matches found for live updates');
         return;
       }
 
-      // Step 2: Score matches to find interesting ones
-      const scoredMatches = await this.matchScorer.scoreMatches(todayMatches, {
+      console.log(`⚽ Found ${recentMatches.length} recent matches for analysis`);
+
+      // Step 2: Score matches to find interesting ones (reduced threshold)
+      const scoredMatches = await this.matchScorer.scoreMatches(recentMatches, {
         content_type: 'live_update',
         min_score_threshold: 8, // Reduced threshold to allow more matches
         language: 'en'
       });
 
-      console.log(`⚽ Found ${scoredMatches.length} interesting matches (score 15+)`);
+      console.log(`🧠 After smart scoring: ${scoredMatches.length} interesting matches (score 8+)`);
 
-      // Step 3: Filter for live matches only
-      const liveMatches = scoredMatches.filter(match => 
-        match.status === 'LIVE' || 
-        match.status === 'IN_PLAY' ||
-        match.status?.toLowerCase().includes('live') ||
-        match.status?.toLowerCase().includes('play')
-      );
+      // Step 3: Filter for potential live matches (broader criteria)
+      const potentialLiveMatches = scoredMatches.filter(match => {
+        const matchTime = match.kickoff.getTime();
+        const nowTime = today.getTime();
+        const hoursDiff = (nowTime - matchTime) / (1000 * 60 * 60);
+        
+        // Include matches from today and matches that might be ongoing
+        const isToday = match.kickoff.toISOString().split('T')[0] === todayStr;
+        const isRecent = hoursDiff <= 24; // Up to 24 hours old
+        const mightBeLive = hoursDiff >= -2 && hoursDiff <= 4; // Starting soon or recently finished
+        
+        console.log(`⚽ ${match.homeTeam.name} vs ${match.awayTeam.name}: isToday=${isToday}, hoursAgo=${hoursDiff.toFixed(1)}, status=${match.status}`);
+        
+        return isToday || mightBeLive || isRecent;
+      });
 
-      console.log(`🔴 Found ${liveMatches.length} LIVE interesting matches`);
+      console.log(`🎯 Found ${potentialLiveMatches.length} potential live matches after time filtering`);
       
       this.monitoringStats.totalMatches = scoredMatches.length;
-      this.monitoringStats.liveMatches = liveMatches.length;
+      this.monitoringStats.liveMatches = potentialLiveMatches.length;
 
-      // Step 4: Process each live match
-      for (const match of liveMatches) {
+      // Step 4: Process each potential live match
+      for (const match of potentialLiveMatches) {
         await this.processLiveMatch(match);
       }
 
@@ -317,17 +336,17 @@ export class LiveUpdatesGenerator {
         const liveMatchData: LiveMatchData = {
           fixture_id: fixtureId,
           homeTeam: {
-            id: match.home_team_id || match.homeTeam?.id,
-            name: match.home_team || match.homeTeam?.name,
+            id: match.home_team_id || match.homeTeam?.id || 'unknown',
+            name: match.home_team || match.homeTeam?.name || 'Unknown Team',
             logo: match.home_team_logo || match.homeTeam?.logo || ''
           },
           awayTeam: {
-            id: match.away_team_id || match.awayTeam?.id,
-            name: match.away_team || match.awayTeam?.name,
+            id: match.away_team_id || match.awayTeam?.id || 'unknown',
+            name: match.away_team || match.awayTeam?.name || 'Unknown Team',
             logo: match.away_team_logo || match.awayTeam?.logo || ''
           },
           competition: {
-            id: match.competition_id || match.league?.id,
+            id: match.competition_id || match.league?.id || 'unknown',
             name: match.competition_name || match.league?.name || 'Unknown',
             country: match.competition_country || match.league?.country || 'Unknown'
           },

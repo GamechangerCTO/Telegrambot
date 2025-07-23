@@ -1086,8 +1086,8 @@ export class UnifiedFootballService {
       daysBack = 5; // Football-data.org limit: max 10 days total
       daysForward = 5; // Total: 10 days (API limit)
     } else if (request.type === 'live_update') {
-      daysBack = 1; // Yesterday
-      daysForward = 2; // Today and tomorrow for live
+      daysBack = 2; // Include yesterday and today (covers late games and early games)
+      daysForward = 1; // Today and tomorrow for live potential
     } else if (request.type === 'daily_summary') {
       daysBack = 2; // עד 48 שעות אחורה
       daysForward = 0; // רק אתמול ושלשום
@@ -1199,8 +1199,9 @@ export class UnifiedFootballService {
       daysBack = 7; // Last week for recent results
       daysForward = 7; // Next week for upcoming matches
     } else if (request.type === 'live_update') {
-      daysBack = 1; // Yesterday
-      daysForward = 2; // Today and tomorrow for live
+      // 🔧 IMPROVED: Better coverage for live updates
+      daysBack = 2; // Include yesterday and today (covers late games and early games)
+      daysForward = 1; // Today and tomorrow for live potential
     } else if (request.type === 'daily_summary') {
       daysBack = 2; // עד 48 שעות אחורה
       daysForward = 0; // רק אתמול ושלשום
