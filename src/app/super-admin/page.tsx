@@ -10,12 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const languages = {
-  en: 'English',
-  am: 'አማርኛ',
-  sw: 'Kiswahili'
-};
-
 interface SystemStats {
   organizations: {
     total: number;
@@ -84,6 +78,7 @@ interface OpenAICosts {
   };
 }
 
+// Translation constants removed - English only interface
 const translations = {
   en: {
     title: 'System Administrator Dashboard',
