@@ -173,12 +173,13 @@ export async function GET(request: NextRequest) {
 
 // POST - יצירת מנהל בוט חדש (רק אדמין או super_admin)
 export async function POST(request: NextRequest) {
-  console.log('🚀 POST /api/admin/managers started')
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`🚀 POST /api/admin/managers started [${requestId}]`)
   
   try {
     const supabase = createServiceClient()
     const body = await request.json()
-    console.log('📝 Request body received:', { 
+    console.log(`📝 Request body received [${requestId}]:`, { 
       email: body.email, 
       name: body.name, 
       organization_id: body.organization_id,
@@ -192,59 +193,61 @@ export async function POST(request: NextRequest) {
       preferred_language = 'en',
       role = 'manager',
       organization_id,
-      created_by_user_id, // Current user creating the manager
-      notes,
-      password,         // Optional - if not provided, will generate random password
-      generate_password = true // Whether to generate password automatically
+      created_by_user_id, // Get from frontend
+      notes
     } = body
-    
-    // Validation
+
+    // Validate required fields
     if (!email || !name || !organization_id || !created_by_user_id) {
       return NextResponse.json({
-        error: 'Missing required fields: email, name, organization_id, created_by_user_id'
+        error: 'Missing required fields: email, name, organization_id, and created_by_user_id are required'
       }, { status: 400 })
     }
-    
-    // Check permissions - only admin or super_admin can create managers
+
+    // Check permissions
     const permissionCheck = await checkUserPermissions(
-      supabase, created_by_user_id, organization_id, 'can_create_managers'
+      supabase, 
+      created_by_user_id, 
+      organization_id,
+      'can_create_managers'
     )
-    
+
     if (!permissionCheck.hasPermission) {
-      return NextResponse.json({
-        error: permissionCheck.error || 'Only administrators can create bot managers'
+      return NextResponse.json({ 
+        error: 'Access denied', 
+        details: permissionCheck.error || 'Only administrators can create bot managers'
       }, { status: 403 })
     }
     
     // Check if a user with this email already exists
-    console.log('🔍 Checking if email already exists:', email)
+    console.log(`🔍 Checking if email already exists [${requestId}]:`, email)
     const { data: existingUser } = await supabase
       .from('users')
       .select('id, email')
       .eq('email', email)
       .single()
     
-    console.log('👥 Existing user check result:', existingUser)
+    console.log(`👥 Existing user check result [${requestId}]:`, existingUser)
     
     if (existingUser) {
-      console.log('❌ Email already exists in users table')
+      console.log(`❌ Email already exists in users table [${requestId}]`)
       return NextResponse.json({
         error: 'A user with this email already exists'
       }, { status: 409 })
     }
 
     // Also check if manager with this email exists
-    console.log('🔍 Checking if manager email already exists:', email)
+    console.log(`🔍 Checking if manager email already exists [${requestId}]:`, email)
     const { data: existingManager } = await supabase
       .from('managers')
       .select('id, email')
       .eq('email', email)
       .single()
     
-    console.log('👤 Existing manager check result:', existingManager)
+    console.log(`👤 Existing manager check result [${requestId}]:`, existingManager)
     
     if (existingManager) {
-      console.log('❌ Email already exists in managers table')
+      console.log(`❌ Email already exists in managers table [${requestId}]`)
       return NextResponse.json({
         error: 'A manager with this email already exists'
       }, { status: 409 })
@@ -256,7 +259,7 @@ export async function POST(request: NextRequest) {
     // Validate the simple password (should pass now)
     const passwordValidation = validatePasswordStrength(managerPassword)
     if (!passwordValidation.valid) {
-      console.error('❌ Password validation failed:', passwordValidation.errors)
+      console.error(`❌ Password validation failed [${requestId}]:`, passwordValidation.errors)
       return NextResponse.json({
         error: 'Initial password does not meet requirements',
         details: passwordValidation.errors
@@ -267,116 +270,89 @@ export async function POST(request: NextRequest) {
     const { hash: passwordHash, salt: passwordSalt } = await hashPassword(managerPassword)
     
     // Create user in Supabase Auth system first
-    let authUser: any
-    try {
-      const authResult = await supabase.auth.admin.createUser({
-        email,
-        password: managerPassword,
-        email_confirm: true, // Auto-confirm email
-        user_metadata: {
-          name,
-          role: 'bot_manager',
-          preferred_language,
-          created_by: created_by_user_id,
-          organization_id,
-          phone: phone || null
-        }
-      })
-      
-      if (authResult.error) {
-        console.error('Supabase Auth user creation error:', authResult.error)
-        return NextResponse.json({
-          error: 'Failed to create user authentication account',
-          details: authResult.error.message
-        }, { status: 500 })
+    console.log(`🔍 Creating Supabase Auth user [${requestId}]...`)
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password: managerPassword,
+      email_confirm: true,
+      user_metadata: {
+        name,
+        role: 'manager',
+        organization_id
       }
-      
-      authUser = authResult.data
-      console.log('Created Supabase Auth user:', authUser.user?.id)
-      
-    } catch (authCreateError) {
-      console.error('Error creating Supabase Auth user:', authCreateError)
-      return NextResponse.json({
-        error: 'Failed to create authentication account'
+    })
+
+    if (authError || !authUser.user) {
+      console.error(`❌ Error creating auth user [${requestId}]:`, authError)
+      return NextResponse.json({ 
+        error: 'Failed to create authentication account',
+        details: authError?.message 
       }, { status: 500 })
     }
-    
+
+    console.log(`✅ Created Supabase Auth user [${requestId}]:`, authUser.user.id)
+
     // Auto-approve if created by super_admin, otherwise pending
     const approval_status = permissionCheck.user.role === 'super_admin' ? 'approved' : 'pending'
     const approved_by = permissionCheck.user.role === 'super_admin' ? created_by_user_id : null
     const approval_date = approval_status === 'approved' ? new Date().toISOString() : null
 
-    console.log('🔍 Creating manager with data:', {
-      user_id: authUser.user?.id,
-      email,
-      name,
-      preferred_language,
-      role,
-      is_active: approval_status === 'approved',
-      created_by: created_by_user_id,
-      approved_by,
-      approval_status,
-      approval_date,
-      notes,
-      force_password_change: true
-    });
-
-    console.log('📧 Email being inserted:', email);
-    console.log('🔑 Auth user email:', authUser.user?.email);
-
-    const { data: manager, error } = await supabase
+    // Check if manager was auto-created by trigger and update it
+    console.log(`🔍 Checking if manager was auto-created by trigger [${requestId}]...`)
+    const { data: existingManagerAfterAuth } = await supabase
       .from('managers')
-      .insert({
-        user_id: authUser.user?.id, // Use the ID of the newly created user
-        email,
-        name,
-        preferred_language,
-        role,
-        is_active: approval_status === 'approved',
-        created_by: created_by_user_id,
-        approved_by,
-        approval_status,
-        approval_date,
-        notes,
-        // Password fields
-        password_hash: passwordHash,
-        password_salt: passwordSalt,
-        password_set_at: new Date().toISOString(),
-        force_password_change: true, // Force change if password was generated
-        login_attempts: 0
-      })
-      .select(`*`)
+      .select('id, email')
+      .eq('email', email)
       .single()
-    
-    if (error) {
-      console.error('Error creating manager:', error)
-      console.error('Error details:', JSON.stringify(error, null, 2))
-      
-      // Cleanup: Delete the auth user if manager creation failed
-      try {
-        await supabase.auth.admin.deleteUser(authUser.user?.id)
-        console.log('🧹 Cleaned up auth user after manager creation failure')
-      } catch (cleanupError) {
-        console.error('❌ Failed to cleanup auth user:', cleanupError)
+
+    if (existingManagerAfterAuth) {
+      console.log(`✅ Manager auto-created by trigger, updating it [${requestId}]...`)
+      // Update the auto-created manager with our details
+      const { data: manager, error } = await supabase
+        .from('managers')
+        .update({
+          name,
+          preferred_language,
+          role,
+          is_active: approval_status === 'approved',
+          created_by: created_by_user_id,
+          approved_by,
+          approval_status,
+          approval_date,
+          notes,
+          // Password fields
+          password_hash: passwordHash,
+          password_salt: passwordSalt,
+          password_set_at: new Date().toISOString(),
+          force_password_change: true,
+          login_attempts: 0
+        })
+        .eq('email', email)
+        .select(`*`)
+        .single()
+
+      console.log(`✅ Manager updated successfully [${requestId}]!`)
+
+      if (error) {
+        console.error(`Error updating manager [${requestId}]:`, error)
+        return NextResponse.json({ 
+          error: 'Failed to update manager',
+          details: error.message || error.toString()
+        }, { status: 500 })
       }
-      
-      return NextResponse.json({ 
-        error: 'Failed to create manager',
-        details: error.message || error.toString()
-      }, { status: 500 })
+
+      return NextResponse.json({
+        success: true,
+        manager,
+        email: email,
+        password: managerPassword,
+        message: approval_status === 'approved' 
+          ? 'Bot manager created and approved successfully. Account ready for login with password: 123456aA!'
+          : 'Bot manager created and pending approval. Authentication account created with password: 123456aA!',
+        password_info: 'Initial password is 123456aA! - Manager must change password on first login.',
+        auth_info: 'User created in Supabase Auth system - can login immediately with 123456aA!'
+      }, { status: 201 })
     }
-    
-    return NextResponse.json({
-      success: true,
-      manager,
-      email: email, // Return the email for the frontend
-      password: managerPassword, // Always return the simple password (123456aA!)
-      message: approval_status === 'approved' 
-        ? 'Bot manager created and approved successfully. Account ready for login with password: 123456aA!'
-        : 'Bot manager created and pending approval. Authentication account created with password: 123456aA!',
-      password_info: 'Initial password is 123456aA! - Manager must change password on first login.',
-      auth_info: 'User created in Supabase Auth system - can login immediately with 123456aA!'
-    }, { status: 201 })
     
   } catch (error) {
     console.error('API Error:', error)

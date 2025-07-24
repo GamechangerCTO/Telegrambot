@@ -163,7 +163,7 @@ export default function AdminManagersPage() {
         body: JSON.stringify({
           ...newManager,
           organization_id: organizationId,
-          created_by_user_id: user?.id
+          created_by_user_id: "00000000-0000-0000-0000-000000000002" // Super admin ID for now
         })
       })
       
