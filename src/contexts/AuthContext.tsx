@@ -1,6 +1,6 @@
 /**
  * TELEGRAM BOT MANAGER 2025 - Authentication Context
- * Revolutionary role-based authentication system with database validation
+ * Optimized authentication system with minimal logging
  */
 
 'use client';
@@ -41,6 +41,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -54,8 +62,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Function to create manager record for existing users
   const createManagerRecord = async (user: User): Promise<Manager | null> => {
     try {
-      console.log('🔧 AuthContext: Creating manager record for existing user:', user.email);
-      
       const { data: newManager, error: createError } = await supabase
         .from('managers')
         .insert({
@@ -74,7 +80,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return null;
       }
 
-      console.log('✅ AuthContext: Manager record created successfully');
       return newManager as Manager;
     } catch (error) {
       console.error('Error creating manager record:', error);
@@ -85,18 +90,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Function to load manager data from database
   const loadManagerData = async (userId: string): Promise<Manager | null> => {
     try {
-      console.log('🔍 AuthContext: Loading manager data for user:', userId);
-      
-      // Add timeout to prevent hanging - increased for production
+      // Reduced timeout for faster response
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timeout')), 10000);
+        setTimeout(() => reject(new Error('Database query timeout')), 5000);
       });
       
       const queryPromise = supabase
         .from('managers')
         .select('id, user_id, name, email, role, created_at, updated_at')
         .eq('user_id', userId)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no record
+        .maybeSingle();
       
       const { data: managerData, error: managerError } = await Promise.race([
         queryPromise,
@@ -104,41 +107,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       ]);
 
       if (managerError) {
-        console.warn('Database error loading manager:', managerError);
-        
-        // Check if this is a table access issue
+        // Only log significant errors, not warnings
         if (managerError.code === '42P01') {
           console.error('❌ AuthContext: managers table does not exist!');
-        } else {
-          console.error('❌ AuthContext: Database access error:', managerError.code, managerError.message);
         }
-        
         return null;
       }
       
-      // If no manager data found (maybeSingle returns null, not error)
-      if (!managerData) {
-        console.log('📝 AuthContext: No manager record found - attempting to create one');
-        
-        // Try to create manager record for existing auth user
-        if (user) {
-          const newManager = await createManagerRecord(user);
-          if (newManager) {
-            return newManager;
-          }
+      // If no manager data found, try to create one
+      if (!managerData && user) {
+        const newManager = await createManagerRecord(user);
+        if (newManager) {
+          return newManager;
         }
         return null;
       }
 
-      console.log('✅ AuthContext: Manager data loaded:', {
-        email: managerData.email,
-        role: managerData.role,
-        isActive: managerData.is_active
-      });
-
       return managerData as Manager;
     } catch (error) {
-      console.error('Error loading manager data:', error);
+      // Reduced logging - only log unexpected errors
+      if (error instanceof Error && !error.message.includes('timeout')) {
+        console.error('Error loading manager data:', error);
+      }
       return null;
     }
   };
@@ -152,18 +142,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    console.log('🔍 AuthContext: Initializing authentication system...');
-    
     // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        
-        console.log('🔍 AuthContext: Initial session check', {
-          hasSession: !!initialSession,
-          user: initialSession?.user?.email || 'none',
-          error: error?.message || 'none'
-        });
         
         if (error) {
           console.error('Error getting initial session:', error);
@@ -184,11 +166,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    // Add timeout to prevent infinite loading
+    // Reduced timeout for better UX
     const timeout = setTimeout(() => {
-      console.warn('⚠️ AuthContext: Session check timeout, forcing loading to false');
       setLoading(false);
-    }, 3000);
+    }, 2000);
 
     getInitialSession().finally(() => {
       clearTimeout(timeout);
@@ -197,12 +178,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('🔍 AuthContext: Auth state changed', {
-          event,
-          hasSession: !!session,
-          user: session?.user?.email || 'none'
-        });
-        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -223,58 +198,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Computed properties based on database data
   const isAuthenticated = !!session && !!user;
-  const userRole = manager?.role || 'manager'; // Use database role, not metadata
+  const userRole = manager?.role || 'manager';
   const isManager = userRole === 'manager' || userRole === 'super_admin';
   const isSuperAdmin = userRole === 'super_admin';
 
-  console.log('🔍 AuthContext: Current state:', {
-    loading,
-    isAuthenticated,
-    user: user?.email || 'none',
-    managerFromDB: !!manager,
-    roleFromDB: userRole,
-    isManager,
-    isSuperAdmin
-  });
-
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('🔍 AuthContext: Attempting sign in for:', email);
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Sign in error:', error);
         return { error };
       }
 
-      console.log('✅ AuthContext: Sign in successful for:', email);
-      
       // Load manager data from database
       if (data.user) {
         const managerData = await loadManagerData(data.user.id);
         if (managerData) {
           setManager(managerData);
-          console.log('✅ AuthContext: Manager data set from database');
-        } else {
-          console.warn('⚠️ AuthContext: No manager record found for user');
         }
       }
 
       return { data };
     } catch (error) {
-      console.error('Unexpected sign in error:', error);
       return { error };
     }
   };
 
   const signUp = async (email: string, password: string, role = 'manager') => {
     try {
-      console.log('🔍 AuthContext: Attempting sign up for:', email, 'with role:', role);
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -287,7 +241,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       if (error) {
-        console.error('Sign up error:', error);
         return { error };
       }
 
@@ -306,30 +259,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (managerError) {
           console.error('Error creating manager record:', managerError);
-        } else {
-          console.log('✅ AuthContext: Manager record created in database');
         }
       }
 
-      console.log('✅ AuthContext: Sign up successful for:', email);
       return { data };
     } catch (error) {
-      console.error('Unexpected sign up error:', error);
       return { error };
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('🔍 AuthContext: Signing out...');
-      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('Sign out error:', error);
       } else {
-        console.log('✅ AuthContext: Sign out successful');
-        setManager(null); // Clear manager data
+        setManager(null);
       }
     } catch (error) {
       console.error('Unexpected sign out error:', error);
@@ -338,42 +284,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const resetPassword = async (email: string) => {
     try {
-      console.log('🔍 AuthContext: Requesting password reset for:', email);
-      
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
       if (error) {
-        console.error('Password reset error:', error);
         return { error };
       }
 
-      console.log('✅ AuthContext: Password reset email sent');
       return { data };
     } catch (error) {
-      console.error('Unexpected password reset error:', error);
       return { error };
     }
   };
 
   const updatePassword = async (password: string) => {
     try {
-      console.log('🔍 AuthContext: Updating password...');
-      
       const { data, error } = await supabase.auth.updateUser({
         password: password
       });
 
       if (error) {
-        console.error('Password update error:', error);
         return { error };
       }
 
-      console.log('✅ AuthContext: Password updated successfully');
       return { data };
     } catch (error) {
-      console.error('Unexpected password update error:', error);
       return { error };
     }
   };
@@ -399,14 +335,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-export default AuthContext; 
+} 

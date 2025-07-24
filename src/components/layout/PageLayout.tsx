@@ -1,12 +1,11 @@
 /**
  * 🎨 Modern Page Layout Component
- * Professional, colorful layout wrapper with responsive design
+ * Professional, clean layout wrapper with responsive design
  */
 
 'use client';
 
 import React from 'react';
-import { useI18n } from '@/lib/i18n/useI18n';
 import Breadcrumb, { BreadcrumbItem } from '@/components/ui/Breadcrumb';
 
 interface PageLayoutProps {
@@ -26,8 +25,6 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   actions,
   className = ''
 }) => {
-  const { t } = useI18n();
-
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Page Header */}

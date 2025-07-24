@@ -1,6 +1,6 @@
 /**
  * 🎨 Modern Header Component
- * Colorful, professional header with language switching and navigation
+ * Professional English-only header for international development teams
  */
 
 'use client';
@@ -8,9 +8,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useI18n } from '@/lib/i18n/useI18n';
 import { useAuth } from '@/contexts/AuthContext';
-import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 interface HeaderProps {
   user?: {
@@ -22,7 +20,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user }) => {
-  const { t } = useI18n();
   const pathname = usePathname();
   const { signOut, isSuperAdmin, isManager } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -69,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              🏠 {t.nav.dashboard}
+              🏠 Dashboard
             </Link>
             <Link
               href="/dashboard/bots"
@@ -79,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              🤖 {t.nav.bots}
+              🤖 Bots
             </Link>
             <Link
               href="/dashboard/content"
@@ -89,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              📝 {t.nav.content}
+              📝 Content
             </Link>
             <Link
               href="/automation"
@@ -123,8 +120,10 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </button>
 
-            {/* Language Switcher */}
-            <LanguageSwitcher variant="compact" />
+            {/* Language indicator - English only */}
+            <div className="px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-sm font-medium">
+              🌐 English
+            </div>
 
             {/* Profile Dropdown */}
             <div className="relative">
@@ -180,23 +179,14 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
                     onClick={() => setIsProfileOpen(false)}
                   >
                     <span className="mr-3">⚙️</span>
-                    {t.nav.settings}
+                    Settings
                   </Link>
-                  <Link 
-                    href="/help" 
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <span className="mr-3">❓</span>
-                    {t.nav.help}
-                  </Link>
-                  <hr className="my-2" />
                   <button 
                     onClick={handleSignOut}
                     className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50"
                   >
                     <span className="mr-3">🚪</span>
-                    {t.nav.logout}
+                    Logout
                   </button>
                 </div>
               )}

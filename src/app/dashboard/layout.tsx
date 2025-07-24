@@ -5,13 +5,14 @@
 
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from '@/components';
-import Header from '@/components/layout/Header'
+import { useState, useEffect } from 'react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Header from '@/components/layout/Header';
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -20,18 +21,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Safety timeout to prevent infinite loading
   useEffect(() => {
-    console.log('🔄 DashboardLayout: Starting timeout...');
     const timeout = setTimeout(() => {
-      console.log('⚠️ DashboardLayout: Timeout reached, forcing dashboard display');
       setForceShow(true);
-    }, 3000); // 3 second timeout
+    }, 2000); // Reduced from 3 seconds to 2 seconds
 
     return () => clearTimeout(timeout);
   }, []);
 
   // Show loading while checking authentication (with timeout)
   if (loading && !forceShow) {
-    console.log('🔄 DashboardLayout: Still loading...');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -44,7 +42,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // This shouldn't happen due to middleware, but safety check
   if (!isAuthenticated && !forceShow) {
-    console.log('❌ DashboardLayout: Not authenticated');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -65,11 +62,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const headerUser = {
     name: manager?.name || user?.email?.split('@')[0] || 'User',
     email: user?.email || 'user@example.com',
-    avatar: undefined, // Can be extended to include avatar from user metadata
+    avatar: undefined,
     role: manager?.role || 'manager'
   };
-
-  console.log('✅ DashboardLayout: Rendering dashboard with user:', headerUser);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,5 +76,5 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {children}
       </main>
     </div>
-  )
+  );
 } 
