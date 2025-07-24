@@ -4,6 +4,8 @@ import { DailyWeeklySummaryGenerator } from '@/lib/content/daily-weekly-summary-
 import { PollsGenerator } from '@/lib/content/polls-generator';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Daily job started:', new Date().toISOString());
   

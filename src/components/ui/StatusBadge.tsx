@@ -28,45 +28,31 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     ? status 
     : status === 'active' || status === 'enabled';
 
-  // Size classes
-  const sizeClasses = {
-    sm: 'px-1.5 py-0.5 text-xs',
-    md: 'px-2 py-1 text-xs',
-    lg: 'px-3 py-1.5 text-sm'
-  };
-
-  // Color variants
-  const getVariantClasses = () => {
-    if (variant === 'success') {
-      return isActive 
-        ? 'bg-emerald-100 text-emerald-800' 
-        : 'bg-gray-100 text-gray-600';
-    }
-    
-    if (variant === 'warning') {
-      return isActive 
-        ? 'bg-amber-100 text-amber-800' 
-        : 'bg-gray-100 text-gray-600';
-    }
-    
-    if (variant === 'error') {
-      return isActive 
-        ? 'bg-red-100 text-red-800' 
-        : 'bg-gray-100 text-gray-600';
-    }
-    
-    // Default variant
-    return isActive 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-red-100 text-red-800';
-  };
-
   const displayText = isActive ? activeText : inactiveText;
 
+  const sizeClasses = {
+    sm: 'px-2 py-1 text-xs',
+    md: 'px-3 py-1 text-sm',
+    lg: 'px-4 py-2 text-base'
+  };
+
+  const getVariantClasses = () => {
+    if (variant === 'success' || (variant === 'default' && isActive)) {
+      return 'bg-green-100 text-green-800 border border-green-200';
+    }
+    if (variant === 'error' || (variant === 'default' && !isActive)) {
+      return 'bg-red-100 text-red-800 border border-red-200';
+    }
+    if (variant === 'warning') {
+      return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+    }
+    return 'bg-gray-100 text-gray-800 border border-gray-200';
+  };
+
   return (
-    <span 
+    <span
       className={`
-        inline-flex items-center rounded-full font-medium
+        inline-flex items-center font-medium rounded-full
         ${sizeClasses[size]}
         ${getVariantClasses()}
         ${className}
@@ -78,4 +64,5 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   );
 };
 
+export { StatusBadge };
 export default StatusBadge;

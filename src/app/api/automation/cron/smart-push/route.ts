@@ -3,6 +3,8 @@ import { SmartPushEngine } from '@/lib/content/smart-push-engine';
 import { SmartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Smart push job started:', new Date().toISOString());
   

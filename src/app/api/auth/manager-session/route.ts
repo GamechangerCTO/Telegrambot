@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateManagerSession } from '@/lib/auth'
 
+export const runtime = 'nodejs'
+
 // GET - בדיקת תוקף session
 export async function GET(request: NextRequest) {
   try {

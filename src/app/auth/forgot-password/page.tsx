@@ -1,6 +1,6 @@
 /**
  * 🔐 Forgot Password Page
- * Password reset functionality
+ * Professional password reset for international teams
  */
 
 'use client';
@@ -8,13 +8,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useI18n } from '@/lib/i18n/useI18n';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase';
-import { LanguageSwitcher, FormField, TextInput, LoadingSpinner } from '@/components';
 
 export default function ForgotPasswordPage() {
-  const { t } = useI18n();
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const supabase = createClient();
@@ -31,41 +28,37 @@ export default function ForgotPasswordPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-    
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!email.trim()) {
+      setErrors({ email: 'Email is required' });
+      return;
+    }
     
+    if (!validateEmail(email)) {
+      setErrors({ email: 'Please enter a valid email address' });
+      return;
+    }
+
     setIsLoading(true);
     setErrors({});
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
       if (error) {
-        setErrors({ general: error.message || 'Failed to send reset email. Please try again.' });
-        return;
+        setErrors({ general: error.message });
+      } else {
+        setSuccess(true);
       }
-
-      setSuccess(true);
-      
     } catch (error: any) {
-      console.error('Password reset error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
@@ -76,149 +69,97 @@ export default function ForgotPasswordPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  // Don't render if already authenticated
+  if (isAuthenticated) {
+    return null;
+  }
+
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📧</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
-            <p className="text-gray-600 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>. 
-              Please check your email and follow the instructions to reset your password.
-            </p>
-            <div className="space-y-3">
-              <Link
-                href="/auth/login"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-              >
-                Back to Login
-              </Link>
-              <p className="text-sm text-gray-500">
-                Didn't receive the email? Check your spam folder or{' '}
-                <button
-                  onClick={() => setSuccess(false)}
-                  className="text-blue-600 hover:text-blue-500 underline"
-                >
-                  try again
-                </button>
-              </p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="text-blue-500 text-6xl mb-4">✉️</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Email Sent!</h1>
+          <p className="text-gray-600 mb-6">
+            We've sent you a password reset link. Please check your email and follow the instructions to reset your password.
+          </p>
+          <Link
+            href="/auth/login"
+            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Back to Login
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
         {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center space-x-3 group mb-8">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-200">
-              <span className="text-white font-bold text-xl">⚡</span>
-            </div>
-            <div className="text-left">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                TeleBots Pro
-              </h1>
-              <p className="text-xs text-gray-600">Sports Content Manager</p>
-            </div>
-          </Link>
-
-          <div className="p-4 rounded-xl bg-orange-50 border-2 border-orange-500 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              🔐 Reset Password
-            </h2>
-            <p className="text-gray-600">
-              Enter your email to receive reset instructions
-            </p>
+        <div className="text-center mb-8">
+          <div className="bg-white/60 backdrop-blur-sm rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <span className="text-2xl">🔐</span>
           </div>
-
-          {/* Language Switcher */}
-          <div className="flex justify-center mb-6">
-            <LanguageSwitcher variant="compact" />
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h1>
+          <p className="text-gray-600">No worries, we'll send you reset instructions</p>
         </div>
 
-        {/* Reset Form */}
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        {/* Form */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* General Error */}
             {errors.general && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-700 text-sm">{errors.general}</p>
               </div>
             )}
 
-            <div className="space-y-4">
-              <FormField
-                label="Email Address"
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  errors.email ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Enter your email address"
                 required
-                error={errors.email}
-              >
-                <TextInput
-                  type="email"
-                  value={email}
-                  onChange={(value) => setEmail(value)}
-                  placeholder="Enter your email"
-                  error={!!errors.email}
-                  autoComplete="email"
-                />
-              </FormField>
+              />
+              {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
             </div>
 
-            <div className="mt-6">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white transition-all duration-200 bg-gradient-to-r from-orange-500 to-red-600 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <LoadingSpinner size="sm" />
-                    <span>Sending Reset Link...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span>📧</span>
-                    <span>Send Reset Link</span>
-                  </div>
-                )}
-              </button>
-            </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              {isLoading ? 'Sending Reset Link...' : 'Send Reset Link'}
+            </button>
+          </form>
 
-            {/* Info */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">🔒 Password Reset</h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>• Reset link expires in 1 hour</p>
-                <p>• Check spam folder if not received</p>
-                <p>• Contact support if issues persist</p>
-              </div>
-            </div>
+          {/* Back to Login */}
+          <div className="mt-6 text-center">
+            <Link 
+              href="/auth/login" 
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              ← Back to Login
+            </Link>
           </div>
-
-          {/* Footer Links */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Remember your password?{' '}
-              <Link
-                href="/auth/login"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

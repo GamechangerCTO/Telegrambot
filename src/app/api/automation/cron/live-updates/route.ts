@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LiveUpdatesGenerator } from '@/lib/content/live-updates-generator';
 import { FootballMatchScorer } from '@/lib/content/football-match-scorer';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Live updates job started:', new Date().toISOString());
   

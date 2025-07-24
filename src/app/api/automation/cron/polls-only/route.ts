@@ -3,6 +3,8 @@ import { PollsGenerator } from '@/lib/content/polls-generator';
 import { TelegramDistributor } from '@/lib/content/api-modules/telegram-distributor';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('📊 [CRON] Polls-only job started:', new Date().toISOString());
   

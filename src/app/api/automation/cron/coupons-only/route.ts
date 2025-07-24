@@ -3,6 +3,8 @@ import { SmartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
 import { TelegramDistributor } from '@/lib/content/api-modules/telegram-distributor';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('🎫 [CRON] Coupons-only job started:', new Date().toISOString());
   

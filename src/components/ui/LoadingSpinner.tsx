@@ -28,14 +28,8 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   const content = (
     <div className={`text-center ${className}`}>
-      <div 
-        className={`animate-spin rounded-full border-b-2 border-blue-600 mx-auto ${sizeClasses[size]}`}
-        role="status"
-        aria-label="Loading"
-      />
-      {message && (
-        <p className="text-gray-600 mt-4 text-sm">{message}</p>
-      )}
+      <div className={`animate-spin rounded-full border-b-2 border-blue-600 mx-auto ${sizeClasses[size]}`}></div>
+      {message && <p className="mt-4 text-gray-600">{message}</p>}
     </div>
   );
 
@@ -50,4 +44,5 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return content;
 };
 
+export { LoadingSpinner };
 export default LoadingSpinner;

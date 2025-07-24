@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { backgroundScheduler } from '@/lib/automation/background-scheduler';
 import { AutomationEngine } from '@/lib/automation/automation-engine';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Hourly system tasks started:', new Date().toISOString());
   

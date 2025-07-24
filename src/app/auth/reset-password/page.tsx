@@ -1,6 +1,6 @@
 /**
  * 🔐 Reset Password Page
- * Complete password reset with new password
+ * Professional password reset for international teams
  */
 
 'use client';
@@ -8,12 +8,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useI18n } from '@/lib/i18n/useI18n';
 import { createClient } from '@/lib/supabase';
-import { LanguageSwitcher, FormField, TextInput, LoadingSpinner } from '@/components';
 
 function ResetPasswordContent() {
-  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -36,10 +33,10 @@ function ResetPasswordContent() {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     
-    if (!formData.password.trim()) {
+    if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
     
     if (formData.password !== formData.confirmPassword) {
@@ -54,7 +51,7 @@ function ResetPasswordContent() {
     e.preventDefault();
     
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
     setErrors({});
     
@@ -64,19 +61,15 @@ function ResetPasswordContent() {
       });
 
       if (error) {
-        setErrors({ general: error.message || 'Failed to reset password. Please try again.' });
-        return;
+        setErrors({ general: error.message });
+      } else {
+        setSuccess(true);
+        // Redirect to login after success
+        setTimeout(() => {
+          router.push('/auth/login?message=password-reset-success');
+        }, 3000);
       }
-
-      setSuccess(true);
-      
-      // Redirect to login after showing success message
-      setTimeout(() => {
-        router.push('/auth/login?message=password-reset-success');
-      }, 3000);
-      
     } catch (error: any) {
-      console.error('Password reset error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
@@ -85,145 +78,101 @@ function ResetPasswordContent() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">✅</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Password Reset Successful!</h2>
-            <p className="text-gray-600 mb-6">
-              Your password has been updated successfully. You can now sign in with your new password.
-            </p>
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-            >
-              Continue to Login
-            </Link>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="text-green-500 text-6xl mb-4">✓</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Password Updated!</h1>
+          <p className="text-gray-600 mb-6">
+            Your password has been successfully updated. You can now log in with your new password.
+          </p>
+          <p className="text-sm text-gray-500">
+            Redirecting to login page...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
         {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center space-x-3 group mb-8">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:shadow-lg transition-all duration-200">
-              <span className="text-white font-bold text-xl">⚡</span>
-            </div>
-            <div className="text-left">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                TeleBots Pro
-              </h1>
-              <p className="text-xs text-gray-600">Sports Content Manager</p>
-            </div>
-          </Link>
-
-          <div className="p-4 rounded-xl bg-green-50 border-2 border-green-500 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              🔐 Set New Password
-            </h2>
-            <p className="text-gray-600">
-              Enter your new password below
-            </p>
+        <div className="text-center mb-8">
+          <div className="bg-white/60 backdrop-blur-sm rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <span className="text-2xl">🔐</span>
           </div>
-
-          {/* Language Switcher */}
-          <div className="flex justify-center mb-6">
-            <LanguageSwitcher variant="compact" />
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h1>
+          <p className="text-gray-600">Enter your new password below</p>
         </div>
 
-        {/* Reset Form */}
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        {/* Form */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* General Error */}
             {errors.general && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-700 text-sm">{errors.general}</p>
               </div>
             )}
 
-            <div className="space-y-4">
-              <FormField
-                label="New Password"
+            {/* New Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                New Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  errors.password ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Enter your new password"
                 required
-                error={errors.password}
-              >
-                <TextInput
-                  type="password"
-                  value={formData.password}
-                  onChange={(value) => handleInputChange('password', value)}
-                  placeholder="Enter your new password"
-                  error={!!errors.password}
-                  autoComplete="new-password"
-                />
-              </FormField>
+              />
+              {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+            </div>
 
-              <FormField
-                label="Confirm New Password"
+            {/* Confirm Password */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Confirm your new password"
                 required
-                error={errors.confirmPassword}
-              >
-                <TextInput
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(value) => handleInputChange('confirmPassword', value)}
-                  placeholder="Confirm your new password"
-                  error={!!errors.confirmPassword}
-                  autoComplete="new-password"
-                />
-              </FormField>
+              />
+              {errors.confirmPassword && <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>}
             </div>
 
-            <div className="mt-6">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white transition-all duration-200 bg-gradient-to-r from-green-500 to-teal-600 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <LoadingSpinner size="sm" />
-                    <span>Updating Password...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span>🔐</span>
-                    <span>Update Password</span>
-                  </div>
-                )}
-              </button>
-            </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              {isLoading ? 'Updating Password...' : 'Update Password'}
+            </button>
+          </form>
 
-            {/* Info */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">🔒 Password Requirements</h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>• Minimum 6 characters</p>
-                <p>• Use a unique password</p>
-                <p>• Consider using a password manager</p>
-              </div>
-            </div>
+          {/* Back to Login */}
+          <div className="mt-6 text-center">
+            <Link 
+              href="/auth/login" 
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              ← Back to Login
+            </Link>
           </div>
-
-          {/* Footer Links */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Remember your password?{' '}
-              <Link
-                href="/auth/login"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -231,7 +180,11 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+      </div>
+    }>
       <ResetPasswordContent />
     </Suspense>
   );

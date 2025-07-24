@@ -4,6 +4,8 @@ import { FootballMatchScorer } from '@/lib/content/football-match-scorer';
 import { smartContentScheduler } from '@/lib/automation/smart-content-scheduler';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   console.log('🌅 [CRON] Morning Discovery started:', new Date().toISOString());
   
