@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -35,19 +36,15 @@ interface User {
 export default function AdminManagersPage() {
   const searchParams = useSearchParams()
   const [managers, setManagers] = useState<Manager[]>([])
-  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'create'>(() => {
     const tabParam = searchParams.get('tab')
     return tabParam === 'create' ? 'create' : 'pending'
   })
-  const [currentUser] = useState<User>({
-    id: '00000000-0000-0000-0000-000000000002', // Super Admin ID
-    name: 'Super Admin',
-    email: 'triroars@gmail.com',
-    role: 'super_admin',
-    organization_id: '00000000-0000-0000-0000-000000000001'
-  })
+  const { user, manager } = useAuth()
+  
+  // Use default organization ID 
+  const organizationId = '00000000-0000-0000-0000-000000000001'
 
   // New manager form state
   const [newManager, setNewManager] = useState({
@@ -55,13 +52,11 @@ export default function AdminManagersPage() {
     name: '',
     phone: '',
     preferred_language: 'en',
-    notes: '',
-    password: '',
-    generate_password: true
+    notes: ''
   })
   
-  const [generatedPassword, setGeneratedPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [createdManagerEmail, setCreatedManagerEmail] = useState('')
 
   useEffect(() => {
     // Check for tab parameter in URL
@@ -73,12 +68,14 @@ export default function AdminManagersPage() {
   }, [activeTab, searchParams])
 
   const fetchData = async () => {
+    if (!user?.id) return;
+    
     try {
       setLoading(true)
       
       // Fetch managers
       const managersResponse = await fetch(
-        `/api/admin/managers?user_id=${currentUser.id}&organization_id=${currentUser.organization_id}${
+        `/api/admin/managers?user_id=${user.id}&organization_id=${organizationId}${
           activeTab !== 'all' && activeTab !== 'create' ? `&status=${activeTab}` : ''
         }`
       )
@@ -86,28 +83,8 @@ export default function AdminManagersPage() {
       
       if (managersData.success) {
         setManagers(managersData.managers || [])
-      }
-      
-      // Fetch users for creating new managers (only if on create tab)
-      if (activeTab === 'create') {
-        // This would need to be implemented - fetch users who aren't managers yet
-        // For now, we'll use mock data
-        setUsers([
-          { 
-            id: 'user-1', 
-            name: 'John Doe', 
-            email: 'john@example.com', 
-            role: 'user',
-            organization_id: currentUser.organization_id
-          },
-          { 
-            id: 'user-2', 
-            name: 'Jane Smith', 
-            email: 'jane@example.com', 
-            role: 'user',
-            organization_id: currentUser.organization_id
-          }
-        ])
+      } else {
+        console.error('Failed to fetch managers:', managersData.error)
       }
       
     } catch (error) {
@@ -126,8 +103,8 @@ export default function AdminManagersPage() {
           id: managerId,
           approval_status: 'approved',
           notes,
-          approved_by_user_id: currentUser.id,
-          organization_id: currentUser.organization_id
+          approved_by_user_id: user?.id,
+          organization_id: organizationId
         })
       })
       
@@ -153,8 +130,8 @@ export default function AdminManagersPage() {
           id: managerId,
           approval_status: 'rejected',
           notes,
-          approved_by_user_id: currentUser.id,
-          organization_id: currentUser.organization_id
+          approved_by_user_id: user?.id,
+          organization_id: organizationId
         })
       })
       
@@ -185,32 +162,25 @@ export default function AdminManagersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newManager,
-          organization_id: currentUser.organization_id,
-          created_by_user_id: currentUser.id
+          organization_id: organizationId,
+          created_by_user_id: user?.id
         })
       })
       
       const data = await response.json()
       
       if (data.success) {
-        let message = data.message
+        // Show success message with manager email from API response
+        setCreatedManagerEmail(data.email || newManager.email)
+        setShowSuccessMessage(true)
         
-        // If password was generated, show it to the admin
-        if (data.password) {
-          setGeneratedPassword(data.password)
-          setShowPassword(true)
-          message += `\n\nGenerated Password: ${data.password}\n\nPlease save this password and share it securely with the manager.`
-        }
-        
-        alert(message)
+        // Clear form
         setNewManager({ 
           email: '', 
           name: '', 
           phone: '', 
           preferred_language: 'en', 
-          notes: '', 
-          password: '',
-          generate_password: true 
+          notes: ''
         })
         setActiveTab('pending') // Switch to pending tab to see the new manager
       } else {
@@ -303,8 +273,9 @@ export default function AdminManagersPage() {
                 <div className="ml-3">
                   <h4 className="text-sm font-medium text-blue-800">Creating a New Bot Manager</h4>
                   <p className="text-sm text-blue-700 mt-1">
-                    This will create a complete new account for a bot manager. They will receive login credentials 
-                    and can immediately start creating and managing their own bots and channels.
+                    This will create a complete new account for a bot manager. The initial password will be 
+                    <strong> 123456aA!</strong> and the manager will be required to change it on first login.
+                    You can share these simple login credentials with the new manager.
                   </p>
                 </div>
               </div>
@@ -381,49 +352,17 @@ export default function AdminManagersPage() {
                       <input
                         type="radio"
                         name="passwordOption"
-                        checked={newManager.generate_password}
-                        onChange={() => setNewManager({ ...newManager, generate_password: true, password: '' })}
+                        checked={true} // Always checked for initial password
+                        onChange={() => {}} // No change handler
                         className="mr-2"
                       />
-                      <span className="text-sm">Generate secure password automatically</span>
-                    </label>
-                    
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="passwordOption"
-                        checked={!newManager.generate_password}
-                        onChange={() => setNewManager({ ...newManager, generate_password: false })}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">Set custom password</span>
+                      <span className="text-sm">Initial Password: 123456aA!</span>
                     </label>
                   </div>
                   
-                  {!newManager.generate_password && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Custom Password *
-                      </label>
-                      <input
-                        type="password"
-                        value={newManager.password}
-                        onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter secure password (min 8 chars, must include: A-Z, a-z, 0-9, special char)"
-                        required={!newManager.generate_password}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Password must be at least 8 characters and include uppercase, lowercase, number, and special character
-                      </p>
-                    </div>
-                  )}
+                  {/* Removed password generation options */}
                   
-                  {newManager.generate_password && (
-                    <div className="text-sm text-green-600">
-                      ✓ A secure 12-character password will be generated automatically
-                    </div>
-                  )}
+                  {/* Removed generated password display */}
                 </div>
               </div>
 
@@ -465,49 +404,64 @@ export default function AdminManagersPage() {
         </Card>
       )}
 
-      {/* Generated Password Display */}
-      {showPassword && generatedPassword && (
+      {/* Success Message */}
+      {showSuccessMessage && createdManagerEmail && (
         <Card className="p-6 mb-6 border-green-200 bg-green-50">
           <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-semibold text-green-800 mb-2">Manager Created Successfully!</h3>
-              <p className="text-green-700 mb-4">
-                The manager account has been created. Here is the generated password:
-              </p>
-              <div className="bg-white p-4 rounded border border-green-200 font-mono text-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-800">{generatedPassword}</span>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(generatedPassword)
-                      alert('Password copied to clipboard!')
-                    }}
-                    className="ml-4 bg-green-600 hover:bg-green-700"
-                  >
-                    Copy
-                  </Button>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-green-800 mb-3">
+                  ✅ Bot Manager Created Successfully!
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-green-700 mb-2">
+                      <strong>Email:</strong> {createdManagerEmail}
+                    </p>
+                    <p className="text-sm text-green-700 mb-2">
+                      <strong>Initial Password:</strong>
+                    </p>
+                    <div className="bg-white p-4 rounded border border-green-200 font-mono text-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-800">123456aA!</span>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText('123456aA!')
+                            alert('Password copied to clipboard!')
+                          }}
+                          className="ml-2"
+                        >
+                          Copy Password
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                    <h4 className="text-sm font-medium text-yellow-800 mb-1">Important Instructions:</h4>
+                    <ul className="text-sm text-yellow-700 space-y-1">
+                      <li>• Share these login credentials: <strong>{createdManagerEmail}</strong> / <strong>123456aA!</strong></li>
+                      <li>• The manager must change the password on first login</li>
+                      <li>• The account is ready for immediate use</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-green-600 mt-2">
-                ⚠️ Please save this password securely and share it with the manager. 
-                This password will not be shown again.
-              </p>
+              
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSuccessMessage(false)
+                  setCreatedManagerEmail('')
+                }}
+                className="text-green-600 border-green-600 ml-4"
+              >
+                ✕ Close
+              </Button>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowPassword(false)
-                setGeneratedPassword('')
-              }}
-              className="text-green-600 border-green-600"
-            >
-              ✕ Close
-            </Button>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
 
       {/* Managers List */}
       {activeTab !== 'create' && (
