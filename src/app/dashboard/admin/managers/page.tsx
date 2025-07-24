@@ -51,9 +51,9 @@ export default function AdminManagersPage() {
 
   // New manager form state
   const [newManager, setNewManager] = useState({
-    user_id: '',
     email: '',
     name: '',
+    phone: '',
     preferred_language: 'en',
     notes: '',
     password: '',
@@ -174,7 +174,7 @@ export default function AdminManagersPage() {
   const handleCreateManager = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!newManager.user_id || !newManager.email || !newManager.name) {
+    if (!newManager.name || !newManager.email) {
       alert('Please fill in all required fields')
       return
     }
@@ -204,9 +204,9 @@ export default function AdminManagersPage() {
         
         alert(message)
         setNewManager({ 
-          user_id: '', 
           email: '', 
           name: '', 
+          phone: '', 
           preferred_language: 'en', 
           notes: '', 
           password: '',
@@ -291,36 +291,28 @@ export default function AdminManagersPage() {
       {/* Create Manager Form */}
       {activeTab === 'create' && (
         <Card className="p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Create New Bot Manager</h3>
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-2">Create New Bot Manager Account</h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full text-sm font-medium">
+                    💡
+                  </span>
+                </div>
+                <div className="ml-3">
+                  <h4 className="text-sm font-medium text-blue-800">Creating a New Bot Manager</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    This will create a complete new account for a bot manager. They will receive login credentials 
+                    and can immediately start creating and managing their own bots and channels.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <form onSubmit={handleCreateManager} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select User *
-                </label>
-                <select
-                  value={newManager.user_id}
-                  onChange={(e) => {
-                    const selectedUser = users.find(u => u.id === e.target.value)
-                    setNewManager({
-                      ...newManager,
-                      user_id: e.target.value,
-                      email: selectedUser?.email || '',
-                      name: selectedUser?.name || ''
-                    })
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select a user</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Manager Name *
@@ -330,39 +322,54 @@ export default function AdminManagersPage() {
                   value={newManager.name}
                   onChange={(e) => setNewManager({ ...newManager, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter full name"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
+                  Email Address *
                 </label>
                 <input
                   type="email"
                   value={newManager.email}
                   onChange={(e) => setNewManager({ ...newManager, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter email address"
                   required
                 />
               </div>
 
-                              <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Preferred Language
-                  </label>
-                  <select
-                    value={newManager.preferred_language}
-                    onChange={(e) => setNewManager({ ...newManager, preferred_language: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="en">English</option>
-                    <option value="am">Amharic</option>
-                    <option value="sw">Swahili</option>
-                    <option value="he">Hebrew</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Preferred Language
+                </label>
+                <select
+                  value={newManager.preferred_language}
+                  onChange={(e) => setNewManager({ ...newManager, preferred_language: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="en">English</option>
+                  <option value="am">Amharic</option>
+                  <option value="sw">Swahili</option>
+                  <option value="he">Hebrew</option>
+                </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number (Optional)
+                </label>
+                <input
+                  type="tel"
+                  value={newManager.phone || ''}
+                  onChange={(e) => setNewManager({ ...newManager, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter phone number (optional)"
+                />
+              </div>
+            </div>
 
               {/* Password Configuration */}
               <div className="col-span-2">
@@ -429,16 +436,29 @@ export default function AdminManagersPage() {
                 onChange={(e) => setNewManager({ ...newManager, notes: e.target.value })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Any additional notes about this manager..."
+                placeholder="Add any notes about this manager's role, responsibilities, or special permissions..."
               />
+              <p className="text-xs text-gray-500 mt-1">
+                These notes will help you remember why this manager was created and their specific role.
+              </p>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab('pending')}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Cancel
+              </button>
               <Button 
                 type="submit"
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
               >
-                Create Manager {newManager.generate_password ? '& Generate Password' : ''}
+                <span className="flex items-center">
+                  <span className="mr-2">👤</span>
+                  Create Bot Manager Account
+                </span>
               </Button>
             </div>
           </form>
@@ -515,7 +535,13 @@ export default function AdminManagersPage() {
                       {manager.email}
                     </p>
                     <div className="flex items-center space-x-4 mb-2">
-                      <StatusBadge status={manager.approval_status} />
+                      <StatusBadge 
+                        status={manager.approval_status === 'approved'} 
+                        activeText="Approved"
+                        inactiveText={manager.approval_status === 'pending' ? 'Pending' : 'Rejected'}
+                        variant={manager.approval_status === 'approved' ? 'success' : 
+                                manager.approval_status === 'pending' ? 'warning' : 'error'}
+                      />
                       <span className="text-sm text-gray-500">
                         Language: {manager.preferred_language.toUpperCase()}
                       </span>

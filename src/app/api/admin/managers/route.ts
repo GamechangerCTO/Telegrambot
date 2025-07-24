@@ -115,9 +115,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     const {
-      user_id,          // The user who will be the manager
       email,
       name,
+      phone,
       preferred_language = 'en',
       role = 'manager',
       organization_id,
@@ -128,9 +128,9 @@ export async function POST(request: NextRequest) {
     } = body
     
     // Validation
-    if (!user_id || !email || !name || !organization_id || !created_by_user_id) {
+    if (!email || !name || !organization_id || !created_by_user_id) {
       return NextResponse.json({
-        error: 'Missing required fields: user_id, email, name, organization_id, created_by_user_id'
+        error: 'Missing required fields: email, name, organization_id, created_by_user_id'
       }, { status: 400 })
     }
     
@@ -145,41 +145,22 @@ export async function POST(request: NextRequest) {
       }, { status: 403 })
     }
     
-    // Check if user exists and belongs to the organization
-    const { data: targetUser } = await supabase
+    // Check if a user with this email already exists
+    const { data: existingUser } = await supabase
       .from('users')
-      .select('id, organization_id, role')
-      .eq('id', user_id)
+      .select('id, email')
+      .eq('email', email)
       .single()
     
-    if (!targetUser) {
+    if (existingUser) {
       return NextResponse.json({
-        error: 'Target user not found'
-      }, { status: 404 })
-    }
-    
-    if (targetUser.organization_id !== organization_id) {
-      return NextResponse.json({
-        error: 'User does not belong to the specified organization'
-      }, { status: 400 })
-    }
-    
-    // Check if manager already exists for this user
-    const { data: existingManager } = await supabase
-      .from('managers')
-      .select('id')
-      .eq('user_id', user_id)
-      .single()
-    
-    if (existingManager) {
-      return NextResponse.json({
-        error: 'This user is already a bot manager'
+        error: 'A user with this email already exists'
       }, { status: 409 })
     }
     
     // Handle password creation
     let managerPassword = password
-    let passwordValidation = { valid: true, errors: [] }
+    let passwordValidation: { valid: boolean; errors: string[] } = { valid: true, errors: [] }
     
     if (generate_password || !password) {
       // Generate random secure password
@@ -199,8 +180,9 @@ export async function POST(request: NextRequest) {
     const { hash: passwordHash, salt: passwordSalt } = await hashPassword(managerPassword)
     
     // Create user in Supabase Auth system first
+    let authUser: any
     try {
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      const authResult = await supabase.auth.admin.createUser({
         email,
         password: managerPassword,
         email_confirm: true, // Auto-confirm email
@@ -209,18 +191,20 @@ export async function POST(request: NextRequest) {
           role: 'bot_manager',
           preferred_language,
           created_by: created_by_user_id,
-          organization_id
+          organization_id,
+          phone: phone || null
         }
       })
       
-      if (authError) {
-        console.error('Supabase Auth user creation error:', authError)
+      if (authResult.error) {
+        console.error('Supabase Auth user creation error:', authResult.error)
         return NextResponse.json({
           error: 'Failed to create user authentication account',
-          details: authError.message
+          details: authResult.error.message
         }, { status: 500 })
       }
       
+      authUser = authResult.data
       console.log('Created Supabase Auth user:', authUser.user?.id)
       
     } catch (authCreateError) {
@@ -238,7 +222,7 @@ export async function POST(request: NextRequest) {
     const { data: manager, error } = await supabase
       .from('managers')
       .insert({
-        user_id,
+        user_id: authUser.user?.id, // Use the ID of the newly created user
         email,
         name,
         preferred_language,
