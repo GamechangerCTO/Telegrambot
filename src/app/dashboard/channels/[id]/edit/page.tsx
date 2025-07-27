@@ -11,19 +11,19 @@ import { ArrowRight, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
 const CONTENT_TYPES = [
-  { id: 'news', label: 'חדשות', description: 'חדשות כדורגל עדכניות' },
-  { id: 'betting', label: 'הימורים', description: 'טיפים והמלצות הימורים' },
-  { id: 'analysis', label: 'ניתוח', description: 'ניתוח מקצועי של משחקים' },
-  { id: 'live', label: 'עדכונים חיים', description: 'עדכונים במהלך משחקים' },
-  { id: 'polls', label: 'סקרים', description: 'סקרי דעת אינטראקטיביים' },
-  { id: 'summary', label: 'סיכומים', description: 'סיכומי משחקים ותקופות' }
+  { id: 'news', label: 'News', description: 'Latest football news' },
+  { id: 'betting', label: 'Betting', description: 'Betting tips and recommendations' },
+  { id: 'analysis', label: 'Analysis', description: 'Professional game analysis' },
+  { id: 'live', label: 'Live Updates', description: 'Live updates during games' },
+  { id: 'polls', label: 'Polls', description: 'Interactive opinion polls' },
+  { id: 'summary', label: 'Summaries', description: 'Game and period summaries' }
 ];
 
 const LANGUAGES = [
-  { code: 'he', name: 'עברית', flag: '🇮🇱' },
+  { code: 'he', name: 'Hebrew', flag: '🇮🇱' },
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'am', name: 'አማርኛ', flag: '🇪🇹' },
-  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' }
+  { code: 'am', name: 'Amharic', flag: '🇪🇹' },
+  { code: 'sw', name: 'Swahili', flag: '🇰🇪' }
 ];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -40,8 +40,8 @@ export default function EditChannel() {
     name: '',
     channel_id: '',
     language: 'he',
-    content_types: [],
-    automation_hours: [],
+    content_types: [] as string[],
+    automation_hours: [] as number[],
     is_active: true
   });
 
@@ -67,14 +67,14 @@ export default function EditChannel() {
           name: data.name || '',
           channel_id: data.channel_id || '',
           language: data.language || 'he',
-          content_types: data.content_types || [],
-          automation_hours: data.automation_hours || [],
+          content_types: Array.isArray(data.content_types) ? data.content_types : [],
+          automation_hours: Array.isArray(data.automation_hours) ? data.automation_hours : [],
           is_active: data.is_active || false
         });
       }
     } catch (error) {
       console.error('Error fetching channel:', error);
-      alert('שגיאה בטעינת נתוני הערוץ');
+      alert('Error loading channel data');
       router.push('/dashboard');
     } finally {
       setInitialLoading(false);
@@ -90,17 +90,17 @@ export default function EditChannel() {
       
       // Validate required fields
       if (!formData.name || !formData.channel_id) {
-        alert('אנא מלא את כל השדות הנדרשים');
+        alert('Please fill in all required fields');
         return;
       }
 
       if (formData.content_types.length === 0) {
-        alert('אנא בחר לפחות סוג תוכן אחד');
+        alert('Please select at least one content type');
         return;
       }
 
       if (formData.automation_hours.length === 0) {
-        alert('אנא בחר לפחות שעה אחת לאוטומציה');
+        alert('Please select at least one automation hour');
         return;
       }
 
@@ -111,18 +111,18 @@ export default function EditChannel() {
 
       if (error) throw error;
 
-      alert('הערוץ עודכן בהצלחה!');
+      alert('Channel updated successfully!');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error updating channel:', error);
-      alert('שגיאה בעדכון הערוץ. אנא נסה שוב.');
+      alert('Error updating channel. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את הערוץ? פעולה זו לא ניתנת לביטול.')) {
+    if (!confirm('Are you sure you want to delete this channel? This action cannot be undone.')) {
       return;
     }
 
@@ -136,11 +136,11 @@ export default function EditChannel() {
 
       if (error) throw error;
 
-      alert('הערוץ נמחק בהצלחה');
+      alert('Channel deleted successfully!');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error deleting channel:', error);
-      alert('שגיאה במחיקת הערוץ. אנא נסה שוב.');
+      alert('Error deleting channel. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -177,7 +177,7 @@ export default function EditChannel() {
   if (initialLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">טוען נתוני הערוץ...</div>
+        <div className="text-lg">Loading channel data...</div>
       </div>
     );
   }
@@ -193,8 +193,8 @@ export default function EditChannel() {
           <ArrowRight className="w-4 h-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">עריכת ערוץ</h1>
-          <p className="text-gray-600 mt-1">עדכן הגדרות הערוץ {formData.name}</p>
+          <h1 className="text-3xl font-bold">Edit Channel</h1>
+          <p className="text-gray-600 mt-1">Update settings for {formData.name}</p>
         </div>
         <Button
           variant="destructive"
@@ -202,7 +202,7 @@ export default function EditChannel() {
           disabled={deleting}
         >
           <Trash2 className="w-4 h-4 mr-2" />
-          {deleting ? 'מוחק...' : 'מחק ערוץ'}
+          {deleting ? 'Deleting...' : 'Delete Channel'}
         </Button>
       </div>
 
@@ -210,7 +210,7 @@ export default function EditChannel() {
         {/* Active Status */}
         <Card>
           <CardHeader>
-            <CardTitle>סטטוס הערוץ</CardTitle>
+            <CardTitle>Channel Status</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2 space-x-reverse">
@@ -220,7 +220,7 @@ export default function EditChannel() {
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked as boolean }))}
               />
               <Label htmlFor="is_active">
-                הערוץ פעיל (קבלת תוכן אוטומטי)
+                Channel is active (receives automatic content)
               </Label>
             </div>
           </CardContent>
@@ -229,17 +229,17 @@ export default function EditChannel() {
         {/* Basic Information */}
         <Card>
           <CardHeader>
-            <CardTitle>פרטי הערוץ</CardTitle>
+            <CardTitle>Channel Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="name">שם הערוץ</Label>
+              <Label htmlFor="name">Channel Name</Label>
               <Input
                 id="name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="למשל: ערוץ ספורט ישראל"
+                placeholder="e.g., Israel Sports Channel"
                 required
               />
             </div>
@@ -251,16 +251,16 @@ export default function EditChannel() {
                 type="text"
                 value={formData.channel_id}
                 onChange={(e) => setFormData(prev => ({ ...prev, channel_id: e.target.value }))}
-                placeholder="למשל: @my_channel או -1001234567890"
+                placeholder="e.g., @my_channel or -1001234567890"
                 required
               />
               <p className="text-sm text-gray-500 mt-1">
-                ניתן למצוא ב-@userinfobot או בהגדרות הערוץ
+                You can find this using @userinfobot or in channel settings
               </p>
             </div>
 
             <div>
-              <Label htmlFor="language">שפת הערוץ</Label>
+              <Label htmlFor="language">Channel Language</Label>
               <select
                 id="language"
                 value={formData.language}
@@ -280,8 +280,8 @@ export default function EditChannel() {
         {/* Content Types */}
         <Card>
           <CardHeader>
-            <CardTitle>סוגי תוכן</CardTitle>
-            <p className="text-sm text-gray-600">בחר איזה סוגי תוכן הערוץ יקבל</p>
+            <CardTitle>Content Types</CardTitle>
+            <p className="text-sm text-gray-600">Select which content types the channel will receive</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -289,7 +289,7 @@ export default function EditChannel() {
                 <div key={type.id} className="flex items-start space-x-3 space-x-reverse">
                   <Checkbox
                     id={type.id}
-                    checked={formData.content_types.includes(type.id)}
+                    checked={Array.isArray(formData.content_types) && formData.content_types.includes(type.id)}
                     onCheckedChange={(checked) => handleContentTypeChange(type.id, checked as boolean)}
                   />
                   <div className="grid gap-1.5 leading-none">
@@ -312,8 +312,8 @@ export default function EditChannel() {
         {/* Automation Hours */}
         <Card>
           <CardHeader>
-            <CardTitle>שעות אוטומציה</CardTitle>
-            <p className="text-sm text-gray-600">בחר באילו שעות ביום לפרסם תוכן אוטומטי</p>
+            <CardTitle>Automation Hours</CardTitle>
+            <p className="text-sm text-gray-600">Select which hours of the day to post automatic content</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
@@ -321,7 +321,7 @@ export default function EditChannel() {
                 <div key={hour} className="flex items-center space-x-2 space-x-reverse">
                   <Checkbox
                     id={`hour-${hour}`}
-                    checked={formData.automation_hours.includes(hour)}
+                    checked={Array.isArray(formData.automation_hours) && formData.automation_hours.includes(hour)}
                     onCheckedChange={(checked) => handleHourChange(hour, checked as boolean)}
                   />
                   <Label htmlFor={`hour-${hour}`} className="text-sm">
@@ -331,7 +331,7 @@ export default function EditChannel() {
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              השעות הנבחרות כרגע: {formData.automation_hours.map(h => `${h.toString().padStart(2, '0')}:00`).join(', ')}
+              Selected hours currently: {Array.isArray(formData.automation_hours) ? formData.automation_hours.map(h => `${h.toString().padStart(2, '0')}:00`).join(', ') : 'Not set'}
             </p>
           </CardContent>
         </Card>
@@ -344,14 +344,14 @@ export default function EditChannel() {
             onClick={() => router.push('/dashboard')}
             className="flex-1"
           >
-            ביטול
+            Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >
-            {loading ? 'עודכן...' : 'עדכן ערוץ'}
+            {loading ? 'Updating...' : 'Update Channel'}
           </Button>
         </div>
       </form>

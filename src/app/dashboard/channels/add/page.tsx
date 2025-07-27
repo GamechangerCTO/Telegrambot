@@ -11,19 +11,19 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
 const CONTENT_TYPES = [
-  { id: 'news', label: 'חדשות', description: 'חדשות כדורגל עדכניות' },
-  { id: 'betting', label: 'הימורים', description: 'טיפים והמלצות הימורים' },
-  { id: 'analysis', label: 'ניתוח', description: 'ניתוח מקצועי של משחקים' },
-  { id: 'live', label: 'עדכונים חיים', description: 'עדכונים במהלך משחקים' },
-  { id: 'polls', label: 'סקרים', description: 'סקרי דעת אינטראקטיביים' },
-  { id: 'summary', label: 'סיכומים', description: 'סיכומי משחקים ותקופות' }
+  { id: 'news', label: 'News', description: 'Latest football news' },
+  { id: 'betting', label: 'Betting', description: 'Betting tips and recommendations' },
+  { id: 'analysis', label: 'Analysis', description: 'Professional game analysis' },
+  { id: 'live', label: 'Live Updates', description: 'Live updates during games' },
+  { id: 'polls', label: 'Polls', description: 'Interactive opinion polls' },
+  { id: 'summary', label: 'Summaries', description: 'Game and period summaries' }
 ];
 
 const LANGUAGES = [
-  { code: 'he', name: 'עברית', flag: '🇮🇱' },
+  { code: 'he', name: 'Hebrew', flag: '🇮🇱' },
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'am', name: 'አማርኛ', flag: '🇪🇹' },
-  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' }
+  { code: 'am', name: 'Amharic', flag: '🇪🇹' },
+  { code: 'sw', name: 'Swahili', flag: '🇰🇪' }
 ];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -49,17 +49,17 @@ export default function AddChannel() {
       
       // Validate required fields
       if (!formData.name || !formData.channel_id) {
-        alert('אנא מלא את כל השדות הנדרשים');
+        alert('Please fill in all required fields');
         return;
       }
 
       if (formData.content_types.length === 0) {
-        alert('אנא בחר לפחות סוג תוכן אחד');
+        alert('Please select at least one content type');
         return;
       }
 
       if (formData.automation_hours.length === 0) {
-        alert('אנא בחר לפחות שעה אחת לאוטומציה');
+        alert('Please select at least one automation hour');
         return;
       }
 
@@ -69,11 +69,11 @@ export default function AddChannel() {
 
       if (error) throw error;
 
-      alert('הערוץ נוסף בהצלחה!');
+      alert('Channel added successfully!');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error adding channel:', error);
-      alert('שגיאה בהוספת הערוץ. אנא נסה שוב.');
+      alert('Error adding channel. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -118,8 +118,8 @@ export default function AddChannel() {
           <ArrowRight className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">הוספת ערוץ חדש</h1>
-          <p className="text-gray-600 mt-1">הוסף ערוץ טלגרם חדש למערכת</p>
+          <h1 className="text-3xl font-bold">Add New Channel</h1>
+          <p className="text-gray-600 mt-1">Add a new Telegram channel to the system</p>
         </div>
       </div>
 
@@ -127,17 +127,17 @@ export default function AddChannel() {
         {/* Basic Information */}
         <Card>
           <CardHeader>
-            <CardTitle>פרטי הערוץ</CardTitle>
+            <CardTitle>Channel Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="name">שם הערוץ</Label>
+              <Label htmlFor="name">Channel Name</Label>
               <Input
                 id="name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="למשל: ערוץ ספורט ישראל"
+                placeholder="e.g., Israel Sports Channel"
                 required
               />
             </div>
@@ -149,16 +149,16 @@ export default function AddChannel() {
                 type="text"
                 value={formData.channel_id}
                 onChange={(e) => setFormData(prev => ({ ...prev, channel_id: e.target.value }))}
-                placeholder="למשל: @my_channel או -1001234567890"
+                placeholder="e.g., @my_channel or -1001234567890"
                 required
               />
               <p className="text-sm text-gray-500 mt-1">
-                ניתן למצוא ב-@userinfobot או בהגדרות הערוץ
+                You can find this using @userinfobot or in channel settings
               </p>
             </div>
 
             <div>
-              <Label htmlFor="language">שפת הערוץ</Label>
+              <Label htmlFor="language">Channel Language</Label>
               <select
                 id="language"
                 value={formData.language}
@@ -178,8 +178,8 @@ export default function AddChannel() {
         {/* Content Types */}
         <Card>
           <CardHeader>
-            <CardTitle>סוגי תוכן</CardTitle>
-            <p className="text-sm text-gray-600">בחר איזה סוגי תוכן הערוץ יקבל</p>
+            <CardTitle>Content Types</CardTitle>
+            <p className="text-sm text-gray-600">Select which types of content this channel will receive</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -210,8 +210,8 @@ export default function AddChannel() {
         {/* Automation Hours */}
         <Card>
           <CardHeader>
-            <CardTitle>שעות אוטומציה</CardTitle>
-            <p className="text-sm text-gray-600">בחר באילו שעות ביום לפרסם תוכן אוטומטי</p>
+            <CardTitle>Automation Hours</CardTitle>
+            <p className="text-sm text-gray-600">Select which hours of the day to automatically publish content</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
@@ -229,7 +229,7 @@ export default function AddChannel() {
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              השעות הנבחרות כרגע: {formData.automation_hours.map(h => `${h.toString().padStart(2, '0')}:00`).join(', ')}
+              Selected hours: {formData.automation_hours.map(h => `${h.toString().padStart(2, '0')}:00`).join(', ')}
             </p>
           </CardContent>
         </Card>
@@ -242,14 +242,14 @@ export default function AddChannel() {
             onClick={() => router.push('/dashboard')}
             className="flex-1"
           >
-            ביטול
+            Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >
-            {loading ? 'מוסיף...' : 'הוסף ערוץ'}
+            {loading ? 'Adding...' : 'Add Channel'}
           </Button>
         </div>
       </form>

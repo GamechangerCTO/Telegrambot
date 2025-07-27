@@ -78,7 +78,7 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error toggling channel:', error);
-      alert('שגיאה בשינוי סטטוס הערוץ');
+      alert('Error changing channel status');
     }
   };
 
@@ -101,14 +101,14 @@ export default function Dashboard() {
 
       const result = await response.json();
       if (result.success) {
-        alert(`תוכן ${getContentTypeDisplay(contentType)} נשלח בהצלחה לערוץ ${channelName}!`);
+        alert(`${getContentTypeDisplay(contentType)} content sent successfully to ${channelName}!`);
         fetchChannels(); // Refresh to update last_content_sent
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error('Error sending content:', error);
-      alert('שגיאה בשליחת התוכן');
+      alert('Error sending content');
     } finally {
       setSendingContent(prev => ({ ...prev, [key]: false }));
     }
@@ -116,28 +116,28 @@ export default function Dashboard() {
 
   const getLanguageDisplay = (language: string) => {
     const languages: { [key: string]: string } = {
-      'he': 'עברית',
+      'he': 'Hebrew',
       'en': 'English',
-      'am': 'አማርኛ',
-      'sw': 'Kiswahili'
+      'am': 'Amharic',
+      'sw': 'Swahili'
     };
     return languages[language] || language;
   };
 
   const getContentTypeDisplay = (type: string) => {
     const types: { [key: string]: string } = {
-      'news': 'חדשות',
-      'betting': 'הימורים',
-      'analysis': 'ניתוח',
-      'live': 'עדכונים חיים',
-      'polls': 'סקרים',
-      'summary': 'סיכומים'
+      'news': 'News',
+      'betting': 'Betting',
+      'analysis': 'Analysis',
+      'live': 'Live Updates',
+      'polls': 'Polls',
+      'summary': 'Summaries'
     };
     return types[type] || type;
   };
 
   const getContentTypesDisplay = (types: string[]) => {
-    if (!Array.isArray(types) || types.length === 0) return 'לא הוגדר';
+    if (!Array.isArray(types) || types.length === 0) return 'Not configured';
     return types.map(type => getContentTypeDisplay(type)).join(', ');
   };
 
@@ -156,7 +156,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">טוען ערוצים...</div>
+        <div className="text-lg">Loading channels...</div>
       </div>
     );
   }
@@ -169,9 +169,9 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">ניהול ערוצים</h1>
+          <h1 className="text-3xl font-bold">Channel Management</h1>
           <p className="text-gray-600 mt-2">
-            נהל את כל הערוצים והגדרות האוטומציה במקום אחד
+            Manage all channels and automation settings in one place
           </p>
         </div>
         <Button 
@@ -179,7 +179,7 @@ export default function Dashboard() {
           className="bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="w-4 h-4 mr-2" />
-          הוסף ערוץ חדש
+          Add New Channel
         </Button>
       </div>
 
@@ -189,7 +189,7 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">סה"כ ערוצים</p>
+                <p className="text-sm font-medium text-gray-600">Total Channels</p>
                 <p className="text-2xl font-bold">{safeChannels.length}</p>
               </div>
             </div>
@@ -200,7 +200,7 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">ערוצים פעילים</p>
+                <p className="text-sm font-medium text-gray-600">Active Channels</p>
                 <p className="text-2xl font-bold text-green-600">
                   {safeChannels.filter(c => c.is_active).length}
                 </p>
@@ -213,7 +213,7 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">ערוצים כבויים</p>
+                <p className="text-sm font-medium text-gray-600">Inactive Channels</p>
                 <p className="text-2xl font-bold text-red-600">
                   {safeChannels.filter(c => !c.is_active).length}
                 </p>
@@ -226,7 +226,7 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">שפות</p>
+                <p className="text-sm font-medium text-gray-600">Languages</p>
                 <p className="text-2xl font-bold">
                   {new Set(safeChannels.map(c => c.language)).size}
                 </p>
@@ -239,18 +239,18 @@ export default function Dashboard() {
       {/* Channels List */}
       <Card>
         <CardHeader>
-          <CardTitle>רשימת ערוצים</CardTitle>
+          <CardTitle>Channels List</CardTitle>
         </CardHeader>
         <CardContent>
           {safeChannels.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">אין ערוצים עדיין</p>
+              <p className="text-gray-500 mb-4">No channels yet</p>
               <Button 
                 onClick={() => router.push('/dashboard/channels/add')}
                 variant="outline"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                הוסף ערוץ ראשון
+                Add First Channel
               </Button>
             </div>
           ) : (
@@ -265,7 +265,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">{channel.name}</h3>
                       <Badge variant={channel.is_active ? 'default' : 'secondary'}>
-                        {channel.is_active ? 'פעיל' : 'כבוי'}
+                        {channel.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                       <Badge variant="outline">
                         {getLanguageDisplay(channel.language)}
@@ -298,25 +298,25 @@ export default function Dashboard() {
                   {/* Channel Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">ID ערוץ:</p>
+                      <p className="text-sm text-gray-600 mb-1">Channel ID:</p>
                       <p className="font-mono text-sm">{channel.channel_id}</p>
                     </div>
                     
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">שעות אוטומציה:</p>
-                      <p className="text-sm">{Array.isArray(channel.automation_hours) ? channel.automation_hours.join(', ') : 'לא הוגדר'}</p>
+                      <p className="text-sm text-gray-600 mb-1">Automation Hours:</p>
+                      <p className="text-sm">{Array.isArray(channel.automation_hours) ? channel.automation_hours.join(', ') : 'Not configured'}</p>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">סוגי תוכן:</p>
+                    <p className="text-sm text-gray-600 mb-2">Content Types:</p>
                     <p className="text-sm">{getContentTypesDisplay(channel.content_types || [])}</p>
                   </div>
 
                   {/* Manual Content Buttons */}
                   {channel.is_active && (
                     <div className="border-t pt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-3">שלח תוכן ידני:</p>
+                      <p className="text-sm font-medium text-gray-700 mb-3">Send Manual Content:</p>
                       <div className="flex flex-wrap gap-2">
                         {(Array.isArray(channel.content_types) ? channel.content_types : []).map(contentType => {
                           const Icon = getContentTypeIcon(contentType);
@@ -333,7 +333,7 @@ export default function Dashboard() {
                               className="flex items-center gap-2"
                             >
                               <Icon className="w-4 h-4" />
-                              {isLoading ? 'שולח...' : getContentTypeDisplay(contentType)}
+                              {isLoading ? 'Sending...' : getContentTypeDisplay(contentType)}
                             </Button>
                           );
                         })}
