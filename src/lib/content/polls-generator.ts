@@ -1330,8 +1330,11 @@ export class PollsGenerator {
   /**
    * 🏆 Generate enhanced match prediction poll
    */
-  private generateMatchPredictionPoll(analysis: EnhancedPollAnalysis, language: 'en' | 'am' | 'sw'): EnhancedPollContent {
+  private generateMatchPredictionPoll(analysis: EnhancedPollAnalysis, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): EnhancedPollContent {
     const { homeTeam, awayTeam, teamComparison, narrativeElements } = analysis;
+    
+    // Translate key factors to target language for pure content
+    const translatedKeyFactors = this.translateKeyFactors(teamComparison.keyFactors.slice(0, 3), language);
     
     if (language === 'en') {
       return {
@@ -1348,7 +1351,7 @@ export class PollsGenerator {
           open_period: 36000
         },
         introText: `🔥 ${narrativeElements.mainStoryline}`,
-        analysisText: `📊 The Stats Say:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% win probability\n• Draw: ${teamComparison.drawProbability}% probability\n• ${awayTeam}: ${teamComparison.awayWinProbability}% win probability\n\n🎯 Key Factors:\n${teamComparison.keyFactors.slice(0, 3).map(factor => `• ${factor}`).join('\n')}`,
+        analysisText: `📊 The Stats Say:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% win probability\n• Draw: ${teamComparison.drawProbability}% probability\n• ${awayTeam}: ${teamComparison.awayWinProbability}% win probability\n\n🎯 Key Factors:\n${translatedKeyFactors.map(factor => `• ${factor}`).join('\n')}`,
         engagementText: `Cast your vote and join ${this.estimateParticipants('HIGH', analysis.matchImportance)}+ football fans! 🗳️⚽`,
         funFact: `💡 Did you know? ${this.generateFunFact(analysis)}`,
         pollType: 'match_prediction',
@@ -1374,7 +1377,7 @@ export class PollsGenerator {
           open_period: 36000
         },
         introText: `🔥 ታላቅ ጨዋታ! ${narrativeElements.mainStoryline}`,
-        analysisText: `📊 የስታቲስቲክ መረጃ:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% የማሸነፍ ዕድል\n• አቻነት: ${teamComparison.drawProbability}% ዕድል\n• ${awayTeam}: ${teamComparison.awayWinProbability}% የማሸነፍ ዕድል\n\n🎯 ቁልፍ ነጥቦች:\n${teamComparison.keyFactors.slice(0, 3).map(factor => `• ${factor}`).join('\n')}`,
+        analysisText: `📊 የስታቲስቲክ መረጃ:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% የማሸነፍ ዕድል\n• አቻነት: ${teamComparison.drawProbability}% ዕድል\n• ${awayTeam}: ${teamComparison.awayWinProbability}% የማሸነፍ ዕድል\n\n🎯 ቁልፍ ነጥቦች:\n${translatedKeyFactors.map(factor => `• ${factor}`).join('\n')}`,
         engagementText: `ድምጽዎን ይስጡ እና ከ${this.estimateParticipants('HIGH', analysis.matchImportance)}+ የእግር ኳስ ፍቅረኞች ጋር ይቀላቀሉ! 🗳️⚽`,
         funFact: `💡 ያውቃሉ ወይ? ${this.generateFunFact(analysis)}`,
         pollType: 'match_prediction',
@@ -1397,12 +1400,12 @@ export class PollsGenerator {
           is_anonymous: true,
           type: 'regular',
           allows_multiple_answers: false,
-          open_period: 3600
+          open_period: 36000
         },
-        introText: `🔥 Mchezo mkuu! ${narrativeElements.mainStoryline}`,
-        analysisText: `📊 Takwimu Zinasema:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% uwezekano wa kushinda\n• Sare: ${teamComparison.drawProbability}% uwezekano\n• ${awayTeam}: ${teamComparison.awayWinProbability}% uwezekano wa kushinda\n\n🎯 Mambo Muhimu:\n${teamComparison.keyFactors.slice(0, 3).map(factor => `• ${factor}`).join('\n')}`,
-        engagementText: `Piga kura yako na ujiunge na mashabiki ${this.estimateParticipants('HIGH', analysis.matchImportance)}+! 🗳️⚽`,
-        funFact: `💡 Je, ulijua? ${this.generateFunFact(analysis)}`,
+        introText: `🔥 Mechi kubwa! ${narrativeElements.mainStoryline}`,
+        analysisText: `📊 Takwimu Zinasema:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% uwezekano wa kushinda\n• Sare: ${teamComparison.drawProbability}% uwezekano\n• ${awayTeam}: ${teamComparison.awayWinProbability}% uwezekano wa kushinda\n\n🎯 Mambo Muhimu:\n${translatedKeyFactors.map(factor => `• ${factor}`).join('\n')}`,
+        engagementText: `Piga kura yako na ujiunga na mapinduzi ya ${this.estimateParticipants('HIGH', analysis.matchImportance)}+ wapenzi wa mpira! 🗳️⚽`,
+        funFact: `💡 Je, unajua? ${this.generateFunFact(analysis)}`,
         pollType: 'match_prediction',
         difficulty: 'EASY',
         expectedEngagement: 'HIGH',
@@ -1410,9 +1413,61 @@ export class PollsGenerator {
         viralPotential: 'HIGH'
       };
     }
-    
-    // Fallback
-    return this.generateFallbackPoll(analysis, 'match_prediction', language);
+
+    if (language === 'fr') {
+      return {
+        telegramPoll: {
+          question: `🔥 ${homeTeam} vs ${awayTeam}: Qui remporte la victoire?`,
+          options: [
+            { text: `🏠 Victoire ${homeTeam} (${teamComparison.homeWinProbability}%)`, emoji: '🏠' },
+            { text: `🤝 Match nul (${teamComparison.drawProbability}%)`, emoji: '🤝' },
+            { text: `✈️ Victoire ${awayTeam} (${teamComparison.awayWinProbability}%)`, emoji: '✈️' }
+          ],
+          is_anonymous: true,
+          type: 'regular',
+          allows_multiple_answers: false,
+          open_period: 36000
+        },
+        introText: `🔥 Grand match! ${narrativeElements.mainStoryline}`,
+        analysisText: `📊 Les Statistiques Disent:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% de probabilité de victoire\n• Match nul: ${teamComparison.drawProbability}% de probabilité\n• ${awayTeam}: ${teamComparison.awayWinProbability}% de probabilité de victoire\n\n🎯 Facteurs Clés:\n${translatedKeyFactors.map(factor => `• ${factor}`).join('\n')}`,
+        engagementText: `Votez et rejoignez ${this.estimateParticipants('HIGH', analysis.matchImportance)}+ fans de football! 🗳️⚽`,
+        funFact: `💡 Le saviez-vous? ${this.generateFunFact(analysis)}`,
+        pollType: 'match_prediction',
+        difficulty: 'EASY',
+        expectedEngagement: 'HIGH',
+        educationalValue: 'MEDIUM',
+        viralPotential: 'HIGH'
+      };
+    }
+
+    if (language === 'ar') {
+      return {
+        telegramPoll: {
+          question: `🔥 ${homeTeam} ضد ${awayTeam}: من سيحقق النصر؟`,
+          options: [
+            { text: `🏠 فوز ${homeTeam} (${teamComparison.homeWinProbability}%)`, emoji: '🏠' },
+            { text: `🤝 تعادل (${teamComparison.drawProbability}%)`, emoji: '🤝' },
+            { text: `✈️ فوز ${awayTeam} (${teamComparison.awayWinProbability}%)`, emoji: '✈️' }
+          ],
+          is_anonymous: true,
+          type: 'regular',
+          allows_multiple_answers: false,
+          open_period: 36000
+        },
+        introText: `🔥 مباراة كبيرة! ${narrativeElements.mainStoryline}`,
+        analysisText: `📊 الإحصائيات تقول:\n• ${homeTeam}: ${teamComparison.homeWinProbability}% احتمالية الفوز\n• التعادل: ${teamComparison.drawProbability}% احتمالية\n• ${awayTeam}: ${teamComparison.awayWinProbability}% احتمالية الفوز\n\n🎯 العوامل الرئيسية:\n${translatedKeyFactors.map(factor => `• ${factor}`).join('\n')}`,
+        engagementText: `صوت وانضم إلى ${this.estimateParticipants('HIGH', analysis.matchImportance)}+ من عشاق كرة القدم! 🗳️⚽`,
+        funFact: `💡 هل تعلم؟ ${this.generateFunFact(analysis)}`,
+        pollType: 'match_prediction',
+        difficulty: 'EASY',
+        expectedEngagement: 'HIGH',
+        educationalValue: 'MEDIUM',
+        viralPotential: 'HIGH'
+      };
+    }
+
+    // Fallback to English if language not supported
+    return this.generateMatchPredictionPoll(analysis, 'en');
   }
 
   /**
@@ -2178,6 +2233,57 @@ export class PollsGenerator {
       open_period: poll.open_period,
       close_date: poll.close_date
     };
+  }
+
+  /**
+   * 🌐 Translate key factors to target language for pure language content
+   */
+  private translateKeyFactors(factors: string[], language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): string[] {
+    const translations: Record<string, Record<'en' | 'am' | 'sw' | 'fr' | 'ar', string>> = {
+      'Recent form momentum': {
+        en: 'Recent form momentum',
+        am: 'የቅርብ ጊዜ የአፈፃፀም ሁኔታ',
+        sw: 'Mtiririko wa hivi karibuni',
+        fr: 'Dynamique de forme récente',
+        ar: 'زخم الأداء الأخير'
+      },
+      'Head-to-head psychological edge': {
+        en: 'Head-to-head psychological edge',
+        am: 'የአእምሮአዊ የበላይነት',
+        sw: 'Ubingwa wa kisaikolojia',
+        fr: 'Avantage psychologique direct',
+        ar: 'التفوق النفسي المباشر'
+      },
+      'Home crowd support': {
+        en: 'Home crowd support',
+        am: 'የቤት ተቀጃጅ ድጋፍ',
+        sw: 'Uongozi wa umati wa nyumbani',
+        fr: 'Soutien du public à domicile',
+        ar: 'دعم الجمهور المحلي'
+      },
+      'Key player availability': {
+        en: 'Key player availability',
+        am: 'የቁልፍ ተጫዋቾች መገኘት',
+        sw: 'Upatikanaji wa wachezaji muhimu',
+        fr: 'Disponibilité des joueurs clés',
+        ar: 'توفر اللاعبين الأساسيين'
+      },
+      'Tactical matchup advantages': {
+        en: 'Tactical matchup advantages',
+        am: 'የስትራቴጂ የበላይነት',
+        sw: 'Faida za mkabala wa kitaktiki',
+        fr: 'Avantages tactiques',
+        ar: 'المزايا التكتيكية'
+      }
+    };
+
+    return factors.map(factor => {
+      if (translations[factor] && translations[factor][language]) {
+        return translations[factor][language];
+      }
+      // Fallback: if translation not found, return in target language format
+      return factor; // In production, this should not happen
+    });
   }
 }
 

@@ -9,14 +9,14 @@ interface ImageGenerationOptions {
   prompt: string;
   size?: '1024x1024' | '1792x1024' | '1024x1792';
   quality?: 'low' | 'medium' | 'high' | 'auto' | 'standard' | 'hd'; // Support both GPT-Image-1 and DALL-E 3 values
-  language?: 'en' | 'am' | 'sw';
+  language?: 'en' | 'am' | 'sw' | 'fr' | 'ar';
 }
 
 interface ContentAnalysisOptions {
   content: string;
   title?: string;
   contentType: 'news' | 'betting' | 'analysis' | 'live' | 'poll' | 'daily_summary' | 'weekly_summary';
-  language?: 'en' | 'am' | 'sw';
+  language?: 'en' | 'am' | 'sw' | 'fr' | 'ar';
   teams?: string[];
   competition?: string;
 }
@@ -473,7 +473,9 @@ Create an image that directly relates to and enhances the specific content being
     const culturalElements = {
       'en': ', Premier League atmosphere',
       'am': ', Ethiopian football culture, African stadium atmosphere',
-      'sw': ', East African football culture, Swahili region stadium'
+      'sw': ', East African football culture, Swahili region stadium',
+      'fr': ', French football culture, European stadium atmosphere',
+      'ar': ', Arab football culture, Middle Eastern stadium atmosphere'
     };
 
     prompt += culturalElements[language || 'en'];
@@ -483,44 +485,93 @@ Create an image that directly relates to and enhances the specific content being
 
   /**
    * 🎨 MAIN FUNCTION: Generate image from content analysis
+   * Uses simplified prompt engineering for faster generation
    */
-  async generateImageFromContent(options: ContentAnalysisOptions & {
-    size?: '1024x1024' | '1792x1024' | '1024x1792';
-    quality?: 'low' | 'medium' | 'high' | 'auto' | 'standard' | 'hd';
-  }): Promise<GeneratedImage | null> {
-    console.log(`🎨 Generating image from ${options.contentType} content...`);
+  async generateImageFromContent(options: ContentAnalysisOptions): Promise<GeneratedImage | null> {
+    console.log(`🎨 Generating image for ${options.contentType} content...`);
     
-    // Step 1: Generate intelligent prompt from content
-    const intelligentPrompt = await this.generatePromptFromContent(options);
-    
-    // Step 2: Generate image using the intelligent prompt
-    return await this.generateImage({
-      prompt: intelligentPrompt,
-      size: options.size || '1024x1024',
-      quality: options.quality || 'high',
-      language: options.language
-    });
+    try {
+      const { language } = options;
+      const prompt = this.buildImagePromptFromContent(options);
+      
+      console.log(`🎯 Final image prompt: ${prompt.substring(0, 100)}...`);
+      
+      const result = await this.generateImage({ 
+        prompt, 
+        size: '1024x1024',
+        quality: 'standard',
+        language 
+      });
+      
+      if (result?.url) {
+        console.log(`✅ Image generated successfully`);
+        return result;
+      } else {
+        console.log(`⚠️ Image generation failed - no URL returned`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error generating image from content:', error);
+      return null;
+    }
   }
 
   /**
-   * Build a detailed prompt for ultra-realistic image generation
+   * Build a detailed image prompt from content analysis
    */
-  private buildPrompt(options: ImageGenerationOptions): string {
-    const { prompt, language } = options;
+  private buildImagePromptFromContent(options: ContentAnalysisOptions): string {
+    const { content, contentType, teams, competition, language } = options;
     
-    // Always use realistic style with strong realism keywords
-    const realisticModifiers = 'photorealistic, real photo, professional sports photography, high resolution, sharp details, natural lighting, realistic stadium atmosphere, authentic football scene, documentary style, professional camera shot, 4K quality, no cartoon, no animation, no drawing, real people';
+    // Enhanced prompt engineering
+    let prompt = this.generateSpecificPromptForContentType(contentType, content, teams);
     
-    // Add language-specific cultural elements
+    // Add realistic photographic modifiers for professional look
+    const realisticModifiers = 'photorealistic, professional sports photography, high resolution, detailed';
+    
     const culturalElements = {
       en: '',
       am: ', Ethiopian football culture, African stadium atmosphere',
-      sw: ', East African football culture, Swahili region stadium'
+      sw: ', East African football culture, Swahili region stadium',
+      fr: ', French football culture, European stadium atmosphere',
+      ar: ', Arab football culture, Middle Eastern stadium atmosphere'
     };
     
     return `${prompt}, ${realisticModifiers}${culturalElements[language || 'en']}, professional sports media quality, looks like real sports news photo`;
   }
-  
+
+  /**
+   * Generate a specific prompt for a given content type
+   */
+  private generateSpecificPromptForContentType(contentType: string, content: string, teams: string[]): string {
+    const typeSpecificGuidance = {
+      'news': 'Generate prompts for breaking news photography - action shots, press conferences, stadium scenes, celebration moments',
+      'betting': 'Generate prompts for analytical sports photography - tactical shots, player comparisons, statistical overlays, professional analysis scenes',
+      'analysis': 'Generate prompts for in-depth match analysis photography - tactical formations, player positioning, strategic moments',
+      'live': 'Generate prompts for live action photography - dynamic match moments, crowd reactions, real-time action shots',
+      'poll': 'Generate prompts for fan engagement photography - supporter groups, voting scenarios, fan reactions',
+      'daily_summary': 'Generate prompts for comprehensive match day photography - multiple game highlights, daily football atmosphere',
+      'weekly_summary': 'Generate prompts for weekly football review photography - compilation scenes, league atmosphere, weekly highlights'
+    };
+
+    let prompt = typeSpecificGuidance[contentType as keyof typeof typeSpecificGuidance] || typeSpecificGuidance.news;
+
+    if (teams && teams.length > 0) {
+      prompt += `, featuring ${teams.join(' vs ')}`;
+    }
+
+    if (competition) {
+      prompt += `, ${competition} match`;
+    }
+
+    // Extract key elements from content
+    const keyTerms = this.extractVisualKeywords(content);
+    if (keyTerms.length > 0) {
+      prompt += `, ${keyTerms.join(', ')}`;
+    }
+
+    return prompt;
+  }
+
   /**
    * Generate an image for a specific football match
    */

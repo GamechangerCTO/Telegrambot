@@ -60,9 +60,11 @@ const translations = {
     nav: {
       bots: 'Bots',
       channels: 'Channels',
+      smartScheduling: 'Smart Scheduling',
       content: 'Content',
       coupons: 'Coupons',
       automation: 'Automation',
+      channelAutomation: 'Channel Automation',
       analytics: 'Analytics',
       settings: 'Settings'
     },
@@ -116,9 +118,11 @@ const translations = {
     nav: {
       bots: 'ቦቶች',
       channels: 'ቻናሎች',
+      smartScheduling: 'ኣኪል ቀውሳ',
       content: 'ይዘት',
       coupons: 'ኩፖኖች',
       automation: 'ራስ-ስርዓተ-ስራ',
+      channelAutomation: 'ቻናል ራስ-ስርዓተ-ስራ',
       analytics: 'ትንታኔዎች',
       settings: 'ቅንጅቶች'
     },
@@ -172,9 +176,11 @@ const translations = {
     nav: {
       bots: 'Boti',
       channels: 'Vituo',
+      smartScheduling: 'Mpangilio Akili',
       content: 'Maudhui',
       coupons: 'Kuponi',
       automation: 'Otomatiki',
+      channelAutomation: 'Otomatiki ya Vituo',
       analytics: 'Uchambuzi',
       settings: 'Mipangilio'
     },
@@ -336,9 +342,11 @@ export default function DashboardPage() {
   const navigationItems = [
     { name: t.nav.bots, href: '/dashboard/bots', active: false },
     { name: t.nav.channels, href: '/dashboard/channels', active: false },
+    { name: t.nav.smartScheduling, href: '/dashboard/channels/smart-scheduling', active: false },
     { name: t.nav.content, href: '/dashboard/content', active: false },
     { name: t.nav.coupons, href: '/dashboard/coupons', active: false },
     { name: t.nav.automation, href: '/automation', active: false },
+    { name: t.nav.channelAutomation, href: '/dashboard/channels/automation', active: false },
     { name: t.nav.analytics, href: '/dashboard/content/analytics', active: false },
     { name: t.nav.settings, href: '/dashboard/settings', active: false }
   ];

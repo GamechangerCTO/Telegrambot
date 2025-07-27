@@ -389,7 +389,7 @@ export class OptimizedNewsContentGenerator {
   /**
    * 🤖 OPTIMIZED: AI edit with fallback
    */
-  private async aiEditNewsContentOptimized(news: NewsItem, language: 'en' | 'am' | 'sw'): Promise<string> {
+  private async aiEditNewsContentOptimized(news: NewsItem, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): Promise<string> {
     // Quick template for non-English languages if content is already short
     if (language !== 'en' && news.content.length < 300) {
       return this.createTemplateNewsContent(news, language);
@@ -406,7 +406,17 @@ export class OptimizedNewsContentGenerator {
       const systemPrompts = {
         'en': `You are a football journalist. Create a complete 4-5 line summary with emojis. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with hashtags.`,
         'am': `You are a football journalist writing for Ethiopian readers. Write ONLY in proper Amharic language. Create a natural, flowing 4-5 line news summary. CRITICAL: Always complete your sentences fully - never stop in the middle of a word or sentence. Use ⚽ emoji. End with Amharic hashtags: #እግርኳስዜና #ስፖርት`,
-        'sw': `You are a football journalist writing ONLY in Swahili. Create 4-5 complete lines. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with Swahili & English hashtags.`
+        'sw': `You are a football journalist writing ONLY in Swahili. Create 4-5 complete lines. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with Swahili & English hashtags.`,
+        'fr': `Vous êtes un journaliste de football écrivant UNIQUEMENT en français. Créez un résumé complet de 4-5 lignes. IMPORTANT: Terminez toujours vos phrases complètement - ne coupez jamais au milieu. Utilisez des emojis ⚽. Terminez par des hashtags français.`,
+        'ar': `أنت صحفي كرة قدم تكتب باللغة العربية فقط. أنشئ ملخصاً كاملاً من 4-5 أسطر. مهم: اكمل جملك دائماً - لا تقطع أبداً في المنتصف. استخدم رموز ⚽. انته بهاشتاغات عربية.`
+      };
+
+      const languageNames = {
+        'en': 'English',
+        'am': 'Amharic',
+        'sw': 'Swahili', 
+        'fr': 'français',
+        'ar': 'العربية'
       };
 
       const response = await Promise.race([
@@ -416,35 +426,34 @@ export class OptimizedNewsContentGenerator {
             { role: "system", content: systemPrompts[language] },
             { 
               role: "user", 
-              content: `Create a complete news summary in ${language === 'en' ? 'English' : language === 'am' ? 'Amharic' : 'Swahili'}. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
+              content: `Create a complete news summary in ${languageNames[language]}. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
             }
           ],
-          max_tokens: 450,
+          max_tokens: 300,
           temperature: 0.7
         }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('AI timeout')), 10000)
-        )
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
       ]) as any;
 
       return response.choices[0]?.message?.content?.trim() || this.createTemplateNewsContent(news, language);
-      
     } catch (error) {
-      console.error('❌ Error with AI:', error);
+      console.log(`⚠️ AI editing failed for ${language}, using template`);
       return this.createTemplateNewsContent(news, language);
     }
   }
 
   /**
-   * 📝 Create template-based news content (fallback)
+   * 📝 Create template-based news content for all languages
    */
-  private createTemplateNewsContent(news: NewsItem, language: 'en' | 'am' | 'sw'): string {
+  private createTemplateNewsContent(news: NewsItem, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): string {
     const shortContent = this.shortenContent(news.content, 200);
     
     const templates = {
       en: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 ${news.source}\n\n#FootballNews #Breaking`,
       am: this.createAmharicNewsContent(news, shortContent),
-      sw: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 Chanzo: ${news.source}\n\n#HabariMpira #FootballNews`
+      sw: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 Chanzo: ${news.source}\n\n#HabariMpira #FootballNews`,
+      fr: this.createFrenchNewsContent(news, shortContent),
+      ar: this.createArabicNewsContent(news, shortContent)
     };
 
     return templates[language];
@@ -459,6 +468,26 @@ export class OptimizedNewsContentGenerator {
     const processedContent = this.processContentForAmharic(shortContent);
     
     return `📰 ${amharicIntro}\n\n⚽ ${processedContent}\n\n🔗 ምንጭ፡ ${news.source}\n📅 ${new Date().toLocaleDateString('am-ET')}\n\n#እግርኳስዜና #ስፖርት #ዝማኔ`;
+  }
+
+  /**
+   * 🇫🇷 Create proper French news content
+   */
+  private createFrenchNewsContent(news: NewsItem, shortContent: string): string {
+    const frenchIntro = this.getFrenchNewsIntro(news.category);
+    const processedContent = this.processContentForFrench(shortContent);
+    
+    return `📰 ${frenchIntro}\n\n⚽ ${processedContent}\n\n🔗 Source: ${news.source}\n📅 ${new Date().toLocaleDateString('fr-FR')}\n\n#FootballNews #Sport #ActualitéFoot`;
+  }
+
+  /**
+   * 🇸🇦 Create proper Arabic news content  
+   */
+  private createArabicNewsContent(news: NewsItem, shortContent: string): string {
+    const arabicIntro = this.getArabicNewsIntro(news.category);
+    const processedContent = this.processContentForArabic(shortContent);
+    
+    return `📰 ${arabicIntro}\n\n⚽ ${processedContent}\n\n🔗 المصدر: ${news.source}\n📅 ${new Date().toLocaleDateString('ar-SA')}\n\n#أخبار_كرة_القدم #رياضة #كرة_القدم`;
   }
 
   /**
@@ -477,6 +506,42 @@ export class OptimizedNewsContentGenerator {
     };
     
     return categoryIntros[category as keyof typeof categoryIntros] || 'የእግር ኳስ ዜና እና ዝማኔ';
+  }
+
+  /**
+   * 🌍 Get French intro based on news category
+   */
+  private getFrenchNewsIntro(category?: string): string {
+    const categoryIntros = {
+      'Premier League': 'Actualités de la Premier League',
+      'Champions League': 'Actualités de la Ligue des Champions',
+      'Transfer News': 'Actualités des transferts',
+      'World Cup': 'Actualités de la Coupe du Monde',
+      'La Liga': 'Actualités de La Liga',
+      'Serie A': 'Actualités de la Serie A',
+      'Bundesliga': 'Actualités de la Bundesliga',
+      'International': 'Actualités du football international'
+    };
+    
+    return categoryIntros[category as keyof typeof categoryIntros] || 'Actualités et mises à jour du football';
+  }
+
+  /**
+   * 🌍 Get Arabic intro based on news category
+   */
+  private getArabicNewsIntro(category?: string): string {
+    const categoryIntros = {
+      'Premier League': 'أخبار الدوري الإنجليزي الممتاز',
+      'Champions League': 'أخبار دوري أبطال أوروبا',
+      'Transfer News': 'أخبار انتقالات اللاعبين',
+      'World Cup': 'أخبار كأس العالم',
+      'La Liga': 'أخبار الليجا الإسبانية',
+      'Serie A': 'أخبار الدوري الإيطالي',
+      'Bundesliga': 'أخبار البوندسليجا الألمانية',
+      'International': 'أخبار كرة القدم الدولية'
+    };
+    
+    return categoryIntros[category as keyof typeof categoryIntros] || 'أخبار ومستجدات كرة القدم';
   }
 
   /**
@@ -510,6 +575,38 @@ export class OptimizedNewsContentGenerator {
     }
     
     return `ከአለም አቀፍ እግር ኳስ ዓለም የደረሰ ወቅታዊ ዜና፡\n\n${contextualContent}...\n\nለሙሉ ዝርዝር ምንጩን ይመልከቱ።`;
+  }
+
+  /**
+   * 📝 Process content for better French presentation
+   */
+  private processContentForFrench(content: string): string {
+    if (content.length < 50) {
+      return 'Plus de détails seront disponibles prochainement. Suivez-nous pour les dernières actualités.';
+    }
+    
+    const cleanContent = content
+      .replace(/[<>]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return cleanContent.length > 200 ? cleanContent.substring(0, 200) + '...' : cleanContent;
+  }
+
+  /**
+   * 📝 Process content for better Arabic presentation
+   */
+  private processContentForArabic(content: string): string {
+    if (content.length < 50) {
+      return 'ستتوفر تفاصيل أكثر قريباً. تابعونا للحصول على آخر الأخبار.';
+    }
+    
+    const cleanContent = content
+      .replace(/[<>]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return cleanContent.length > 200 ? cleanContent.substring(0, 200) + '...' : cleanContent;
   }
   
   /**

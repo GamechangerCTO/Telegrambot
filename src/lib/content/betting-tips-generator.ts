@@ -830,7 +830,7 @@ export class BettingTipsGenerator {
   /**
    * 🤖 AI edit betting content - ENHANCED VERSION
    */
-  private async aiEditBettingContent(content: string, analysis: BettingAnalysis, language: 'en' | 'am' | 'sw'): Promise<string> {
+  private async aiEditBettingContent(content: string, analysis: BettingAnalysis, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): Promise<string> {
     console.log(`🤖 AI editing betting content for language: ${language}`);
     
     try {
@@ -854,7 +854,11 @@ export class BettingTipsGenerator {
         
         በኃላፊነት ውርርድ ጥሪ ያካትቱ።`,
         
-        'sw': `Wewe ni mtaalamu rafiki wa kamari za mpira wa miguu. Andika mapendekezo ya kamari kwa njia ya kirafiki na rahisi kuelewa, kama unavyozungumza na rafiki. Mistari 4-6 tu. Ongeza utabiri wazi na viwango vya ujasiri na uwezekano. Tumia emoji kwa kawaida. Malizia kwa onyo la kamari zenye uwajibikaji na hashtags.`
+        'sw': `Wewe ni mtaalamu rafiki wa kamari za mpira wa miguu. Andika mapendekezo ya kamari kwa njia ya kirafiki na rahisi kuelewa, kama unavyozungumza na rafiki. Mistari 4-6 tu. Ongeza utabiri wazi na viwango vya ujasiri na uwezekano. Tumia emoji kwa kawaida. Malizia kwa onyo la kamari zenye uwajibikaji na hashtags.`,
+
+        'fr': `Vous êtes un expert amical en paris de football qui sait donner des conseils pratiques. Rédigez un court post de conseils de paris naturel (4-6 lignes) qui sonne comme si vous parliez à un ami. Restez conversationnel et utile. Incluez des prédictions spécifiques avec des niveaux de confiance et des estimations de cotes. Ajoutez des emojis naturellement. Terminez par un rappel de jeu responsable et des hashtags.`,
+
+        'ar': `أنت خبير ودود في رهانات كرة القدم تعرف كيف تقدم نصائح عملية. اكتب منشوراً قصيراً وطبيعياً لنصائح الرهان (4-6 أسطر) يبدو وكأنك تتحدث مع صديق. حافظ على الطابع المحادثي والمفيد. أدرج توقعات محددة مع مستويات الثقة وتقديرات الاحتمالات. أضف الرموز التعبيرية بشكل طبيعي. انته بتذكير بالمقامرة المسؤولة والهاشتاغات.`
       };
 
       // Build detailed analysis data for AI
@@ -943,7 +947,25 @@ export class BettingTipsGenerator {
         - Miwango inayotarajiwa ya uwezekano
         - Ukumbusho wa kamari zenye uwajibikaji
         
-        Andika kwa kawaida, si kama ripoti rasmi. Tumia emoji pale zinapoonekanea zinafaa.`
+        Andika kwa kawaida, si kama ripoti rasmi. Tumia emoji pale zinapoonekanea zinafaa.`,
+
+        'fr': `Rédigez des conseils de pari naturels et amicaux pour ce match. Gardez-le court et conversationnel - comme si vous donniez des conseils à un ami. Incluez:
+        - 2-3 suggestions de paris spécifiques
+        - Pourquoi vous pensez que ce sont de bons paris
+        - Niveaux de confiance (comme "80% confiant" ou "forte chance")
+        - Gammes de cotes attendues
+        - Un rappel de jeu responsable
+        
+        Écrivez naturellement, pas comme un rapport formel. Utilisez des emojis là où ils semblent appropriés.`,
+
+        'ar': `اكتب نصائح رهان طبيعية وودية لهذه المباراة. اجعلها قصيرة ومحادثة - كما لو كنت تعطي نصيحة لصديق. تشمل:
+        - 2-3 اقتراحات رهان محددة
+        - لماذا تعتقد أنها رهانات جيدة
+        - مستويات الثقة (مثل "واثق بنسبة 80%" أو "فرصة قوية")
+        - نطاقات الاحتمالات المتوقعة
+        - تذكير بالمقامرة المسؤولة
+        
+        اكتب بشكل طبيعي، وليس مثل تقرير رسمي. استخدم الرموز التعبيرية حيث تبدو مناسبة.`
       };
 
       const response = await openai.chat.completions.create({
@@ -996,7 +1018,7 @@ Create betting tips that are specific to this exact match with the provided data
   /**
    * ✨ Enhance betting content with engaging format
    */
-  private enhanceBettingContent(content: string, analysis: BettingAnalysis, language: 'en' | 'am' | 'sw'): string {
+  private enhanceBettingContent(content: string, analysis: BettingAnalysis, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): string {
     if (language === 'en') {
       return `${content}\n\n🔥 Don't miss this ${analysis.matchAssessment.predictability.toLowerCase()}-confidence betting opportunity!\n\n💡 Remember: Bet responsibly and only what you can afford to lose!\n\n#BettingTips #Football #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')}`;
     }
@@ -1009,13 +1031,21 @@ Create betting tips that are specific to this exact match with the provided data
       return `${content}\n\n🔥 Usikose fursa hii ya kamari ya ${analysis.matchAssessment.predictability.toLowerCase()}-uongozi!\n\n💡 Kumbuka: Weka kamari kwa busara na kile unachoweza kupoteza tu!\n\n#KamariTips #Mpira #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
     }
     
+    if (language === 'fr') {
+      return `${content}\n\n🔥 Ne manquez pas cette opportunité de pari avec ${analysis.matchAssessment.predictability.toLowerCase()}-confiance!\n\n💡 Rappel: Pariez de manière responsable et seulement ce que vous pouvez vous permettre de perdre!\n\n#ConseilsParis #Football #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips`;
+    }
+    
+    if (language === 'ar') {
+      return `${content}\n\n🔥 لا تفوت هذه الفرصة للرهان بثقة ${analysis.matchAssessment.predictability.toLowerCase()}!\n\n💡 تذكر: راهن بمسؤولية وفقط بما يمكنك تحمل خسارته!\n\n#نصائح_الرهان #كرة_القدم #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
+    }
+    
     return content;
   }
 
   /**
    * ⚠️ Get responsible gambling disclaimers
    */
-  private getDisclaimers(language: 'en' | 'am' | 'sw'): string[] {
+  private getDisclaimers(language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): string[] {
     const disclaimers = {
       en: [
         '⚠️ 18+ Only - Gambling can be addictive',
@@ -1040,6 +1070,22 @@ Create betting tips that are specific to this exact match with the provided data
         '🚫 Hakuna uhakika - kamari zote zina hatari',
         '🆘 Matatizo ya kamari? Pata msaada',
         '📊 Utendaji wa zamani haudhaminishe matokeo ya baadaye'
+      ],
+      fr: [
+        '⚠️ 18+ Seulement - Le jeu peut créer une dépendance',
+        '💰 Ne pariez jamais plus que ce que vous pouvez vous permettre de perdre',
+        '📚 Cette analyse est uniquement à des fins éducatives',
+        '🚫 Aucune garantie - tous les paris comportent des risques',
+        '🆘 Problème de jeu? Obtenez de l\'aide: www.joueurs-info-service.fr',
+        '📊 Les performances passées ne garantissent pas les résultats futurs'
+      ],
+      ar: [
+        '⚠️ +18 فقط - القمار يمكن أن يكون إدماناً',
+        '💰 لا تراهن أبداً بأكثر مما يمكنك تحمل خسارته',
+        '📚 هذا التحليل لأغراض تعليمية فقط',
+        '🚫 لا توجد ضمانات - جميع الرهانات تحمل مخاطر',
+        '🆘 مشكلة في القمار؟ احصل على المساعدة',
+        '📊 الأداء السابق لا يضمن النتائج المستقبلية'
       ]
     };
     

@@ -5,132 +5,109 @@
 
 import { ContentType } from './content-router';
 
-export interface ContentTypeConfig {
-  needsImage: boolean;
-  maxLength: number;
-  priority: number;
-  description: string;
-  defaultMaxItems: number;
-  imageRequired: boolean;
-  supportsPolls: boolean;
-  supportsKeyboards: boolean;
-  schedulingEnabled: boolean;
-  automationEnabled: boolean;
-}
+// 🌍 SUPPORTED LANGUAGES - Extended to 5 languages for single-user architecture
+export type Language = 'en' | 'am' | 'sw' | 'fr' | 'ar';
 
-export const CONTENT_CONFIG: Record<ContentType, ContentTypeConfig> = {
-  live: {
-    needsImage: false,
-    maxLength: 300,
-    priority: 1,
-    description: 'Real-time match updates',
-    defaultMaxItems: 3,
-    imageRequired: false,
-    supportsPolls: false,
-    supportsKeyboards: false,
-    schedulingEnabled: false,
-    automationEnabled: true
+// 🌐 LANGUAGE CONFIGURATIONS
+export const LANGUAGE_CONFIG: Record<Language, {
+  name: string;
+  nativeName: string;
+  direction: 'ltr' | 'rtl';
+  footballTerms: {
+    match: string;
+    goal: string;
+    team: string;
+    player: string;
+    win: string;
+    draw: string;
+    loss: string;
+  };
+  culturalContext: string;
+}> = {
+  en: {
+    name: 'English',
+    nativeName: 'English',
+    direction: 'ltr',
+    footballTerms: {
+      match: 'match',
+      goal: 'goal',
+      team: 'team',
+      player: 'player',
+      win: 'win',
+      draw: 'draw',
+      loss: 'loss'
+    },
+    culturalContext: 'Premier League, Champions League, European football culture'
   },
-  betting: {
-    needsImage: true,
-    maxLength: 600,
-    priority: 2,
-    description: 'AI-powered betting tips',
-    defaultMaxItems: 2,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: true,
-    schedulingEnabled: true,
-    automationEnabled: true
+  am: {
+    name: 'Amharic',
+    nativeName: 'አማርኛ',
+    direction: 'ltr',
+    footballTerms: {
+      match: 'ግጥሚያ',
+      goal: 'ጎል',
+      team: 'ቡድን',
+      player: 'ተጫዋች',
+      win: 'አሸንፏል',
+      draw: 'አቻ',
+      loss: 'ተሸንፏል'
+    },
+    culturalContext: 'Ethiopian football culture, African stadium atmosphere, vibrant fan culture'
   },
-  news: {
-    needsImage: true,
-    maxLength: 800,
-    priority: 3,
-    description: 'RSS-based news summaries',
-    defaultMaxItems: 1,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: true,
-    schedulingEnabled: true,
-    automationEnabled: true
+  sw: {
+    name: 'Swahili',
+    nativeName: 'Kiswahili',
+    direction: 'ltr',
+    footballTerms: {
+      match: 'mechi',
+      goal: 'bao',
+      team: 'timu',
+      player: 'mchezaji',
+      win: 'kushinda',
+      draw: 'sare',
+      loss: 'kushindwa'
+    },
+    culturalContext: 'East African football culture, Swahili region stadium atmosphere, community football spirit'
   },
-  polls: {
-    needsImage: false,
-    maxLength: 500,
-    priority: 4,
-    description: 'Interactive fan polls',
-    defaultMaxItems: 1,
-    imageRequired: false,
-    supportsPolls: true,
-    supportsKeyboards: true,
-    schedulingEnabled: true,
-    automationEnabled: true
+  fr: {
+    name: 'French',
+    nativeName: 'Français',
+    direction: 'ltr',
+    footballTerms: {
+      match: 'match',
+      goal: 'but',
+      team: 'équipe',
+      player: 'joueur',
+      win: 'victoire',
+      draw: 'match nul',
+      loss: 'défaite'
+    },
+    culturalContext: 'Ligue 1, French football culture, European championship atmosphere'
   },
-  analysis: {
-    needsImage: true,
-    maxLength: 1000,
-    priority: 5,
-    description: 'Match analysis reports',
-    defaultMaxItems: 1,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: false,
-    schedulingEnabled: true,
-    automationEnabled: true
-  },
-  coupons: {
-    needsImage: true,
-    maxLength: 400,
-    priority: 6,
-    description: 'Affiliate promotions',
-    defaultMaxItems: 1,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: true,
-    schedulingEnabled: true,
-    automationEnabled: true
-  },
-  memes: {
-    needsImage: true,
-    maxLength: 200,
-    priority: 7,
-    description: 'Entertainment content',
-    defaultMaxItems: 1,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: false,
-    schedulingEnabled: true,
-    automationEnabled: false
-  },
-  daily_summary: {
-    needsImage: true,
-    maxLength: 1200,
-    priority: 8,
-    description: 'Daily recap reports',
-    defaultMaxItems: 1,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: false,
-    schedulingEnabled: true,
-    automationEnabled: true
-  },
-  weekly_summary: {
-    needsImage: true,
-    maxLength: 1500,
-    priority: 9,
-    description: 'Weekly summary reports',
-    defaultMaxItems: 1,
-    imageRequired: true,
-    supportsPolls: false,
-    supportsKeyboards: false,
-    schedulingEnabled: true,
-    automationEnabled: true
+  ar: {
+    name: 'Arabic',
+    nativeName: 'العربية',
+    direction: 'rtl',
+    footballTerms: {
+      match: 'مباراة',
+      goal: 'هدف',
+      team: 'فريق',
+      player: 'لاعب',
+      win: 'فوز',
+      draw: 'تعادل',
+      loss: 'هزيمة'
+    },
+    culturalContext: 'Arabic football culture, Middle Eastern and North African football passion'
   }
 };
 
-export const SUPPORTED_LANGUAGES = ['en', 'am', 'sw'] as const;
-export type Language = typeof SUPPORTED_LANGUAGES[number];
+// 🎯 SINGLE USER CONFIGURATION
+export const SINGLE_USER_CONFIG = {
+  email: 'triroars@gmail.com',
+  role: 'super_admin',
+  allowedLanguages: ['en', 'am', 'sw', 'fr', 'ar'] as Language[],
+  defaultLanguage: 'en' as Language
+};
 
 export const SUPPORTED_ACTIONS = ['send_now', 'preview', 'schedule', 'automation'] as const;
 export type ActionType = typeof SUPPORTED_ACTIONS[number];

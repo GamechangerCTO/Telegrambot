@@ -101,7 +101,7 @@ export default function CreateChannelPage() {
         const { data: languagesData, error: languagesError } = await supabase
           .from('languages')
           .select('*')
-          .in('code', ['en', 'am', 'sw'])
+          .in('code', ['en', 'am', 'sw', 'fr', 'ar']) // ✅ All 5 supported languages
           .eq('is_active', true)
           .order('name');
 
@@ -113,11 +113,13 @@ export default function CreateChannelPage() {
         }
       } catch (err) {
         console.warn('Languages table not available, using defaults');
-        // Set default languages if table doesn't exist
+        // Set default languages if table doesn't exist - Now with 5 languages
         setLanguages([
           { code: 'en', name: 'English', native_name: 'English' },
           { code: 'am', name: 'Amharic', native_name: 'አማርኛ' },
-          { code: 'sw', name: 'Swahili', native_name: 'Kiswahili' }
+          { code: 'sw', name: 'Swahili', native_name: 'Kiswahili' },
+          { code: 'fr', name: 'French', native_name: 'Français' },
+          { code: 'ar', name: 'Arabic', native_name: 'العربية' }
         ]);
       }
 

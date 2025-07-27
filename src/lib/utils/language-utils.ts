@@ -1,10 +1,8 @@
 /**
- * 🌐 Language Utilities
- * Shared utilities for multi-language support across the application
- * Consolidates language-related functions to prevent duplication
+ * 🌐 LANGUAGE UTILITIES - Language detection and conversion utilities
  */
 
-export type Language = 'en' | 'am' | 'sw';
+export type Language = 'en' | 'am' | 'sw' | 'fr' | 'ar'; // ✅ All 5 supported languages
 
 export interface LanguageInfo {
   code: Language;

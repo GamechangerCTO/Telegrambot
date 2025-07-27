@@ -407,66 +407,71 @@ export class TelegramDistributor {
     }>> = [];
 
     // Get language from content for all buttons
-    const contentLanguage = content.language || content.content_items?.[0]?.language || 'en';
+    const contentLanguage: Language = (content.language || content.content_items?.[0]?.language || 'en') as Language;
 
     // Buttons for different content types
     if (content.type === 'betting' && content.metadata?.bookmakerUrl) {
-      // Button text in the correct language
+      // Button text in the correct language - ALL 5 LANGUAGES
       const placeBetText = {
         en: '🎯 Place Bet',
         am: '🎯 ውርርድ ያድርጉ',
-        sw: '🎯 Weka Dau'
+        sw: '🎯 Weka Dau',
+        fr: '🎯 Placer un Pari',
+        ar: '🎯 ضع رهان'
       };
-      
+
       keyboard.push([{
         text: placeBetText[contentLanguage as keyof typeof placeBetText] || placeBetText.en,
         url: content.metadata.bookmakerUrl
       }]);
     }
 
-    if (content.type === 'news' && content.metadata?.sourceUrl) {
-      // Button text in the correct language
-      const buttonText = {
-        en: '📖 Read Full Article',
-        am: '📖 ሙሉ ጽሑፍ ያንብቡ',
-        sw: '📖 Soma Makala Kamili'
-      };
-      
-      keyboard.push([{
-        text: buttonText[contentLanguage as keyof typeof buttonText] || buttonText.en,
-        url: content.metadata.sourceUrl
-      }]);
-    }
-
     if (content.type === 'coupons' && content.metadata?.couponUrl) {
-      // Button text in the correct language
+      // Coupon button text in all languages
       const getCouponText = {
-        en: '🎫 Get Coupon',
-        am: '🎫 ኩፖን ያግኙ',
-        sw: '🎫 Pata Kuponi'
+        en: '🎁 Get Coupon',
+        am: '🎁 ኩፖን ያግኙ',
+        sw: '🎁 Pata Kuponi',
+        fr: '🎁 Obtenir le Coupon',
+        ar: '🎁 احصل على الكوبون'
       };
-      
+
       keyboard.push([{
         text: getCouponText[contentLanguage as keyof typeof getCouponText] || getCouponText.en,
         url: content.metadata.couponUrl
       }]);
     }
 
-    // General interaction buttons
-    if (content.type === 'polls') {
-      // Poll button texts in the correct language
-      const pollTexts = {
-        en: { yes: '👍 Yes', no: '👎 No' },
-        am: { yes: '👍 አዎ', no: '👎 አይ' },
-        sw: { yes: '👍 Ndio', no: '👎 Hapana' }
+    if (content.type === 'analysis' && content.metadata?.detailsUrl) {
+      // Analysis button text in all languages
+      const fullAnalysisText = {
+        en: '📊 Full Analysis',
+        am: '📊 ሙሉ ትንታኔ',
+        sw: '📊 Uchambuzi Kamili',
+        fr: '📊 Analyse Complète',
+        ar: '📊 التحليل الكامل'
       };
-      
-      const currentPollTexts = pollTexts[contentLanguage as keyof typeof pollTexts] || pollTexts.en;
-      
-      keyboard.push([
-        { text: currentPollTexts.yes, callback_data: `poll_yes_${content.id}` },
-        { text: currentPollTexts.no, callback_data: `poll_no_${content.id}` }
-      ]);
+
+      keyboard.push([{
+        text: fullAnalysisText[contentLanguage as keyof typeof fullAnalysisText] || fullAnalysisText.en,
+        url: content.metadata.detailsUrl
+      }]);
+    }
+
+    // Share button for viral content
+    if (mode === 'share' && content.type === 'polls') {
+      const shareText = {
+        en: '📤 Share Poll',
+        am: '📤 ስርዓተ ጥያቄ አጋራ',
+        sw: '📤 Shiriki Kura',
+        fr: '📤 Partager le Sondage',
+        ar: '📤 شارك الاستطلاع'
+      };
+
+      keyboard.push([{
+        text: shareText[contentLanguage as keyof typeof shareText] || shareText.en,
+        callback_data: `share_poll_${content.content_items?.[0]?.id}`
+      }]);
     }
 
     return keyboard.length > 0 ? keyboard : undefined;
@@ -600,7 +605,7 @@ export class TelegramDistributor {
         return {
           total_channels: 0,
           active_channels: 0,
-          channels_by_language: { en: 0, am: 0, sw: 0 },
+          channels_by_language: { en: 0, am: 0, sw: 0, fr: 0, ar: 0 },
           channels_with_bots: 0
         };
       }
@@ -608,7 +613,7 @@ export class TelegramDistributor {
              const stats = {
          total_channels: channels.length,
          active_channels: channels.filter((ch: any) => ch.is_active).length,
-         channels_by_language: { en: 0, am: 0, sw: 0 } as Record<Language, number>,
+         channels_by_language: { en: 0, am: 0, sw: 0, fr: 0, ar: 0 } as Record<Language, number>,
          channels_with_bots: channels.filter((ch: any) => ch.is_active && (ch as any).bots.is_active).length
        };
 
@@ -625,7 +630,7 @@ export class TelegramDistributor {
       return {
         total_channels: 0,
         active_channels: 0,
-        channels_by_language: { en: 0, am: 0, sw: 0 },
+        channels_by_language: { en: 0, am: 0, sw: 0, fr: 0, ar: 0 },
         channels_with_bots: 0
       };
     }

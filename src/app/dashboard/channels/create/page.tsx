@@ -68,11 +68,11 @@ export default function CreateChannelPage() {
 
   const loadData = async () => {
     try {
-      // Load languages (English, Amharic, Swahili)
+      // Load languages - All 5 supported languages
       const { data: languagesData, error: languagesError } = await supabase
         .from('languages')
         .select('*')
-        .in('code', ['en', 'am', 'sw'])
+        .in('code', ['en', 'am', 'sw', 'fr', 'ar']) // ✅ All 5 supported languages  
         .eq('is_active', true)
         .order('name');
 

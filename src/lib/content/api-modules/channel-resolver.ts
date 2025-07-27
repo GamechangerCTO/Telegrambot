@@ -5,7 +5,7 @@
 
 import { supabase } from '@/lib/supabase';
 
-export type Language = 'en' | 'am' | 'sw';
+export type Language = 'en' | 'am' | 'sw' | 'fr' | 'ar'; // ✅ All 5 supported languages
 
 export interface ChannelResolutionRequest {
   target_channels?: string[];
@@ -124,8 +124,8 @@ export class ChannelResolver {
       }
     }
     
-    // Step 3: Validate language
-    if (!['en', 'am', 'sw'].includes(language)) {
+    // Step 3: Validate language - Support all 5 languages
+    if (!['en', 'am', 'sw', 'fr', 'ar'].includes(language)) {
       console.log(`⚠️ Invalid language '${language}', defaulting to 'en'`);
       language = 'en';
     }

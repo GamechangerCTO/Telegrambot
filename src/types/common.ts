@@ -2,7 +2,7 @@
  * Common types used across the application
  */
 
-export type Language = 'en' | 'am' | 'sw';
+export type Language = 'en' | 'am' | 'sw' | 'fr' | 'ar'; // ✅ All 5 supported languages
 
 export type ContentType = 'live' | 'betting' | 'news' | 'polls' | 'analysis' | 'coupons' | 'memes' | 'daily_summary' | 'weekly_summary';
 
