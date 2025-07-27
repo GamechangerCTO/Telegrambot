@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Settings, Power, PowerOff, Send, Newspaper, TrendingUp, Activity, Users, BarChart3, MessageSquare } from 'lucide-react';
+import { Plus, Settings, Power, PowerOff, Send, Newspaper, TrendingUp, Activity, Users, BarChart3, MessageSquare, Calendar, Clock, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
 interface Channel {
@@ -18,64 +18,114 @@ interface Channel {
   name: string;
   language: string;
   channel_id: string;
+  description: string;
   is_active: boolean;
+  auto_post_enabled: boolean;
   content_types: string[];
   automation_hours: number[];
+  preferred_post_times: string[];
+  smart_scheduling: boolean;
+  max_posts_per_day: number;
+  post_approval_required: boolean;
+  push_notifications: boolean;
+  total_posts_sent: number;
   last_content_sent: string;
+  automation_rules?: any[];
+}
+
+interface DailyMatch {
+  id: string;
+  home_team: string;
+  away_team: string;
+  competition: string;
+  kickoff_time: string;
+  importance_score: number;
+  scheduled_content_count?: number;
 }
 
 export default function Dashboard() {
-  const [channels, setChannels] = useState<Channel[]>([]); // ערך התחלתי: array ריק
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [dailyMatches, setDailyMatches] = useState<DailyMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingContent, setSendingContent] = useState<{ [key: string]: boolean }>({});
   const router = useRouter();
 
   useEffect(() => {
-    fetchChannels();
+    fetchDashboardData();
   }, []);
 
-  const fetchChannels = async () => {
+  const fetchDashboardData = async () => {
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      
+      // Fetch channels with automation rules
+      const { data: channelsData, error: channelsError } = await supabase
         .from('channels')
-        .select('*')
+        .select(`
+          *,
+          automation_rules(
+            id,
+            name,
+            content_types,
+            is_active,
+            priority
+          )
+        `)
         .order('name');
 
-      if (error) {
-        console.error('Error fetching channels:', error);
-        setChannels([]); // וידוא שזה array ריק בשגיאה
+      if (channelsError) {
+        console.error('Error fetching channels:', channelsError);
       } else {
-        setChannels(Array.isArray(data) ? data : []); // וידוא שזה array
+        setChannels(Array.isArray(channelsData) ? channelsData : []);
       }
+
+      // Fetch today's important matches
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('daily_important_matches')
+        .select(`
+          *,
+          scheduled_content:dynamic_content_schedule(count)
+        `)
+        .eq('discovery_date', new Date().toISOString().split('T')[0])
+        .order('importance_score', { ascending: false });
+
+      if (matchesError) {
+        console.error('Error fetching daily matches:', matchesError);
+      } else {
+        setDailyMatches(Array.isArray(matchesData) ? matchesData : []);
+      }
+
     } catch (error) {
-      console.error('Error fetching channels:', error);
-      setChannels([]); // וידוא שזה array ריק בשגיאה
+      console.error('Error fetching dashboard data:', error);
+      setChannels([]);
+      setDailyMatches([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleChannelActive = async (channelId: string, isActive: boolean) => {
+  const toggleChannelActive = async (channelId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch('/api/simple-automation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'toggle_automation',
-          channelId: channelId
-        }),
-      });
+      const supabase = createClient();
+      
+      const { error } = await supabase
+        .from('channels')
+        .update({ 
+          is_active: !currentStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', channelId);
 
-      const result = await response.json();
-      if (result.success) {
-        fetchChannels(); // Refresh the list
-        alert(result.message);
-      } else {
-        throw new Error(result.error);
-      }
+      if (error) throw error;
+
+      // Update automation rules as well
+      await supabase
+        .from('automation_rules')
+        .update({ is_active: !currentStatus })
+        .eq('channel_id', channelId);
+
+      fetchDashboardData(); // Refresh the data
+      alert(`Channel ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       console.error('Error toggling channel:', error);
       alert('Error changing channel status');
@@ -87,22 +137,22 @@ export default function Dashboard() {
     setSendingContent(prev => ({ ...prev, [key]: true }));
 
     try {
-      const response = await fetch('/api/simple-automation', {
+      const response = await fetch('/api/unified-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'send_content',
-          channelId: channelId,
-          contentType: contentType
+          type: contentType,
+          target_channels: [channelId],
+          manual_trigger: true
         }),
       });
 
       const result = await response.json();
       if (result.success) {
         alert(`${getContentTypeDisplay(contentType)} content sent successfully to ${channelName}!`);
-        fetchChannels(); // Refresh to update last_content_sent
+        fetchDashboardData(); // Refresh to update stats
       } else {
         throw new Error(result.error);
       }
@@ -131,7 +181,8 @@ export default function Dashboard() {
       'analysis': 'Analysis',
       'live': 'Live Updates',
       'polls': 'Polls',
-      'summary': 'Summaries'
+      'summary': 'Summaries',
+      'coupons': 'Coupons'
     };
     return types[type] || type;
   };
@@ -148,7 +199,8 @@ export default function Dashboard() {
       'analysis': BarChart3,
       'live': Activity,
       'polls': MessageSquare,
-      'summary': Users
+      'summary': Users,
+      'coupons': Zap
     };
     return icons[type as keyof typeof icons] || Send;
   };
@@ -156,22 +208,23 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading channels...</div>
+        <div className="text-lg">Loading dashboard...</div>
       </div>
     );
   }
 
-  // וידוא נוסף שchannels הוא array
   const safeChannels = Array.isArray(channels) ? channels : [];
+  const activeChannels = safeChannels.filter(c => c.is_active);
+  const totalAutomationRules = safeChannels.reduce((sum, channel) => sum + (channel.automation_rules?.length || 0), 0);
 
   return (
     <div className="container mx-auto p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Channel Management</h1>
+          <h1 className="text-3xl font-bold">Channel Management Dashboard</h1>
           <p className="text-gray-600 mt-2">
-            Manage all channels and automation settings in one place
+            Manage channels, automation rules, and daily match content
           </p>
         </div>
         <Button 
@@ -192,6 +245,7 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-gray-600">Total Channels</p>
                 <p className="text-2xl font-bold">{safeChannels.length}</p>
               </div>
+              <Settings className="w-8 h-8 text-gray-400" />
             </div>
           </CardContent>
         </Card>
@@ -202,9 +256,10 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Channels</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {safeChannels.filter(c => c.is_active).length}
+                  {activeChannels.length}
                 </p>
               </div>
+              <Power className="w-8 h-8 text-green-400" />
             </div>
           </CardContent>
         </Card>
@@ -213,11 +268,12 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Inactive Channels</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {safeChannels.filter(c => !c.is_active).length}
+                <p className="text-sm font-medium text-gray-600">Automation Rules</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {totalAutomationRules}
                 </p>
               </div>
+              <Zap className="w-8 h-8 text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -226,15 +282,53 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Languages</p>
-                <p className="text-2xl font-bold">
-                  {new Set(safeChannels.map(c => c.language)).size}
+                <p className="text-sm font-medium text-gray-600">Today's Matches</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {dailyMatches.length}
                 </p>
               </div>
+              <Calendar className="w-8 h-8 text-purple-400" />
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Today's Matches */}
+      {dailyMatches.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Today's Important Matches
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {dailyMatches.map((match) => (
+                <div key={match.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold">{match.home_team} vs {match.away_team}</h4>
+                    <Badge variant="outline">Score: {match.importance_score}</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">{match.competition}</p>
+                  <p className="text-sm text-gray-500">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    {new Date(match.kickoff_time).toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                  {match.scheduled_content_count && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {match.scheduled_content_count} content items scheduled
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Channels List */}
       <Card>
@@ -270,6 +364,12 @@ export default function Dashboard() {
                       <Badge variant="outline">
                         {getLanguageDisplay(channel.language)}
                       </Badge>
+                      {channel.smart_scheduling && (
+                        <Badge variant="outline" className="bg-blue-50">
+                          <Zap className="w-3 h-3 mr-1" />
+                          Smart AI
+                        </Badge>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -295,22 +395,53 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Channel Info */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Channel Info Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Channel ID:</p>
                       <p className="font-mono text-sm">{channel.channel_id}</p>
                     </div>
                     
                     <div>
+                      <p className="text-sm text-gray-600 mb-1">Posts Limit:</p>
+                      <p className="text-sm">{channel.max_posts_per_day}/day</p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Total Posts Sent:</p>
+                      <p className="text-sm font-semibold">{channel.total_posts_sent || 0}</p>
+                    </div>
+                  </div>
+
+                  {/* Automation Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
                       <p className="text-sm text-gray-600 mb-1">Automation Hours:</p>
                       <p className="text-sm">{Array.isArray(channel.automation_hours) ? channel.automation_hours.join(', ') : 'Not configured'}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Automation Rules:</p>
+                      <p className="text-sm">{channel.automation_rules?.length || 0} active rules</p>
                     </div>
                   </div>
 
                   <div className="mb-4">
                     <p className="text-sm text-gray-600 mb-2">Content Types:</p>
                     <p className="text-sm">{getContentTypesDisplay(channel.content_types || [])}</p>
+                  </div>
+
+                  {/* Settings Badges */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {channel.auto_post_enabled && (
+                      <Badge variant="outline" className="bg-green-50">Auto-Post</Badge>
+                    )}
+                    {channel.post_approval_required && (
+                      <Badge variant="outline" className="bg-yellow-50">Approval Required</Badge>
+                    )}
+                    {channel.push_notifications && (
+                      <Badge variant="outline" className="bg-blue-50">Notifications</Badge>
+                    )}
                   </div>
 
                   {/* Manual Content Buttons */}
