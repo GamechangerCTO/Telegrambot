@@ -9,6 +9,261 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          key_name: string
+          key_value: string
+          service_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_name: string
+          key_value: string
+          service_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_name?: string
+          key_value?: string
+          service_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      automation_executions: {
+        Row: {
+          automation_rule_id: string | null
+          content_generated: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          execution_data: Json | null
+          execution_trigger: string | null
+          id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          automation_rule_id?: string | null
+          content_generated?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          execution_data?: Json | null
+          execution_trigger?: string | null
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          automation_rule_id?: string | null
+          content_generated?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          execution_data?: Json | null
+          execution_trigger?: string | null
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_executions_automation_rule_id_fkey"
+            columns: ["automation_rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_logs: {
+        Row: {
+          action: string | null
+          automation_rule_id: string | null
+          created_at: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          metadata: Json | null
+          status: string | null
+        }
+        Insert: {
+          action?: string | null
+          automation_rule_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+        }
+        Update: {
+          action?: string | null
+          automation_rule_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_automation_rule_id_fkey"
+            columns: ["automation_rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_rules: {
+        Row: {
+          channel_id: string | null
+          content_types: string[] | null
+          created_at: string | null
+          description: string | null
+          execution_schedule: Json | null
+          id: string
+          is_active: boolean | null
+          last_executed: string | null
+          name: string
+          priority: number | null
+          rule_config: Json | null
+          trigger_conditions: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          content_types?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          execution_schedule?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_executed?: string | null
+          name: string
+          priority?: number | null
+          rule_config?: Json | null
+          trigger_conditions?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          content_types?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          execution_schedule?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_executed?: string | null
+          name?: string
+          priority?: number | null
+          rule_config?: Json | null
+          trigger_conditions?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_settings: {
+        Row: {
+          ai_creativity_level: number | null
+          automation_hours: Json | null
+          content_approval_required: boolean | null
+          content_types_enabled: string[] | null
+          created_at: string | null
+          full_automation_enabled: boolean | null
+          id: string
+          max_daily_posts: number | null
+          posting_interval_minutes: number | null
+          smart_scheduling_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_creativity_level?: number | null
+          automation_hours?: Json | null
+          content_approval_required?: boolean | null
+          content_types_enabled?: string[] | null
+          created_at?: string | null
+          full_automation_enabled?: boolean | null
+          id?: string
+          max_daily_posts?: number | null
+          posting_interval_minutes?: number | null
+          smart_scheduling_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_creativity_level?: number | null
+          automation_hours?: Json | null
+          content_approval_required?: boolean | null
+          content_types_enabled?: string[] | null
+          created_at?: string | null
+          full_automation_enabled?: boolean | null
+          id?: string
+          max_daily_posts?: number | null
+          posting_interval_minutes?: number | null
+          smart_scheduling_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      automation_status: {
+        Row: {
+          created_at: string | null
+          daily_posts_count: number | null
+          id: string
+          is_automation_running: boolean | null
+          last_execution_at: string | null
+          last_post_at: string | null
+          next_execution_at: string | null
+          status_message: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_posts_count?: number | null
+          id?: string
+          is_automation_running?: boolean | null
+          last_execution_at?: string | null
+          last_post_at?: string | null
+          next_execution_at?: string | null
+          status_message?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_posts_count?: number | null
+          id?: string
+          is_automation_running?: boolean | null
+          last_execution_at?: string | null
+          last_post_at?: string | null
+          next_execution_at?: string | null
+          status_message?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bots: {
         Row: {
           auto_post_enabled: boolean | null
@@ -17,7 +272,6 @@ export type Database = {
           is_active: boolean | null
           language_code: string | null
           last_post_at: string | null
-          manager_id: string | null
           max_posts_per_day: number | null
           name: string
           preferred_post_times: string[] | null
@@ -35,7 +289,6 @@ export type Database = {
           is_active?: boolean | null
           language_code?: string | null
           last_post_at?: string | null
-          manager_id?: string | null
           max_posts_per_day?: number | null
           name: string
           preferred_post_times?: string[] | null
@@ -53,7 +306,6 @@ export type Database = {
           is_active?: boolean | null
           language_code?: string | null
           last_post_at?: string | null
-          manager_id?: string | null
           max_posts_per_day?: number | null
           name?: string
           preferred_post_times?: string[] | null
@@ -73,13 +325,6 @@ export type Database = {
             referencedColumns: ["code"]
           },
           {
-            foreignKeyName: "bots_manager_id_fkey"
-            columns: ["manager_id"]
-            isOneToOne: false
-            referencedRelation: "managers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "bots_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false
@@ -88,73 +333,111 @@ export type Database = {
           },
         ]
       }
+      channel_automation_settings: {
+        Row: {
+          automation_hours: Json | null
+          channel_id: string | null
+          content_types: string[] | null
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          max_daily_posts: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          automation_hours?: Json | null
+          channel_id?: string | null
+          content_types?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          max_daily_posts?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          automation_hours?: Json | null
+          channel_id?: string | null
+          content_types?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          max_daily_posts?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_automation_settings_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channels: {
         Row: {
-          affiliate_code: string | null
-          auto_post: boolean | null
+          auto_post_enabled: boolean | null
+          automation_hours: number[] | null
           bot_id: string | null
-          content_types: Json | null
+          channel_id: string
+          content_types: string[] | null
           created_at: string | null
           description: string | null
           id: string
           is_active: boolean | null
           language: string | null
+          last_content_sent: string | null
           last_post_at: string | null
           max_posts_per_day: number | null
-          member_count: number | null
           name: string
-          post_frequency_hours: number | null
+          post_approval_required: boolean | null
           preferred_post_times: string[] | null
-          selected_leagues: Json | null
-          selected_teams: Json | null
-          telegram_channel_id: string
-          telegram_channel_username: string | null
+          push_notifications: boolean | null
+          smart_scheduling: boolean | null
           total_posts_sent: number | null
           updated_at: string | null
         }
         Insert: {
-          affiliate_code?: string | null
-          auto_post?: boolean | null
+          auto_post_enabled?: boolean | null
+          automation_hours?: number[] | null
           bot_id?: string | null
-          content_types?: Json | null
+          channel_id: string
+          content_types?: string[] | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
           language?: string | null
+          last_content_sent?: string | null
           last_post_at?: string | null
           max_posts_per_day?: number | null
-          member_count?: number | null
           name: string
-          post_frequency_hours?: number | null
+          post_approval_required?: boolean | null
           preferred_post_times?: string[] | null
-          selected_leagues?: Json | null
-          selected_teams?: Json | null
-          telegram_channel_id: string
-          telegram_channel_username?: string | null
+          push_notifications?: boolean | null
+          smart_scheduling?: boolean | null
           total_posts_sent?: number | null
           updated_at?: string | null
         }
         Update: {
-          affiliate_code?: string | null
-          auto_post?: boolean | null
+          auto_post_enabled?: boolean | null
+          automation_hours?: number[] | null
           bot_id?: string | null
-          content_types?: Json | null
+          channel_id?: string
+          content_types?: string[] | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
           language?: string | null
+          last_content_sent?: string | null
           last_post_at?: string | null
           max_posts_per_day?: number | null
-          member_count?: number | null
           name?: string
-          post_frequency_hours?: number | null
+          post_approval_required?: boolean | null
           preferred_post_times?: string[] | null
-          selected_leagues?: Json | null
-          selected_teams?: Json | null
-          telegram_channel_id?: string
-          telegram_channel_username?: string | null
+          push_notifications?: boolean | null
+          smart_scheduling?: boolean | null
           total_posts_sent?: number | null
           updated_at?: string | null
         }
@@ -175,60 +458,258 @@ export type Database = {
           },
         ]
       }
-      coupons: {
+      content_items: {
         Row: {
-          affiliate_code: string
-          affiliate_url: string
-          betting_site: string | null
-          bonus_amount: string | null
-          bot_id: string | null
+          content: string
+          content_type_id: string | null
           created_at: string | null
-          currency: string | null
-          description: string | null
-          expiry_date: string | null
           id: string
-          is_active: boolean | null
+          image_url: string | null
+          is_published: boolean | null
           language: string | null
-          max_usage: number | null
-          title: string
+          metadata: Json | null
           updated_at: string | null
-          usage_count: number | null
         }
         Insert: {
-          affiliate_code: string
-          affiliate_url: string
-          betting_site?: string | null
-          bonus_amount?: string | null
-          bot_id?: string | null
+          content: string
+          content_type_id?: string | null
           created_at?: string | null
-          currency?: string | null
-          description?: string | null
-          expiry_date?: string | null
           id?: string
-          is_active?: boolean | null
+          image_url?: string | null
+          is_published?: boolean | null
           language?: string | null
-          max_usage?: number | null
-          title: string
+          metadata?: Json | null
           updated_at?: string | null
-          usage_count?: number | null
         }
         Update: {
-          affiliate_code?: string
-          affiliate_url?: string
-          betting_site?: string | null
-          bonus_amount?: string | null
-          bot_id?: string | null
+          content?: string
+          content_type_id?: string | null
           created_at?: string | null
-          currency?: string | null
-          description?: string | null
-          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          language?: string | null
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_content_type_id_fkey"
+            columns: ["content_type_id"]
+            isOneToOne: false
+            referencedRelation: "content_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_queue: {
+        Row: {
+          channel_id: string | null
+          content: string
+          content_type: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_processed: boolean | null
+          metadata: Json | null
+          priority: number | null
+          scheduled_for: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          content: string
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_processed?: boolean | null
+          metadata?: Json | null
+          priority?: number | null
+          scheduled_for?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          content?: string
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_processed?: boolean | null
+          metadata?: Json | null
+          priority?: number | null
+          scheduled_for?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_queue_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_schedules: {
+        Row: {
+          channel_id: string | null
+          content_types: string[] | null
+          created_at: string | null
+          execution_times: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          post_frequency: string | null
+          recurrence_pattern: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          content_types?: string[] | null
+          created_at?: string | null
+          execution_times?: Json | null
           id?: string
           is_active?: boolean | null
-          language?: string | null
-          max_usage?: number | null
-          title?: string
+          name: string
+          post_frequency?: string | null
+          recurrence_pattern?: Json | null
           updated_at?: string | null
-          usage_count?: number | null
+        }
+        Update: {
+          channel_id?: string | null
+          content_types?: string[] | null
+          created_at?: string | null
+          execution_times?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          post_frequency?: string | null
+          recurrence_pattern?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_schedules_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_types: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          action_url: string | null
+          bonus_amount: string | null
+          bot_id: string | null
+          click_count: number | null
+          code: string | null
+          created_at: string | null
+          description: string | null
+          discount_percentage: number | null
+          expiry_date: string | null
+          id: string
+          image_url: string | null
+          impressions_count: number | null
+          is_active: boolean | null
+          language: string | null
+          last_shown: string | null
+          max_uses: number | null
+          metadata: Json | null
+          name: string
+          priority: number | null
+          show_count: number | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+          uses_count: number | null
+        }
+        Insert: {
+          action_url?: string | null
+          bonus_amount?: string | null
+          bot_id?: string | null
+          click_count?: number | null
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          impressions_count?: number | null
+          is_active?: boolean | null
+          language?: string | null
+          last_shown?: string | null
+          max_uses?: number | null
+          metadata?: Json | null
+          name: string
+          priority?: number | null
+          show_count?: number | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          uses_count?: number | null
+        }
+        Update: {
+          action_url?: string | null
+          bonus_amount?: string | null
+          bot_id?: string | null
+          click_count?: number | null
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          expiry_date?: string | null
+          id?: string
+          image_url?: string | null
+          impressions_count?: number | null
+          is_active?: boolean | null
+          language?: string | null
+          last_shown?: string | null
+          max_uses?: number | null
+          metadata?: Json | null
+          name?: string
+          priority?: number | null
+          show_count?: number | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          uses_count?: number | null
         }
         Relationships: [
           {
@@ -247,72 +728,111 @@ export type Database = {
           },
         ]
       }
+      daily_important_matches: {
+        Row: {
+          api_source: string | null
+          away_team: string | null
+          created_at: string | null
+          home_team: string | null
+          id: string
+          importance_score: number | null
+          league: string | null
+          match_date: string | null
+          match_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_source?: string | null
+          away_team?: string | null
+          created_at?: string | null
+          home_team?: string | null
+          id?: string
+          importance_score?: number | null
+          league?: string | null
+          match_date?: string | null
+          match_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_source?: string | null
+          away_team?: string | null
+          created_at?: string | null
+          home_team?: string | null
+          id?: string
+          importance_score?: number | null
+          league?: string | null
+          match_date?: string | null
+          match_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       languages: {
         Row: {
           code: string
           created_at: string | null
-          direction: string | null
+          display_name: string
+          id: string
           is_active: boolean | null
-          name: string
-          native_name: string
+          native_name: string | null
+          updated_at: string | null
         }
         Insert: {
           code: string
           created_at?: string | null
-          direction?: string | null
+          display_name: string
+          id?: string
           is_active?: boolean | null
-          name: string
-          native_name: string
+          native_name?: string | null
+          updated_at?: string | null
         }
         Update: {
           code?: string
           created_at?: string | null
-          direction?: string | null
+          display_name?: string
+          id?: string
           is_active?: boolean | null
-          name?: string
-          native_name?: string
+          native_name?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       leagues: {
         Row: {
+          api_id: string | null
           api_source: string | null
           country: string | null
           created_at: string | null
-          external_id: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
           name: string
-          name_translations: Json | null
           priority: number | null
           season: string | null
           updated_at: string | null
         }
         Insert: {
+          api_id?: string | null
           api_source?: string | null
           country?: string | null
           created_at?: string | null
-          external_id?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name: string
-          name_translations?: Json | null
           priority?: number | null
           season?: string | null
           updated_at?: string | null
         }
         Update: {
+          api_id?: string | null
           api_source?: string | null
           country?: string | null
           created_at?: string | null
-          external_id?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
-          name_translations?: Json | null
           priority?: number | null
           season?: string | null
           updated_at?: string | null
@@ -321,49 +841,40 @@ export type Database = {
       }
       logs: {
         Row: {
-          action: string
           bot_id: string | null
           channel_id: string | null
-          component: string | null
           created_at: string | null
-          duration_ms: number | null
-          error_details: string | null
+          error_message: string | null
           id: string
           level: string | null
-          message: string | null
+          message: string
           metadata: Json | null
           post_id: string | null
-          status: string | null
+          source: string | null
         }
         Insert: {
-          action: string
           bot_id?: string | null
           channel_id?: string | null
-          component?: string | null
           created_at?: string | null
-          duration_ms?: number | null
-          error_details?: string | null
+          error_message?: string | null
           id?: string
           level?: string | null
-          message?: string | null
+          message: string
           metadata?: Json | null
           post_id?: string | null
-          status?: string | null
+          source?: string | null
         }
         Update: {
-          action?: string
           bot_id?: string | null
           channel_id?: string | null
-          component?: string | null
           created_at?: string | null
-          duration_ms?: number | null
-          error_details?: string | null
+          error_message?: string | null
           id?: string
           level?: string | null
-          message?: string | null
+          message?: string
           metadata?: Json | null
           post_id?: string | null
-          status?: string | null
+          source?: string | null
         }
         Relationships: [
           {
@@ -389,117 +900,166 @@ export type Database = {
           },
         ]
       }
-      managers: {
+      match_events: {
         Row: {
           created_at: string | null
-          email: string
-          email_notifications: boolean | null
+          event_type: string | null
           id: string
-          is_active: boolean | null
-          last_login_at: string | null
-          name: string
-          preferred_language: string | null
-          role: string | null
-          timezone: string | null
+          match_id: string | null
+          metadata: Json | null
+          minute: number | null
+          player: string | null
+          team: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
-          email: string
-          email_notifications?: boolean | null
+          event_type?: string | null
           id?: string
-          is_active?: boolean | null
-          last_login_at?: string | null
-          name: string
-          preferred_language?: string | null
-          role?: string | null
-          timezone?: string | null
+          match_id?: string | null
+          metadata?: Json | null
+          minute?: number | null
+          player?: string | null
+          team?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
-          email?: string
-          email_notifications?: boolean | null
+          event_type?: string | null
           id?: string
-          is_active?: boolean | null
-          last_login_at?: string | null
-          name?: string
-          preferred_language?: string | null
-          role?: string | null
-          timezone?: string | null
+          match_id?: string | null
+          metadata?: Json | null
+          minute?: number | null
+          player?: string | null
+          team?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "managers_preferred_language_fkey"
-            columns: ["preferred_language"]
+            foreignKeyName: "match_events_match_id_fkey"
+            columns: ["match_id"]
             isOneToOne: false
-            referencedRelation: "languages"
-            referencedColumns: ["code"]
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
           },
         ]
       }
-      post_templates: {
+      matches: {
         Row: {
-          bot_id: string | null
-          content: string
-          content_template: string | null
-          content_translations: Json | null
+          api_id: string | null
+          api_source: string | null
+          away_score: number | null
+          away_team_id: string | null
           created_at: string | null
-          description: string | null
-          frequency_hours: number | null
+          home_score: number | null
+          home_team_id: string | null
           id: string
-          include_graph: boolean | null
-          include_image: boolean | null
-          is_active: boolean | null
-          name: string
-          template_variables: Json | null
-          type: string | null
+          league_id: string | null
+          match_date: string | null
+          metadata: Json | null
+          round: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
-          bot_id?: string | null
-          content: string
-          content_template?: string | null
-          content_translations?: Json | null
+          api_id?: string | null
+          api_source?: string | null
+          away_score?: number | null
+          away_team_id?: string | null
           created_at?: string | null
-          description?: string | null
-          frequency_hours?: number | null
+          home_score?: number | null
+          home_team_id?: string | null
           id?: string
-          include_graph?: boolean | null
-          include_image?: boolean | null
-          is_active?: boolean | null
-          name: string
-          template_variables?: Json | null
-          type?: string | null
+          league_id?: string | null
+          match_date?: string | null
+          metadata?: Json | null
+          round?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
-          bot_id?: string | null
-          content?: string
-          content_template?: string | null
-          content_translations?: Json | null
+          api_id?: string | null
+          api_source?: string | null
+          away_score?: number | null
+          away_team_id?: string | null
           created_at?: string | null
-          description?: string | null
-          frequency_hours?: number | null
+          home_score?: number | null
+          home_team_id?: string | null
           id?: string
-          include_graph?: boolean | null
-          include_image?: boolean | null
-          is_active?: boolean | null
-          name?: string
-          template_variables?: Json | null
-          type?: string | null
+          league_id?: string | null
+          match_date?: string | null
+          metadata?: Json | null
+          round?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "post_templates_bot_id_fkey"
-            columns: ["bot_id"]
+            foreignKeyName: "matches_away_team_id_fkey"
+            columns: ["away_team_id"]
             isOneToOne: false
-            referencedRelation: "bots"
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_approvals: {
+        Row: {
+          approved_at: string | null
+          automation_rule_id: string | null
+          content: string
+          content_metadata: Json | null
+          content_type: string | null
+          created_at: string | null
+          id: string
+          rejection_reason: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          automation_rule_id?: string | null
+          content: string
+          content_metadata?: Json | null
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          automation_rule_id?: string | null
+          content?: string
+          content_metadata?: Json | null
+          content_type?: string | null
+          created_at?: string | null
+          id?: string
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_approvals_automation_rule_id_fkey"
+            columns: ["automation_rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
             referencedColumns: ["id"]
           },
         ]
@@ -509,42 +1069,54 @@ export type Database = {
           bot_id: string | null
           channel_id: string | null
           content: string
-          content_translations: Json | null
+          content_type: string | null
           created_at: string | null
+          delivered_at: string | null
           engagement_stats: Json | null
+          error_message: string | null
           id: string
-          scheduled_for: string | null
-          sent_at: string | null
+          image_url: string | null
+          language: string | null
+          message_id: string | null
+          post_analytics: Json | null
           status: string | null
-          type: string | null
+          telegram_response: Json | null
           updated_at: string | null
         }
         Insert: {
           bot_id?: string | null
           channel_id?: string | null
           content: string
-          content_translations?: Json | null
+          content_type?: string | null
           created_at?: string | null
+          delivered_at?: string | null
           engagement_stats?: Json | null
+          error_message?: string | null
           id?: string
-          scheduled_for?: string | null
-          sent_at?: string | null
+          image_url?: string | null
+          language?: string | null
+          message_id?: string | null
+          post_analytics?: Json | null
           status?: string | null
-          type?: string | null
+          telegram_response?: Json | null
           updated_at?: string | null
         }
         Update: {
           bot_id?: string | null
           channel_id?: string | null
           content?: string
-          content_translations?: Json | null
+          content_type?: string | null
           created_at?: string | null
+          delivered_at?: string | null
           engagement_stats?: Json | null
+          error_message?: string | null
           id?: string
-          scheduled_for?: string | null
-          sent_at?: string | null
+          image_url?: string | null
+          language?: string | null
+          message_id?: string | null
+          post_analytics?: Json | null
           status?: string | null
-          type?: string | null
+          telegram_response?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -566,86 +1138,36 @@ export type Database = {
       }
       regions: {
         Row: {
-          country_code: string
           created_at: string | null
-          flag_emoji: string
           id: string
           is_active: boolean | null
           name: string
           primary_language: string | null
           timezone: string | null
+          updated_at: string | null
         }
         Insert: {
-          country_code: string
           created_at?: string | null
-          flag_emoji: string
           id?: string
           is_active?: boolean | null
           name: string
           primary_language?: string | null
           timezone?: string | null
+          updated_at?: string | null
         }
         Update: {
-          country_code?: string
           created_at?: string | null
-          flag_emoji?: string
           id?: string
           is_active?: boolean | null
           name?: string
           primary_language?: string | null
           timezone?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "regions_primary_language_fkey"
             columns: ["primary_language"]
-            isOneToOne: false
-            referencedRelation: "languages"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
-      rss_sources: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          fetch_frequency_minutes: number | null
-          id: string
-          is_active: boolean | null
-          language: string | null
-          last_fetched_at: string | null
-          name: string
-          updated_at: string | null
-          url: string
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          fetch_frequency_minutes?: number | null
-          id?: string
-          is_active?: boolean | null
-          language?: string | null
-          last_fetched_at?: string | null
-          name: string
-          updated_at?: string | null
-          url: string
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          fetch_frequency_minutes?: number | null
-          id?: string
-          is_active?: boolean | null
-          language?: string | null
-          last_fetched_at?: string | null
-          name?: string
-          updated_at?: string | null
-          url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rss_sources_language_fkey"
-            columns: ["language"]
             isOneToOne: false
             referencedRelation: "languages"
             referencedColumns: ["code"]
@@ -661,7 +1183,6 @@ export type Database = {
           is_secret: boolean | null
           key: string
           updated_at: string | null
-          updated_by: string | null
           value: string | null
           value_type: string | null
         }
@@ -673,7 +1194,6 @@ export type Database = {
           is_secret?: boolean | null
           key: string
           updated_at?: string | null
-          updated_by?: string | null
           value?: string | null
           value_type?: string | null
         }
@@ -685,103 +1205,280 @@ export type Database = {
           is_secret?: boolean | null
           key?: string
           updated_at?: string | null
-          updated_by?: string | null
           value?: string | null
           value_type?: string | null
         }
+        Relationships: []
+      }
+      smart_push_analytics: {
+        Row: {
+          channel_id: string | null
+          click_count: number | null
+          coupon_id: string | null
+          ctr: number | null
+          delivery_id: string | null
+          id: string
+          impression_count: number | null
+          metadata: Json | null
+          recorded_at: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          click_count?: number | null
+          coupon_id?: string | null
+          ctr?: number | null
+          delivery_id?: string | null
+          id?: string
+          impression_count?: number | null
+          metadata?: Json | null
+          recorded_at?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          click_count?: number | null
+          coupon_id?: string | null
+          ctr?: number | null
+          delivery_id?: string | null
+          id?: string
+          impression_count?: number | null
+          metadata?: Json | null
+          recorded_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "settings_updated_by_fkey"
-            columns: ["updated_by"]
+            foreignKeyName: "smart_push_analytics_channel_id_fkey"
+            columns: ["channel_id"]
             isOneToOne: false
-            referencedRelation: "managers"
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_push_analytics_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_push_analytics_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "smart_push_deliveries"
             referencedColumns: ["id"]
           },
         ]
       }
-      sports_apis: {
+      smart_push_deliveries: {
         Row: {
-          api_key: string | null
-          api_url: string
+          channel_id: string | null
+          coupon_id: string | null
           created_at: string | null
-          daily_calls_limit: number | null
-          daily_calls_used: number | null
+          delivered_at: string | null
           id: string
-          is_active: boolean | null
-          last_called_at: string | null
-          name: string
-          priority: number | null
-          rate_limit_per_hour: number | null
-        }
-        Insert: {
-          api_key?: string | null
-          api_url: string
-          created_at?: string | null
-          daily_calls_limit?: number | null
-          daily_calls_used?: number | null
-          id?: string
-          is_active?: boolean | null
-          last_called_at?: string | null
-          name: string
-          priority?: number | null
-          rate_limit_per_hour?: number | null
-        }
-        Update: {
-          api_key?: string | null
-          api_url?: string
-          created_at?: string | null
-          daily_calls_limit?: number | null
-          daily_calls_used?: number | null
-          id?: string
-          is_active?: boolean | null
-          last_called_at?: string | null
-          name?: string
-          priority?: number | null
-          rate_limit_per_hour?: number | null
-        }
-        Relationships: []
-      }
-      teams: {
-        Row: {
-          country: string | null
-          created_at: string | null
-          external_id: string | null
-          id: string
-          is_local: boolean | null
-          league: string | null
-          league_id: string | null
-          logo_url: string | null
-          name: string
-          name_translations: Json | null
-          region_id: string | null
+          metadata: Json | null
+          queue_id: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
-          country?: string | null
+          channel_id?: string | null
+          coupon_id?: string | null
           created_at?: string | null
-          external_id?: string | null
+          delivered_at?: string | null
           id?: string
-          is_local?: boolean | null
-          league?: string | null
-          league_id?: string | null
-          logo_url?: string | null
-          name: string
-          name_translations?: Json | null
-          region_id?: string | null
+          metadata?: Json | null
+          queue_id?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
+          channel_id?: string | null
+          coupon_id?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          metadata?: Json | null
+          queue_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_push_deliveries_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_push_deliveries_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_push_deliveries_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "smart_push_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_push_queue: {
+        Row: {
+          channel_id: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          is_processed: boolean | null
+          metadata: Json | null
+          priority: number | null
+          scheduled_for: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_processed?: boolean | null
+          metadata?: Json | null
+          priority?: number | null
+          scheduled_for?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_processed?: boolean | null
+          metadata?: Json | null
+          priority?: number | null
+          scheduled_for?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_push_queue_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_push_settings: {
+        Row: {
+          created_at: string | null
+          enable_smart_push: boolean | null
+          id: string
+          max_daily_pushes: number | null
+          probability_settings: Json | null
+          push_intervals: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enable_smart_push?: boolean | null
+          id?: string
+          max_daily_pushes?: number | null
+          probability_settings?: Json | null
+          push_intervals?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enable_smart_push?: boolean | null
+          id?: string
+          max_daily_pushes?: number | null
+          probability_settings?: Json | null
+          push_intervals?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      team_mappings: {
+        Row: {
+          api_football_id: string | null
+          api_source: string | null
+          created_at: string | null
+          football_data_id: string | null
+          id: string
+          team_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_football_id?: string | null
+          api_source?: string | null
+          created_at?: string | null
+          football_data_id?: string | null
+          id?: string
+          team_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_football_id?: string | null
+          api_source?: string | null
+          created_at?: string | null
+          football_data_id?: string | null
+          id?: string
+          team_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_mappings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          api_id: string | null
+          api_source: string | null
+          country: string | null
+          created_at: string | null
+          founded: number | null
+          id: string
+          league_id: string | null
+          logo_url: string | null
+          name: string
+          region_id: string | null
+          stadium: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_id?: string | null
+          api_source?: string | null
           country?: string | null
           created_at?: string | null
-          external_id?: string | null
+          founded?: number | null
           id?: string
-          is_local?: boolean | null
-          league?: string | null
+          league_id?: string | null
+          logo_url?: string | null
+          name: string
+          region_id?: string | null
+          stadium?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_id?: string | null
+          api_source?: string | null
+          country?: string | null
+          created_at?: string | null
+          founded?: number | null
+          id?: string
           league_id?: string | null
           logo_url?: string | null
           name?: string
-          name_translations?: Json | null
           region_id?: string | null
+          stadium?: string | null
           updated_at?: string | null
         }
         Relationships: [
