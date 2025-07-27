@@ -25,7 +25,7 @@ interface Channel {
 }
 
 export default function Dashboard() {
-  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]); // ערך התחלתי: array ריק
   const [loading, setLoading] = useState(true);
   const [sendingContent, setSendingContent] = useState<{ [key: string]: boolean }>({});
   const router = useRouter();
@@ -42,10 +42,15 @@ export default function Dashboard() {
         .select('*')
         .order('name');
 
-      if (error) throw error;
-      setChannels(data || []);
+      if (error) {
+        console.error('Error fetching channels:', error);
+        setChannels([]); // וידוא שזה array ריק בשגיאה
+      } else {
+        setChannels(Array.isArray(data) ? data : []); // וידוא שזה array
+      }
     } catch (error) {
       console.error('Error fetching channels:', error);
+      setChannels([]); // וידוא שזה array ריק בשגיאה
     } finally {
       setLoading(false);
     }
@@ -103,37 +108,24 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error sending content:', error);
-      alert(`שגיאה בשליחת תוכן לערוץ ${channelName}`);
+      alert('שגיאה בשליחת התוכן');
     } finally {
       setSendingContent(prev => ({ ...prev, [key]: false }));
     }
   };
 
   const getLanguageDisplay = (language: string) => {
-    const languages = {
-      'en': 'English',
+    const languages: { [key: string]: string } = {
       'he': 'עברית',
+      'en': 'English',
       'am': 'አማርኛ',
       'sw': 'Kiswahili'
     };
-    return languages[language as keyof typeof languages] || language;
-  };
-
-  const getContentTypesDisplay = (types: string[]) => {
-    const typeNames = {
-      'news': 'חדשות',
-      'betting': 'הימורים',
-      'analysis': 'ניתוח',
-      'live': 'עדכונים חיים',
-      'polls': 'סקרים',
-      'summary': 'סיכומים'
-    };
-    
-    return types.map(type => typeNames[type as keyof typeof typeNames] || type).join(', ');
+    return languages[language] || language;
   };
 
   const getContentTypeDisplay = (type: string) => {
-    const typeNames = {
+    const types: { [key: string]: string } = {
       'news': 'חדשות',
       'betting': 'הימורים',
       'analysis': 'ניתוח',
@@ -141,7 +133,12 @@ export default function Dashboard() {
       'polls': 'סקרים',
       'summary': 'סיכומים'
     };
-    return typeNames[type as keyof typeof typeNames] || type;
+    return types[type] || type;
+  };
+
+  const getContentTypesDisplay = (types: string[]) => {
+    if (!Array.isArray(types) || types.length === 0) return 'לא הוגדר';
+    return types.map(type => getContentTypeDisplay(type)).join(', ');
   };
 
   const getContentTypeIcon = (type: string) => {
@@ -163,6 +160,9 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // וידוא נוסף שchannels הוא array
+  const safeChannels = Array.isArray(channels) ? channels : [];
 
   return (
     <div className="container mx-auto p-6">
@@ -190,7 +190,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">סה"כ ערוצים</p>
-                <p className="text-2xl font-bold">{channels.length}</p>
+                <p className="text-2xl font-bold">{safeChannels.length}</p>
               </div>
             </div>
           </CardContent>
@@ -202,7 +202,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">ערוצים פעילים</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {channels.filter(c => c.is_active).length}
+                  {safeChannels.filter(c => c.is_active).length}
                 </p>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">ערוצים כבויים</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {channels.filter(c => !c.is_active).length}
+                  {safeChannels.filter(c => !c.is_active).length}
                 </p>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">שפות</p>
                 <p className="text-2xl font-bold">
-                  {new Set(channels.map(c => c.language)).size}
+                  {new Set(safeChannels.map(c => c.language)).size}
                 </p>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function Dashboard() {
           <CardTitle>רשימת ערוצים</CardTitle>
         </CardHeader>
         <CardContent>
-          {channels.length === 0 ? (
+          {safeChannels.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">אין ערוצים עדיין</p>
               <Button 
@@ -255,7 +255,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="space-y-6">
-              {channels.map((channel) => (
+              {safeChannels.map((channel) => (
                 <div 
                   key={channel.id}
                   className="border rounded-lg p-6 hover:bg-gray-50"
@@ -304,7 +304,7 @@ export default function Dashboard() {
                     
                     <div>
                       <p className="text-sm text-gray-600 mb-1">שעות אוטומציה:</p>
-                      <p className="text-sm">{channel.automation_hours?.join(', ') || 'לא הוגדר'}</p>
+                      <p className="text-sm">{Array.isArray(channel.automation_hours) ? channel.automation_hours.join(', ') : 'לא הוגדר'}</p>
                     </div>
                   </div>
 
@@ -318,7 +318,7 @@ export default function Dashboard() {
                     <div className="border-t pt-4">
                       <p className="text-sm font-medium text-gray-700 mb-3">שלח תוכן ידני:</p>
                       <div className="flex flex-wrap gap-2">
-                        {(channel.content_types || []).map(contentType => {
+                        {(Array.isArray(channel.content_types) ? channel.content_types : []).map(contentType => {
                           const Icon = getContentTypeIcon(contentType);
                           const key = `${channel.id}-${contentType}`;
                           const isLoading = sendingContent[key];
