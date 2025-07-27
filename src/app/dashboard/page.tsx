@@ -16,20 +16,17 @@ import { createClient } from '@/lib/supabase';
 interface Channel {
   id: string;
   name: string;
+  telegram_channel_id: string;
+  telegram_channel_username?: string;
   language: string;
-  channel_id: string;
-  description: string;
+  description?: string;
   is_active: boolean;
-  auto_post_enabled: boolean;
-  content_types: string[];
-  automation_hours: number[];
-  preferred_post_times: string[];
-  smart_scheduling: boolean;
-  max_posts_per_day: number;
-  post_approval_required: boolean;
-  push_notifications: boolean;
-  total_posts_sent: number;
-  last_content_sent: string;
+  auto_post: boolean;
+  content_types: any; // Can be jsonb object or array
+  preferred_post_times?: string[];
+  max_posts_per_day?: number;
+  total_posts_sent?: number;
+  last_post_at?: string;
   automation_rules?: any[];
 }
 
@@ -41,6 +38,7 @@ interface DailyMatch {
   kickoff_time: string;
   importance_score: number;
   scheduled_content_count?: number;
+  external_match_id?: string; // Added for new display
 }
 
 export default function Dashboard() {
@@ -58,19 +56,10 @@ export default function Dashboard() {
     try {
       const supabase = createClient();
       
-      // Fetch channels with automation rules
+      // Fetch channels - simple query without automation_rules for now
       const { data: channelsData, error: channelsError } = await supabase
         .from('channels')
-        .select(`
-          *,
-          automation_rules(
-            id,
-            name,
-            content_types,
-            is_active,
-            priority
-          )
-        `)
+        .select('*')
         .order('name');
 
       if (channelsError) {
@@ -79,20 +68,31 @@ export default function Dashboard() {
         setChannels(Array.isArray(channelsData) ? channelsData : []);
       }
 
-      // Fetch today's important matches
-      const { data: matchesData, error: matchesError } = await supabase
-        .from('daily_important_matches')
-        .select(`
-          *,
-          scheduled_content:dynamic_content_schedule(count)
-        `)
-        .eq('discovery_date', new Date().toISOString().split('T')[0])
-        .order('importance_score', { ascending: false });
+      // Fetch automation rules separately
+      const { data: rulesData, error: rulesError } = await supabase
+        .from('automation_rules')
+        .select('*')
+        .eq('enabled', true);
 
-      if (matchesError) {
-        console.error('Error fetching daily matches:', matchesError);
-      } else {
-        setDailyMatches(Array.isArray(matchesData) ? matchesData : []);
+      if (rulesError) {
+        console.error('Error fetching automation rules:', rulesError);
+      }
+
+      // Try to fetch daily matches (but handle gracefully if table doesn't exist)
+      try {
+        const { data: matchesData, error: matchesError } = await supabase
+          .from('daily_important_matches')
+          .select('*')
+          .eq('discovery_date', new Date().toISOString().split('T')[0])
+          .order('importance_score', { ascending: false })
+          .limit(10); // Only get top 10 matches
+
+        if (!matchesError && matchesData) {
+          setDailyMatches(Array.isArray(matchesData) ? matchesData : []);
+        }
+      } catch (matchError) {
+        console.log('Daily matches table not available:', matchError);
+        setDailyMatches([]);
       }
 
     } catch (error) {
@@ -187,9 +187,23 @@ export default function Dashboard() {
     return types[type] || type;
   };
 
-  const getContentTypesDisplay = (types: string[]) => {
-    if (!Array.isArray(types) || types.length === 0) return 'Not configured';
-    return types.map(type => getContentTypeDisplay(type)).join(', ');
+  const getContentTypesDisplay = (types: any) => {
+    if (!types) return 'Not configured';
+    
+    let typesList = [];
+    
+    // Handle both object format {news: true, betting: true} and array format ['news', 'betting']
+    if (Array.isArray(types)) {
+      typesList = types;
+    } else if (typeof types === 'object') {
+      // Filter only the true values from the object
+      typesList = Object.keys(types).filter(key => types[key] === true);
+    } else {
+      return 'Not configured';
+    }
+    
+    if (typesList.length === 0) return 'Not configured';
+    return typesList.map(type => getContentTypeDisplay(type)).join(', ');
   };
 
   const getContentTypeIcon = (type: string) => {
@@ -205,6 +219,42 @@ export default function Dashboard() {
     return icons[type as keyof typeof icons] || Send;
   };
 
+  // Timezone mapping for different languages/regions
+  const getTimezoneForLanguage = (language: string) => {
+    const timezones = {
+      'he': 'Asia/Jerusalem',     // Israel
+      'en': 'Europe/London',      // UK
+      'am': 'Africa/Addis_Ababa', // Ethiopia  
+      'sw': 'Africa/Nairobi',     // Kenya
+      'fr': 'Europe/Paris',       // France
+      'ar': 'Asia/Dubai'          // UAE
+    };
+    return timezones[language as keyof typeof timezones] || 'UTC';
+  };
+
+  const formatLocalTime = (utcTime: string, language: string) => {
+    try {
+      const timezone = getTimezoneForLanguage(language);
+      const date = new Date(utcTime);
+      
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        day: '2-digit',
+        month: 'short'
+      }).format(date);
+    } catch (error) {
+      // Fallback to UTC if timezone conversion fails
+      return new Date(utcTime).toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -215,268 +265,260 @@ export default function Dashboard() {
 
   const safeChannels = Array.isArray(channels) ? channels : [];
   const activeChannels = safeChannels.filter(c => c.is_active);
-  const totalAutomationRules = safeChannels.reduce((sum, channel) => sum + (channel.automation_rules?.length || 0), 0);
+  // For now, we'll show 0 automation rules until we properly connect them
+  const totalAutomationRules = 0;
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Channel Management Dashboard</h1>
-          <p className="text-gray-600 mt-2">
-            Manage channels, automation rules, and daily match content
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-full mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+          <div className="w-full sm:w-auto">
+            <h1 className="text-xl sm:text-2xl font-bold">Channel Management Dashboard</h1>
+            <p className="text-gray-600 text-sm">
+              Manage channels, automation rules, and daily match content
+            </p>
+          </div>
+          <Button 
+            onClick={() => router.push('/dashboard/channels/add')}
+            className="bg-blue-600 hover:bg-blue-700 shrink-0 w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Channel
+          </Button>
         </div>
-        <Button 
-          onClick={() => router.push('/dashboard/channels/add')}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Channel
-        </Button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Channels</p>
-                <p className="text-2xl font-bold">{safeChannels.length}</p>
-              </div>
-              <Settings className="w-8 h-8 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Channels</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {activeChannels.length}
-                </p>
-              </div>
-              <Power className="w-8 h-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Automation Rules</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {totalAutomationRules}
-                </p>
-              </div>
-              <Zap className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Today's Matches</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {dailyMatches.length}
-                </p>
-              </div>
-              <Calendar className="w-8 h-8 text-purple-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Today's Matches */}
-      {dailyMatches.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Today's Important Matches
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dailyMatches.map((match) => (
-                <div key={match.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">{match.home_team} vs {match.away_team}</h4>
-                    <Badge variant="outline">Score: {match.importance_score}</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600">{match.competition}</p>
-                  <p className="text-sm text-gray-500">
-                    <Clock className="w-4 h-4 inline mr-1" />
-                    {new Date(match.kickoff_time).toLocaleTimeString('en-US', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                  {match.scheduled_content_count && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      {match.scheduled_content_count} content items scheduled
-                    </p>
-                  )}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <Card>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Channels</p>
+                  <p className="text-sm sm:text-lg font-bold">{safeChannels.length}</p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Active</p>
+                  <p className="text-sm sm:text-lg font-bold text-green-600">
+                    {activeChannels.length}
+                  </p>
+                </div>
+                <Power className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Channels List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Channels List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {safeChannels.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">No channels yet</p>
-              <Button 
-                onClick={() => router.push('/dashboard/channels/add')}
-                variant="outline"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Channel
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {safeChannels.map((channel) => (
-                <div 
-                  key={channel.id}
-                  className="border rounded-lg p-6 hover:bg-gray-50"
-                >
-                  {/* Channel Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-lg">{channel.name}</h3>
-                      <Badge variant={channel.is_active ? 'default' : 'secondary'}>
-                        {channel.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                      <Badge variant="outline">
-                        {getLanguageDisplay(channel.language)}
-                      </Badge>
-                      {channel.smart_scheduling && (
-                        <Badge variant="outline" className="bg-blue-50">
-                          <Zap className="w-3 h-3 mr-1" />
-                          Smart AI
-                        </Badge>
+          <Card>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Rules</p>
+                  <p className="text-sm sm:text-lg font-bold text-blue-600">
+                    {totalAutomationRules}
+                  </p>
+                </div>
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Matches</p>
+                  <p className="text-sm sm:text-lg font-bold text-purple-600">
+                    {dailyMatches.length}
+                  </p>
+                </div>
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Content Sections */}
+        <div className="space-y-4 sm:space-y-6">
+          {/* Today's Top Matches */}
+          {dailyMatches.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Top Matches Today ({dailyMatches.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 sm:max-h-72 overflow-y-auto">
+                  {dailyMatches.map((match) => {
+                    const activeLanguages = Array.from(new Set(safeChannels.filter(c => c.is_active).map(c => c.language)));
+                    
+                    return (
+                      <div key={match.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-sm truncate flex-1 mr-2">{match.home_team} vs {match.away_team}</h4>
+                          <Badge variant="outline" className="bg-blue-50 text-xs shrink-0">
+                            {match.importance_score}
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-xs text-gray-600 mb-2 truncate">{match.competition}</p>
+
+                        {/* Local Times */}
+                        <div className="space-y-1">
+                          {activeLanguages.slice(0, 2).map((language) => {
+                            const languageNames = {
+                              'he': '🇮🇱',
+                              'en': '🇬🇧', 
+                              'am': '🇪🇹',
+                              'sw': '🇰🇪',
+                              'fr': '🇫🇷',
+                              'ar': '🇦🇪'
+                            };
+                            
+                            const channelsInLanguage = safeChannels.filter(c => c.language === language && c.is_active);
+                            
+                            return (
+                              <div key={language} className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1">
+                                  {languageNames[language as keyof typeof languageNames] || language}
+                                  <span className="text-gray-500">({channelsInLanguage.length})</span>
+                                </span>
+                                <span className="font-mono font-bold text-blue-600">
+                                  {formatLocalTime(match.kickoff_time, language)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Channels List */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Channels List</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {safeChannels.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No channels yet</p>
+                  <Button 
+                    onClick={() => router.push('/dashboard/channels/add')}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add First Channel
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-h-80 sm:max-h-96 overflow-y-auto">
+                  {safeChannels.map((channel) => (
+                    <div 
+                      key={channel.id}
+                      className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
+                    >
+                      {/* Channel Header */}
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-sm truncate">{channel.name}</h3>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <Badge variant={channel.is_active ? 'default' : 'secondary'} className="text-xs">
+                              {channel.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {getLanguageDisplay(channel.language)}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/dashboard/channels/${channel.id}/edit`)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Settings className="w-3 h-3" />
+                          </Button>
+                          
+                          <Button
+                            variant={channel.is_active ? "destructive" : "default"}
+                            size="sm"
+                            onClick={() => toggleChannelActive(channel.id, channel.is_active)}
+                            className="h-7 w-7 p-0"
+                          >
+                            {channel.is_active ? (
+                              <PowerOff className="w-3 h-3" />
+                            ) : (
+                              <Power className="w-3 h-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Channel Info */}
+                      <div className="text-xs text-gray-600 mb-2 space-y-1">
+                        <div>Posts: {channel.total_posts_sent || 0}</div>
+                        <div className="truncate">Types: {getContentTypesDisplay(channel.content_types || []).substring(0, 20)}...</div>
+                      </div>
+
+                      {/* Manual Content Buttons */}
+                      {channel.is_active && (
+                        <div className="flex flex-wrap gap-1">
+                          {(() => {
+                            // Get content types list from either object or array format
+                            let contentTypesList = [];
+                            if (Array.isArray(channel.content_types)) {
+                              contentTypesList = channel.content_types;
+                            } else if (typeof channel.content_types === 'object' && channel.content_types) {
+                              contentTypesList = Object.keys(channel.content_types).filter(key => channel.content_types[key] === true);
+                            }
+                            
+                            return contentTypesList.slice(0, 2).map(contentType => {
+                              const Icon = getContentTypeIcon(contentType);
+                              const key = `${channel.id}-${contentType}`;
+                              const isLoading = sendingContent[key];
+                              
+                              return (
+                                <Button
+                                  key={contentType}
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isLoading}
+                                  onClick={() => sendContent(channel.id, contentType, channel.name)}
+                                  className="h-6 px-2 text-xs flex-1 min-w-0"
+                                >
+                                  <Icon className="w-3 h-3 mr-1 shrink-0" />
+                                  <span className="truncate">{isLoading ? '...' : getContentTypeDisplay(contentType).substring(0, 4)}</span>
+                                </Button>
+                              );
+                            });
+                          })()}
+                        </div>
                       )}
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/dashboard/channels/${channel.id}/edit`)}
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                      
-                      <Button
-                        variant={channel.is_active ? "destructive" : "default"}
-                        size="sm"
-                        onClick={() => toggleChannelActive(channel.id, channel.is_active)}
-                      >
-                        {channel.is_active ? (
-                          <PowerOff className="w-4 h-4" />
-                        ) : (
-                          <Power className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Channel Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Channel ID:</p>
-                      <p className="font-mono text-sm">{channel.channel_id}</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Posts Limit:</p>
-                      <p className="text-sm">{channel.max_posts_per_day}/day</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Posts Sent:</p>
-                      <p className="text-sm font-semibold">{channel.total_posts_sent || 0}</p>
-                    </div>
-                  </div>
-
-                  {/* Automation Info */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Automation Hours:</p>
-                      <p className="text-sm">{Array.isArray(channel.automation_hours) ? channel.automation_hours.join(', ') : 'Not configured'}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Automation Rules:</p>
-                      <p className="text-sm">{channel.automation_rules?.length || 0} active rules</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">Content Types:</p>
-                    <p className="text-sm">{getContentTypesDisplay(channel.content_types || [])}</p>
-                  </div>
-
-                  {/* Settings Badges */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {channel.auto_post_enabled && (
-                      <Badge variant="outline" className="bg-green-50">Auto-Post</Badge>
-                    )}
-                    {channel.post_approval_required && (
-                      <Badge variant="outline" className="bg-yellow-50">Approval Required</Badge>
-                    )}
-                    {channel.push_notifications && (
-                      <Badge variant="outline" className="bg-blue-50">Notifications</Badge>
-                    )}
-                  </div>
-
-                  {/* Manual Content Buttons */}
-                  {channel.is_active && (
-                    <div className="border-t pt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Send Manual Content:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(Array.isArray(channel.content_types) ? channel.content_types : []).map(contentType => {
-                          const Icon = getContentTypeIcon(contentType);
-                          const key = `${channel.id}-${contentType}`;
-                          const isLoading = sendingContent[key];
-                          
-                          return (
-                            <Button
-                              key={contentType}
-                              variant="outline"
-                              size="sm"
-                              disabled={isLoading}
-                              onClick={() => sendContent(channel.id, contentType, channel.name)}
-                              className="flex items-center gap-2"
-                            >
-                              <Icon className="w-4 h-4" />
-                              {isLoading ? 'Sending...' : getContentTypeDisplay(contentType)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 } 

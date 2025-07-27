@@ -7,7 +7,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Plus } from 'lucide-react';
+import { Home, Plus, Menu, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -23,10 +25,27 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
-        <div className="flex h-16 items-center px-6 border-b">
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+      `}>
+        <div className="flex h-16 items-center justify-between px-6 border-b">
           <h1 className="text-xl font-bold text-gray-900">TeleBots Pro</h1>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1 rounded-md hover:bg-gray-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         <nav className="mt-6 px-3">
@@ -39,6 +58,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   className={`
                     group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                     ${isActive 
@@ -62,8 +82,20 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content */}
-      <div className="pl-64">
-        <main>
+      <div className="lg:pl-64">
+        {/* Mobile header with hamburger */}
+        <div className="lg:hidden bg-white border-b px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-md hover:bg-gray-100"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-semibold">TeleBots Pro</h1>
+          <div className="w-9"></div> {/* Spacer for centering */}
+        </div>
+
+        <main className="min-h-screen">
           {children}
         </main>
       </div>

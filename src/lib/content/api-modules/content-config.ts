@@ -146,6 +146,114 @@ export const DEFAULT_SETTINGS = {
   MAX_CONTENT_LENGTH: 2000
 } as const;
 
+// 🎯 CONTENT TYPE CONFIGURATION INTERFACE
+export interface ContentTypeConfig {
+  priority: number;
+  description: string;
+  defaultMaxItems: number;
+  needsImage: boolean;
+  imageRequired: boolean;
+  maxLength: number;
+  schedulingEnabled: boolean;
+  automationEnabled: boolean;
+}
+
+export const SUPPORTED_LANGUAGES: Language[] = ['en', 'am', 'sw', 'fr', 'ar'];
+
+// 📋 CONTENT CONFIGURATION - Main content type definitions
+export const CONTENT_CONFIG: Record<ContentType, ContentTypeConfig> = {
+  live: {
+    priority: 1,
+    description: 'Live match updates and real-time scores',
+    defaultMaxItems: 1,
+    needsImage: false,
+    imageRequired: false,
+    maxLength: 500,
+    schedulingEnabled: false,
+    automationEnabled: true
+  },
+  betting: {
+    priority: 2,
+    description: 'Betting tips and odds analysis',
+    defaultMaxItems: 2,
+    needsImage: true,
+    imageRequired: false,
+    maxLength: 800,
+    schedulingEnabled: true,
+    automationEnabled: true
+  },
+  news: {
+    priority: 3,
+    description: 'Latest football news and updates',
+    defaultMaxItems: 3,
+    needsImage: true,
+    imageRequired: false,
+    maxLength: 1000,
+    schedulingEnabled: true,
+    automationEnabled: true
+  },
+  polls: {
+    priority: 4,
+    description: 'Interactive polls and fan engagement',
+    defaultMaxItems: 1,
+    needsImage: false,
+    imageRequired: false,
+    maxLength: 300,
+    schedulingEnabled: true,
+    automationEnabled: true
+  },
+  analysis: {
+    priority: 5,
+    description: 'Match analysis and tactical insights',
+    defaultMaxItems: 2,
+    needsImage: true,
+    imageRequired: false,
+    maxLength: 1200,
+    schedulingEnabled: true,
+    automationEnabled: true
+  },
+  coupons: {
+    priority: 6,
+    description: 'Promotional coupons and offers',
+    defaultMaxItems: 1,
+    needsImage: false,
+    imageRequired: false,
+    maxLength: 400,
+    schedulingEnabled: true,
+    automationEnabled: true
+  },
+  memes: {
+    priority: 7,
+    description: 'Football memes and humor content',
+    defaultMaxItems: 2,
+    needsImage: true,
+    imageRequired: true,
+    maxLength: 200,
+    schedulingEnabled: true,
+    automationEnabled: false
+  },
+  daily_summary: {
+    priority: 8,
+    description: 'Daily football summary and highlights',
+    defaultMaxItems: 1,
+    needsImage: false,
+    imageRequired: false,
+    maxLength: 1500,
+    schedulingEnabled: true,
+    automationEnabled: true
+  },
+  weekly_summary: {
+    priority: 9,
+    description: 'Weekly football roundup and analysis',
+    defaultMaxItems: 1,
+    needsImage: true,
+    imageRequired: false,
+    maxLength: 2000,
+    schedulingEnabled: true,
+    automationEnabled: false
+  }
+};
+
 export const FALLBACK_TEMPLATES = {
   en: {
     title: 'Recent Football Updates',
