@@ -100,7 +100,7 @@ async function getChannelAutomationOverview(channelId: string) {
     .order('scheduled_time', { ascending: true });
 
   // Generate timeline data for today
-  const timeline = generateDailyTimeline(rules || [], executions || [], manualPosts || []);
+  const timeline = await generateDailyTimeline(rules || [], executions || [], manualPosts || []);
 
   // Calculate summary stats
   const stats = {
@@ -188,7 +188,7 @@ async function getChannelCronStatus(channelId: string) {
       active_jobs: activeRules?.length || 0,
       last_check: new Date().toISOString(),
       status: 'running',
-      jobs: activeRules?.map(rule => ({
+      jobs: activeRules?.map((rule: any) => ({
         id: rule.id,
         name: rule.name,
         type: rule.content_type,
@@ -348,14 +348,26 @@ async function toggleChannelAutomation(channelId: string, enabled: boolean) {
 }
 
 // Generate daily timeline combining rules and executions
-function generateDailyTimeline(rules: any[], executions: any[], manualPosts: any[]) {
+async function generateDailyTimeline(rules: any[], executions: any[], manualPosts: any[]) {
   const timeline: any[] = [];
   const today = new Date();
+  
+  // Get today's important matches for dynamic scheduling
+  const todayMatches = await getTodayMatches();
+  
+  // Dynamic scheduling configuration
+  const dynamicScheduling: Record<string, any> = {
+    'betting': { beforeMatch: 45, description: '45 min before match' }, // 45 minutes before
+    'analysis': { beforeMatch: 120, description: '2 hours before match' }, // 2 hours before  
+    'live': { duringMatch: true, description: 'During match' }, // During match
+    'daily_summary': { afterMatch: 30, description: '30 min after match' }, // 30 minutes after
+    'smart_push': { afterContent: true, description: 'After content' } // After other content
+  };
 
   // Add scheduled rules to timeline
-  rules.forEach(rule => {
-    if (rule.schedule?.times) {
-      rule.schedule.times.forEach((time: string) => {
+  rules.forEach((rule: any, index: number) => {
+    if (rule.config?.times) {
+      rule.config.times.forEach((time: string) => {
         const [hour, minute] = time.split(':').map(Number);
         const scheduledTime = new Date(today);
         scheduledTime.setHours(hour, minute, 0, 0);
@@ -377,6 +389,76 @@ function generateDailyTimeline(rules: any[], executions: any[], manualPosts: any
           execution_id: execution?.id
         });
       });
+    } else {
+      // Dynamic scheduling based on content type and matches
+      const scheduling = dynamicScheduling[rule.content_type as keyof typeof dynamicScheduling];
+      
+      if (rule.content_type === 'news') {
+        // News gets fixed times if not configured
+        const defaultNewsTimes = ['09:00', '13:00', '18:00'];
+        const timeIndex = index % defaultNewsTimes.length;
+        const time = defaultNewsTimes[timeIndex];
+        const [hour, minute] = time.split(':').map(Number);
+        const scheduledTime = new Date(today);
+        scheduledTime.setHours(hour, minute, 0, 0);
+
+        const execution = executions.find(ex => 
+          ex.automation_rule_id === rule.id &&
+          new Date(ex.created_at).getHours() === hour
+        );
+
+        timeline.push({
+          id: `rule-${rule.id}-${time}`,
+          type: 'automated',
+          time: scheduledTime.toISOString(),
+          content_type: rule.content_type,
+          rule_name: rule.name,
+          status: execution ? (execution.status === 'success' ? 'executed' : 'failed') : 'pending',
+          source: 'automation',
+          execution_id: execution?.id,
+          note: 'Fixed time for news'
+        });
+      } else if (scheduling && todayMatches.length > 0) {
+        // Dynamic scheduling based on matches
+        todayMatches.forEach((match: any, matchIndex: number) => {
+          const matchTime = new Date(match.kickoff_time);
+          let scheduledTime = new Date(matchTime);
+          let note = '';
+
+          if ('beforeMatch' in scheduling && scheduling.beforeMatch) {
+            scheduledTime = new Date(matchTime.getTime() - (scheduling.beforeMatch * 60 * 1000));
+            note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
+          } else if ('duringMatch' in scheduling && scheduling.duringMatch) {
+            scheduledTime = new Date(matchTime.getTime() + (15 * 60 * 1000)); // 15 min into match
+            note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
+          } else if ('afterMatch' in scheduling && scheduling.afterMatch) {
+            scheduledTime = new Date(matchTime.getTime() + (90 * 60 * 1000) + (scheduling.afterMatch * 60 * 1000)); // After 90min + offset
+            note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
+          }
+
+          // Only schedule if time is today
+          if (scheduledTime.toDateString() === today.toDateString()) {
+            const execution = executions.find(ex => 
+              ex.automation_rule_id === rule.id &&
+              Math.abs(new Date(ex.created_at).getTime() - scheduledTime.getTime()) < 30 * 60 * 1000 // Within 30 min
+            );
+
+            timeline.push({
+              id: `rule-${rule.id}-match-${match.id}`,
+              type: 'automated',
+              time: scheduledTime.toISOString(),
+              content_type: rule.content_type,
+              rule_name: rule.name,
+              status: execution ? (execution.status === 'success' ? 'executed' : 'failed') : 'pending',
+              source: 'automation',
+              execution_id: execution?.id,
+              note: note,
+              match_id: match.id,
+              match_info: `${match.home_team} vs ${match.away_team}`
+            });
+          }
+        });
+      }
     }
   });
 
@@ -398,4 +480,30 @@ function generateDailyTimeline(rules: any[], executions: any[], manualPosts: any
   timeline.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
   return timeline;
+}
+
+// Get today's important matches
+async function getTodayMatches() {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  try {
+    const { data: matches, error } = await supabase
+      .from('daily_important_matches')
+      .select('*')
+      .eq('discovery_date', today)
+      .gte('importance_score', 15) // Only important matches
+      .order('importance_score', { ascending: false })
+      .order('kickoff_time', { ascending: true })
+      .limit(10); // Top 10 matches
+
+    if (error) {
+      console.error('Error fetching today matches:', error);
+      return [];
+    }
+
+    return matches || [];
+  } catch (error) {
+    console.error('Error in getTodayMatches:', error);
+    return [];
+  }
 }
