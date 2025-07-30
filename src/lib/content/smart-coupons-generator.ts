@@ -113,6 +113,14 @@ export interface CouponPlacementContext {
     dayOfWeek: string;
     isWeekend: boolean;
   };
+  
+  // 🎯 NEW: Channel-specific settings for targeted coupons
+  channelSettings?: {
+    affiliateCode?: string;
+    selectedLeagues?: string[];
+    selectedTeams?: string[];
+    channelName?: string;
+  };
 }
 
 export interface SmartCouponPlacement {
@@ -460,15 +468,18 @@ export class SmartCouponsGenerator {
       content += `${coupon.offerText}\n\n`;
       
       // Add contextual introduction
-      const contextIntro = this.getContextualIntroduction(contentType, coupon.type);
+      const contextIntro = this.getContextualIntroduction(contentType, coupon.type, 'en');
       if (contextIntro) {
         content += `${contextIntro}\n\n`;
       }
       
       content += `🏷️ ${coupon.description}\n\n`;
       
-      // Add coupon details
-      if (coupon.couponCode) {
+      // Add coupon details - prioritize channel's affiliate code
+      if (context.channelSettings?.affiliateCode) {
+        content += `🔑 Channel Code: ${context.channelSettings.affiliateCode}\n`;
+        console.log(`🎯 Using channel affiliate code: ${context.channelSettings.affiliateCode}`);
+      } else if (coupon.couponCode) {
         content += `🔑 Code: ${coupon.couponCode}\n`;
       }
       
@@ -505,43 +516,190 @@ export class SmartCouponsGenerator {
       };
     }
     
-    // Simplified for other languages
+    if (language === 'am') {
+      const title = `🎫 ${coupon.title}`;
+      
+      let content = `💎 ልዩ አቅርቦት\n\n`;
+      content += `${coupon.offerText}\n\n`;
+      
+      // Add contextual introduction in Amharic
+      const contextIntro = this.getContextualIntroduction(contentType, coupon.type, 'am');
+      if (contextIntro) {
+        content += `${contextIntro}\n\n`;
+      }
+      
+      content += `🏷️ ${coupon.description}\n\n`;
+      
+      // Add coupon details - prioritize channel's affiliate code
+      if (context.channelSettings?.affiliateCode) {
+        content += `🔑 የቻናል ኮድ: ${context.channelSettings.affiliateCode}\n`;
+        console.log(`🎯 Using channel affiliate code (AM): ${context.channelSettings.affiliateCode}`);
+      } else if (coupon.couponCode) {
+        content += `🔑 ኮድ: ${coupon.couponCode}\n`;
+      }
+      
+      if (coupon.discountPercentage) {
+        content += `💰 ${coupon.discountPercentage}% ቅናሽ\n`;
+      }
+      
+      if (coupon.discountAmount) {
+        content += `💰 $${coupon.discountAmount} ቅናሽ\n`;
+      }
+      
+      if (coupon.minSpend) {
+        content += `📊 ዝቅተኛ ወጪ: $${coupon.minSpend}\n`;
+      }
+      
+      content += `⏰ ከዚህ እስከ: ${new Date(coupon.validUntil).toLocaleDateString()}\n\n`;
+      
+      // Brand info
+      content += `🏪 አጋር: ${coupon.brandName}\n`;
+      
+      // Terms
+      if (coupon.termsUrl) {
+        content += `📜 ሁኔታዎች ተፈጻሚ ይሆናሉ\n`;
+      }
+      
+      const callToAction = this.generateCallToAction(coupon, language);
+      const urgencyText = this.generateUrgencyText(coupon, language);
+      
+      return { title, content, callToAction, urgencyText };
+    }
+    
+    if (language === 'sw') {
+      const title = `🎫 ${coupon.title}`;
+      
+      let content = `💎 OFA YA KIPEKEE\n\n`;
+      content += `${coupon.offerText}\n\n`;
+      
+      // Add contextual introduction in Swahili
+      const contextIntro = this.getContextualIntroduction(contentType, coupon.type, 'sw');
+      if (contextIntro) {
+        content += `${contextIntro}\n\n`;
+      }
+      
+      content += `🏷️ ${coupon.description}\n\n`;
+      
+      // Add coupon details - prioritize channel's affiliate code
+      if (context.channelSettings?.affiliateCode) {
+        content += `🔑 Msimbo wa Channel: ${context.channelSettings.affiliateCode}\n`;
+        console.log(`🎯 Using channel affiliate code (SW): ${context.channelSettings.affiliateCode}`);
+      } else if (coupon.couponCode) {
+        content += `🔑 Msimbo: ${coupon.couponCode}\n`;
+      }
+      
+      if (coupon.discountPercentage) {
+        content += `💰 Punguzo la ${coupon.discountPercentage}%\n`;
+      }
+      
+      if (coupon.discountAmount) {
+        content += `💰 Punguzo la $${coupon.discountAmount}\n`;
+      }
+      
+      if (coupon.minSpend) {
+        content += `📊 Gharama ya chini: $${coupon.minSpend}\n`;
+      }
+      
+      content += `⏰ Halali hadi: ${new Date(coupon.validUntil).toLocaleDateString()}\n\n`;
+      
+      // Brand info
+      content += `🏪 Mshirika: ${coupon.brandName}\n`;
+      
+      // Terms
+      if (coupon.termsUrl) {
+        content += `📜 Masharti yanatekelezwa\n`;
+      }
+      
+      const callToAction = this.generateCallToAction(coupon, language);
+      const urgencyText = this.generateUrgencyText(coupon, language);
+      
+      return { title, content, callToAction, urgencyText };
+    }
+    
+    // Fallback for other languages
     return {
       title: `🎫 ${coupon.title}`,
-      content: `${coupon.offerText}\n\nCode: ${coupon.couponCode || 'No code needed'}\nValid until: ${new Date(coupon.validUntil).toLocaleDateString()}`,
+      content: `${coupon.offerText}\n\nCode: ${context.channelSettings?.affiliateCode || coupon.couponCode || 'No code needed'}\nValid until: ${new Date(coupon.validUntil).toLocaleDateString()}`,
       callToAction: 'Claim offer!',
       urgencyText: 'Limited time!'
     };
   }
 
   /**
-   * 🎭 Get contextual introduction
+   * 🎭 Get contextual introduction with multi-language support
    */
-  private getContextualIntroduction(contentType: string, couponType: CouponType): string {
+  private getContextualIntroduction(contentType: string, couponType: CouponType, language: 'en' | 'am' | 'sw' = 'en'): string {
     const introductions = {
-      'betting_tip': {
-        'betting_bonus': 'Ready to back your predictions? Get extra value with this exclusive bonus!',
-        'odds_boost': 'Boost your betting potential with enhanced odds on today\'s matches!',
-        'free_bet': 'Turn your analysis into action with this free bet opportunity!',
-        'risk_free': 'Bet with confidence - your first bet is on us if it doesn\'t win!'
+      'en': {
+        'betting_tip': {
+          'betting_bonus': 'Ready to back your predictions? Get extra value with this exclusive bonus!',
+          'odds_boost': 'Boost your betting potential with enhanced odds on today\'s matches!',
+          'free_bet': 'Turn your analysis into action with this free bet opportunity!',
+          'risk_free': 'Bet with confidence - your first bet is on us if it doesn\'t win!'
+        },
+        'analysis': {
+          'betting_bonus': 'Put your match analysis to the test with this betting bonus!',
+          'odds_boost': 'Leverage your football knowledge with boosted odds!',
+          'free_bet': 'Your analysis deserves a free bet - claim yours now!'
+        },
+        'news': {
+          'betting_bonus': 'Stay informed and bet smart with this exclusive bonus!',
+          'merchandise': 'Show your team pride with exclusive merchandise deals!'
+        },
+        'poll': {
+          'betting_bonus': 'From poll predictions to real bets - get your bonus!',
+          'free_bet': 'Voted in our poll? Here\'s a free bet to back your choice!'
+        }
       },
-      'analysis': {
-        'betting_bonus': 'Put your match analysis to the test with this betting bonus!',
-        'odds_boost': 'Leverage your football knowledge with boosted odds!',
-        'free_bet': 'Your analysis deserves a free bet - claim yours now!'
+      'am': {
+        'betting_tip': {
+          'betting_bonus': 'ትንበያዎችዎን ለመደገፍ ዝግጁ ነዎት? በዚህ ልዩ ቦነስ ተጨማሪ እሴት ያግኙ!',
+          'odds_boost': 'በዛሬ ጨዋታዎች ላይ የተሻሻሉ እድሎች ውርርድ አቅምዎን ያሳድጉ!',
+          'free_bet': 'ትንታኔዎን ወደ ተግባር ይቀይሩ በዚህ ነጻ ውርርድ አጋጣሚ!',
+          'risk_free': 'በራስ መተማመን ውርርድ ያድርጉ - የመጀመሪያ ውርርድዎ እኛ ላይ ነው!'
+        },
+        'analysis': {
+          'betting_bonus': 'የጨዋታ ትንታኔዎን በዚህ ውርርድ ቦነስ ይሞክሩት!',
+          'odds_boost': 'የእግር ኳስ እውቀትዎን በቦነስ እድሎች ይጠቀሙ!',
+          'free_bet': 'ትንታኔዎ ነጻ ውርርድ ይገባዋል - አሁን ያግኙት!'
+        },
+        'news': {
+          'betting_bonus': 'ተመሳሳይ ሆነው ብልጥ ውርርድ ያድርጉ በዚህ ልዩ ቦነስ!',
+          'merchandise': 'በልዩ የቡድን እቃዎች ዴልዎች ኩራትዎን ያሳዩ!'
+        },
+        'poll': {
+          'betting_bonus': 'ከሳቭ ትንበያዎች ወደ ተጨባጭ ውርርድ - ቦነስዎን ያግኙ!',
+          'free_bet': 'በሳቭ ላይ ድምጽ ሰጥተዋል? ምርጫዎን ለመደገፍ ነጻ ውርርድ ይሄን!'
+        }
       },
-      'news': {
-        'betting_bonus': 'Stay informed and bet smart with this exclusive bonus!',
-        'merchandise': 'Show your team pride with exclusive merchandise deals!'
-      },
-      'poll': {
-        'betting_bonus': 'From poll predictions to real bets - get your bonus!',
-        'free_bet': 'Voted in our poll? Here\'s a free bet to back your choice!'
+      'sw': {
+        'betting_tip': {
+          'betting_bonus': 'Uko tayari kumtegemeza utabiri wako? Pata thamani ya ziada na bonasi hii ya kipekee!',
+          'odds_boost': 'Ongeza uwezo wako wa kamari kwa uwezekano ulioboreshwa kwenye mechi za leo!',
+          'free_bet': 'Badilisha uchambuzi wako kuwa vitendo kwa fursa hii ya kamari bila malipo!',
+          'risk_free': 'Kamari kwa ujasiri - kamari yako ya kwanza ni yetu ikiwa haitashinda!'
+        },
+        'analysis': {
+          'betting_bonus': 'Jaribu uchambuzi wa mechi kwa bonasi hii ya kamari!',
+          'odds_boost': 'Tumia ujuzi wako wa mpira kwa uwezekano ulioongezwa!',
+          'free_bet': 'Uchambuzi wako unastahili kamari bila malipo - dai yako sasa!'
+        },
+        'news': {
+          'betting_bonus': 'Kaa umeelezewa na kamari kwa akili kwa bonasi hii ya kipekee!',
+          'merchandise': 'Onyesha kiburi chako cha timu kwa ofa za kipekee za bidhaa!'
+        },
+        'poll': {
+          'betting_bonus': 'Kutoka utabiri wa kura hadi kamari halisi - pata bonasi yako!',
+          'free_bet': 'Umepiga kura kwenye kura yetu? Hapa kuna kamari bila malipo ya kuunga mkono chaguo lako!'
+        }
       }
     };
 
-    return introductions[contentType as keyof typeof introductions]?.[couponType] || 
-           'Don\'t miss this exclusive opportunity!';
+    const langIntroductions = introductions[language];
+    return langIntroductions?.[contentType as keyof typeof langIntroductions]?.[couponType] || 
+           (language === 'am' ? 'ይህን ልዩ አጋጣሚ አትይቀት!' : 
+            language === 'sw' ? 'Usikose fursa hii ya kipekee!' : 
+            'Don\'t miss this exclusive opportunity!');
   }
 
   /**

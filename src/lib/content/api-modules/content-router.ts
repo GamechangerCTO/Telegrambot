@@ -35,6 +35,17 @@ export interface ContentGenerationOptions {
   maxItems: number;
   channelId?: string;
   customContent?: any;
+  
+  // 🎯 NEW: Channel-specific configuration for targeted content
+  channelSettings?: {
+    selected_leagues?: string[];
+    selected_teams?: string[];
+    affiliate_code?: string;
+    smart_scheduling?: boolean;
+    max_posts_per_day?: number;
+    channel_name?: string;
+    telegram_channel_id?: string;
+  };
 }
 
 export class ContentRouter {
@@ -42,38 +53,43 @@ export class ContentRouter {
    * Main content generation method - routes to appropriate generators
    */
   async generateContent(options: ContentGenerationOptions): Promise<ContentGenerationResult> {
-    const { type, language, maxItems, channelId = 'unified-content', customContent } = options;
+    const { type, language, maxItems, channelId = 'unified-content', customContent, channelSettings } = options;
 
-    console.log(`🎯 Content Router: Generating ${type} content for ${language}`);
+    console.log(`🎯 Content Router: Generating ${type} content for ${language}${channelSettings?.channel_name ? ` (Channel: ${channelSettings.channel_name})` : ''}`);
+    
+    // 🎯 Pass channel settings to all generators
+    if (channelSettings) {
+      console.log(`📋 Channel settings: Leagues: ${channelSettings.selected_leagues?.length || 0}, Teams: ${channelSettings.selected_teams?.length || 0}, Affiliate: ${channelSettings.affiliate_code || 'none'}`);
+    }
 
-    // Route to specific content generator
+    // Route to specific content generator with channel settings
     switch (type) {
       case 'live':
-        return await this.generateLiveContent(language, maxItems, channelId);
+        return await this.generateLiveContent(language, maxItems, channelId, channelSettings);
         
       case 'betting':
-        return await this.generateBettingContent(language, maxItems, channelId);
+        return await this.generateBettingContent(language, maxItems, channelId, channelSettings);
         
       case 'news':
-        return await this.generateNewsContent(language, maxItems, channelId);
+        return await this.generateNewsContent(language, maxItems, channelId, channelSettings);
         
       case 'polls':
-        return await this.generatePollsContent(language, maxItems, channelId, customContent);
+        return await this.generatePollsContent(language, maxItems, channelId, customContent, channelSettings);
         
       case 'analysis':
-        return await this.generateAnalysisContent(language, maxItems, channelId);
+        return await this.generateAnalysisContent(language, maxItems, channelId, channelSettings);
         
       case 'coupons':
-        return await this.generateCouponsContent(language, maxItems, channelId);
+        return await this.generateCouponsContent(language, maxItems, channelId, channelSettings);
         
       case 'memes':
-        return await this.generateMemesContent(language, maxItems, channelId);
+        return await this.generateMemesContent(language, maxItems, channelId, channelSettings);
         
       case 'daily_summary':
-        return await this.generateDailySummaryContent(language, maxItems, channelId);
+        return await this.generateDailySummaryContent(language, maxItems, channelId, channelSettings);
         
       case 'weekly_summary':
-        return await this.generateWeeklySummaryContent(language, maxItems, channelId);
+        return await this.generateWeeklySummaryContent(language, maxItems, channelId, channelSettings);
         
       default:
         console.error(`❌ Unsupported content type: ${type}`);
@@ -84,12 +100,12 @@ export class ContentRouter {
   /**
    * Generate live content
    */
-  private async generateLiveContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateLiveContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`🔴 Using enhanced live content generator with fallback for ${language}`);
       
       // Get active live updates using the correct method
-      const results = await liveUpdatesGenerator.getActiveLiveUpdates(language, maxItems);
+      const results = await liveUpdatesGenerator.getActiveLiveUpdates(language as 'en' | 'am' | 'sw', maxItems);
       
       if (!results || results.length === 0) {
         console.log('⚠️ No active live updates found');
@@ -132,7 +148,7 @@ export class ContentRouter {
   /**
    * Generate betting content
    */
-  private async generateBettingContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateBettingContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`🎯 Using betting tips generator for ${language}`);
       
@@ -141,8 +157,13 @@ export class ContentRouter {
         console.log(`🎯 Betting attempt ${attempt}/3`);
         
         const result = await bettingTipsGenerator.generateBettingTips({
-          language,
-          channelId
+          language: language as 'en' | 'am' | 'sw',
+          channelId,
+          // 🎯 Pass channel-specific settings for targeted betting content
+          selectedLeagues: channelSettings?.selected_leagues,
+          selectedTeams: channelSettings?.selected_teams,
+          affiliateCode: channelSettings?.affiliate_code,
+          channelName: channelSettings?.channel_name
         });
         
         if (result) {
@@ -195,13 +216,17 @@ export class ContentRouter {
   /**
    * Generate news content
    */
-  private async generateNewsContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateNewsContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`📰 Using news content generator for ${language}`);
       const newsGenerator = new OptimizedNewsContentGenerator();
       const result = await newsGenerator.generateNewsContent({
-        language,
-        channelId
+        language: language as 'en' | 'am' | 'sw',
+        channelId,
+        // 🎯 Pass channel-specific settings for targeted news content
+        selectedLeagues: channelSettings?.selected_leagues,
+        selectedTeams: channelSettings?.selected_teams,
+        channelName: channelSettings?.channel_name
       });
       
       if (!result) {
@@ -254,7 +279,7 @@ export class ContentRouter {
   /**
    * Generate polls content
    */
-  private async generatePollsContent(language: Language, maxItems: number, channelId: string, customContent?: any): Promise<ContentGenerationResult> {
+  private async generatePollsContent(language: Language, maxItems: number, channelId: string, customContent?: any, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`🗳️ Using polls generator for ${language}`);
       
@@ -273,7 +298,7 @@ export class ContentRouter {
       }
       
       const result = await pollsGenerator.generatePoll({
-        language,
+        language: language as 'en' | 'am' | 'sw',
         channelId,
         pollType: 'match_prediction'
       });
@@ -314,11 +339,11 @@ export class ContentRouter {
   /**
    * Generate analysis content
    */
-  private async generateAnalysisContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateAnalysisContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`📈 Using match analysis generator for ${language}`);
       const result = await matchAnalysisGenerator.generateMatchAnalysis({
-        language,
+        language: language as 'en' | 'am' | 'sw',
         channelId
       });
       
@@ -368,11 +393,11 @@ export class ContentRouter {
   /**
    * Generate coupons content
    */
-  private async generateCouponsContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateCouponsContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`🎫 Using smart coupons generator for ${language}`);
       
-      // Smart coupons work differently - they need context
+      // Smart coupons work differently - they need context with channel settings
       const context = {
         contentType: 'betting_tip',
         channelId: channelId,
@@ -381,6 +406,13 @@ export class ContentRouter {
           hour: new Date().getHours(),
           dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
           isWeekend: [0, 6].includes(new Date().getDay())
+        },
+        // 🎯 Channel-specific settings for targeted coupons
+        channelSettings: {
+          affiliateCode: channelSettings?.affiliate_code,
+          selectedLeagues: channelSettings?.selected_leagues,
+          selectedTeams: channelSettings?.selected_teams,
+          channelName: channelSettings?.channel_name
         }
       };
       
@@ -412,7 +444,7 @@ export class ContentRouter {
   /**
    * Generate memes content (placeholder)
    */
-  private async generateMemesContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateMemesContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`😂 Generating memes content for ${language} (placeholder)`);
       // Memes generator not implemented yet - using fallback
@@ -426,7 +458,7 @@ export class ContentRouter {
   /**
    * Generate daily summary content
    */
-  private async generateDailySummaryContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateDailySummaryContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`📋 Using daily summary generator for ${language}`);
       
@@ -446,7 +478,7 @@ export class ContentRouter {
       
       const result = await dailyWeeklySummaryGenerator.generateSummary({
         type: 'daily',
-        language,
+        language: language as 'en' | 'am' | 'sw',
         channelId,
         targetDate
       });
@@ -489,12 +521,12 @@ export class ContentRouter {
   /**
    * Generate weekly summary content
    */
-  private async generateWeeklySummaryContent(language: Language, maxItems: number, channelId: string): Promise<ContentGenerationResult> {
+  private async generateWeeklySummaryContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
     try {
       console.log(`📊 Using weekly summary generator for ${language}`);
       const result = await dailyWeeklySummaryGenerator.generateSummary({
         type: 'weekly',
-        language,
+        language: language as 'en' | 'am' | 'sw',
         channelId
       });
 
@@ -556,7 +588,7 @@ export class ContentRouter {
       }
     };
 
-    const template = templates[language];
+    const template = templates[language as 'en' | 'am' | 'sw'];
     
     const fallbackContent = [{
       id: `fallback_${contentType}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,

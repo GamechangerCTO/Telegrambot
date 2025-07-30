@@ -7,265 +7,269 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
       api_keys: {
         Row: {
           created_at: string | null
-          description: string | null
           id: string
           is_active: boolean | null
-          key_name: string
           key_value: string
+          last_used: string | null
           service_name: string
           updated_at: string | null
+          usage_count: number | null
         }
         Insert: {
           created_at?: string | null
-          description?: string | null
           id?: string
           is_active?: boolean | null
-          key_name: string
           key_value: string
+          last_used?: string | null
           service_name: string
           updated_at?: string | null
+          usage_count?: number | null
         }
         Update: {
           created_at?: string | null
-          description?: string | null
           id?: string
           is_active?: boolean | null
-          key_name?: string
           key_value?: string
+          last_used?: string | null
           service_name?: string
           updated_at?: string | null
+          usage_count?: number | null
         }
         Relationships: []
       }
       automation_executions: {
         Row: {
-          automation_rule_id: string | null
-          content_generated: string | null
+          channels_processed: number | null
+          content_generated: number | null
+          content_type: string
           created_at: string | null
-          duration_ms: number | null
           error_message: string | null
-          execution_data: Json | null
-          execution_trigger: string | null
+          executed_at: string | null
+          execution_details: Json | null
+          execution_status: string
+          execution_time: unknown | null
           id: string
-          status: string | null
-          updated_at: string | null
+          language: string
+          rule_id: string | null
         }
         Insert: {
-          automation_rule_id?: string | null
-          content_generated?: string | null
+          channels_processed?: number | null
+          content_generated?: number | null
+          content_type: string
           created_at?: string | null
-          duration_ms?: number | null
           error_message?: string | null
-          execution_data?: Json | null
-          execution_trigger?: string | null
+          executed_at?: string | null
+          execution_details?: Json | null
+          execution_status: string
+          execution_time?: unknown | null
           id?: string
-          status?: string | null
-          updated_at?: string | null
+          language?: string
+          rule_id?: string | null
         }
         Update: {
-          automation_rule_id?: string | null
-          content_generated?: string | null
+          channels_processed?: number | null
+          content_generated?: number | null
+          content_type?: string
           created_at?: string | null
-          duration_ms?: number | null
           error_message?: string | null
-          execution_data?: Json | null
-          execution_trigger?: string | null
+          executed_at?: string | null
+          execution_details?: Json | null
+          execution_status?: string
+          execution_time?: unknown | null
           id?: string
-          status?: string | null
-          updated_at?: string | null
+          language?: string
+          rule_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "automation_executions_automation_rule_id_fkey"
-            columns: ["automation_rule_id"]
-            isOneToOne: false
-            referencedRelation: "automation_rules"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       automation_logs: {
         Row: {
-          action: string | null
           automation_rule_id: string | null
+          channels_updated: number | null
+          content_generated: number | null
           created_at: string | null
-          error_message: string | null
-          execution_time_ms: number | null
+          details: Json | null
+          errors: Json | null
           id: string
-          metadata: Json | null
+          run_time: string
           status: string | null
         }
         Insert: {
-          action?: string | null
           automation_rule_id?: string | null
+          channels_updated?: number | null
+          content_generated?: number | null
           created_at?: string | null
-          error_message?: string | null
-          execution_time_ms?: number | null
+          details?: Json | null
+          errors?: Json | null
           id?: string
-          metadata?: Json | null
+          run_time?: string
           status?: string | null
         }
         Update: {
-          action?: string | null
           automation_rule_id?: string | null
+          channels_updated?: number | null
+          content_generated?: number | null
           created_at?: string | null
-          error_message?: string | null
-          execution_time_ms?: number | null
+          details?: Json | null
+          errors?: Json | null
           id?: string
-          metadata?: Json | null
+          run_time?: string
           status?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "automation_logs_automation_rule_id_fkey"
-            columns: ["automation_rule_id"]
-            isOneToOne: false
-            referencedRelation: "automation_rules"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       automation_rules: {
         Row: {
-          channel_id: string | null
-          content_types: string[] | null
+          automation_type: string | null
+          channels: Json | null
+          conditions: Json | null
+          config: Json | null
+          content_type: string | null
+          content_types: Json | null
           created_at: string | null
-          description: string | null
-          execution_schedule: Json | null
+          enabled: boolean | null
+          error_count: number | null
           id: string
-          is_active: boolean | null
-          last_executed: string | null
+          languages: Json | null
+          last_run: string | null
           name: string
-          priority: number | null
-          rule_config: Json | null
-          trigger_conditions: Json | null
+          organization_id: string
+          schedule: Json | null
+          success_count: number | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
-          channel_id?: string | null
-          content_types?: string[] | null
+          automation_type?: string | null
+          channels?: Json | null
+          conditions?: Json | null
+          config?: Json | null
+          content_type?: string | null
+          content_types?: Json | null
           created_at?: string | null
-          description?: string | null
-          execution_schedule?: Json | null
+          enabled?: boolean | null
+          error_count?: number | null
           id?: string
-          is_active?: boolean | null
-          last_executed?: string | null
+          languages?: Json | null
+          last_run?: string | null
           name: string
-          priority?: number | null
-          rule_config?: Json | null
-          trigger_conditions?: Json | null
+          organization_id?: string
+          schedule?: Json | null
+          success_count?: number | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
-          channel_id?: string | null
-          content_types?: string[] | null
+          automation_type?: string | null
+          channels?: Json | null
+          conditions?: Json | null
+          config?: Json | null
+          content_type?: string | null
+          content_types?: Json | null
           created_at?: string | null
-          description?: string | null
-          execution_schedule?: Json | null
+          enabled?: boolean | null
+          error_count?: number | null
           id?: string
-          is_active?: boolean | null
-          last_executed?: string | null
+          languages?: Json | null
+          last_run?: string | null
           name?: string
-          priority?: number | null
-          rule_config?: Json | null
-          trigger_conditions?: Json | null
+          organization_id?: string
+          schedule?: Json | null
+          success_count?: number | null
+          type?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "automation_rules_channel_id_fkey"
-            columns: ["channel_id"]
-            isOneToOne: false
-            referencedRelation: "channels"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       automation_settings: {
         Row: {
-          ai_creativity_level: number | null
-          automation_hours: Json | null
-          content_approval_required: boolean | null
-          content_types_enabled: string[] | null
+          active_content_types: Json | null
+          content_generation_interval: number | null
           created_at: string | null
-          full_automation_enabled: boolean | null
+          full_automation_enabled: boolean
           id: string
-          max_daily_posts: number | null
-          posting_interval_minutes: number | null
-          smart_scheduling_enabled: boolean | null
+          max_daily_content: number | null
+          notify_on_errors: boolean | null
+          organization_id: string
+          retry_failed_content: boolean | null
           updated_at: string | null
         }
         Insert: {
-          ai_creativity_level?: number | null
-          automation_hours?: Json | null
-          content_approval_required?: boolean | null
-          content_types_enabled?: string[] | null
+          active_content_types?: Json | null
+          content_generation_interval?: number | null
           created_at?: string | null
-          full_automation_enabled?: boolean | null
+          full_automation_enabled?: boolean
           id?: string
-          max_daily_posts?: number | null
-          posting_interval_minutes?: number | null
-          smart_scheduling_enabled?: boolean | null
+          max_daily_content?: number | null
+          notify_on_errors?: boolean | null
+          organization_id?: string
+          retry_failed_content?: boolean | null
           updated_at?: string | null
         }
         Update: {
-          ai_creativity_level?: number | null
-          automation_hours?: Json | null
-          content_approval_required?: boolean | null
-          content_types_enabled?: string[] | null
+          active_content_types?: Json | null
+          content_generation_interval?: number | null
           created_at?: string | null
-          full_automation_enabled?: boolean | null
+          full_automation_enabled?: boolean
           id?: string
-          max_daily_posts?: number | null
-          posting_interval_minutes?: number | null
-          smart_scheduling_enabled?: boolean | null
+          max_daily_content?: number | null
+          notify_on_errors?: boolean | null
+          organization_id?: string
+          retry_failed_content?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
       }
       automation_status: {
         Row: {
-          created_at: string | null
-          daily_posts_count: number | null
+          failed_executions: number | null
           id: string
-          is_automation_running: boolean | null
-          last_execution_at: string | null
-          last_post_at: string | null
-          next_execution_at: string | null
-          status_message: string | null
+          is_running: boolean | null
+          last_execution: string | null
+          next_execution: string | null
+          successful_executions: number | null
+          system_health: Json | null
+          total_executions: number | null
           updated_at: string | null
         }
         Insert: {
-          created_at?: string | null
-          daily_posts_count?: number | null
+          failed_executions?: number | null
           id?: string
-          is_automation_running?: boolean | null
-          last_execution_at?: string | null
-          last_post_at?: string | null
-          next_execution_at?: string | null
-          status_message?: string | null
+          is_running?: boolean | null
+          last_execution?: string | null
+          next_execution?: string | null
+          successful_executions?: number | null
+          system_health?: Json | null
+          total_executions?: number | null
           updated_at?: string | null
         }
         Update: {
-          created_at?: string | null
-          daily_posts_count?: number | null
+          failed_executions?: number | null
           id?: string
-          is_automation_running?: boolean | null
-          last_execution_at?: string | null
-          last_post_at?: string | null
-          next_execution_at?: string | null
-          status_message?: string | null
+          is_running?: boolean | null
+          last_execution?: string | null
+          next_execution?: string | null
+          successful_executions?: number | null
+          system_health?: Json | null
+          total_executions?: number | null
           updated_at?: string | null
         }
         Relationships: []
       }
       bots: {
         Row: {
+          approval_date: string | null
+          approval_status: string | null
           auto_post_enabled: boolean | null
           created_at: string | null
           id: string
@@ -274,6 +278,7 @@ export type Database = {
           last_post_at: string | null
           max_posts_per_day: number | null
           name: string
+          notes: string | null
           preferred_post_times: string[] | null
           push_notifications: boolean | null
           region_id: string | null
@@ -283,6 +288,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          approval_date?: string | null
+          approval_status?: string | null
           auto_post_enabled?: boolean | null
           created_at?: string | null
           id?: string
@@ -291,6 +298,7 @@ export type Database = {
           last_post_at?: string | null
           max_posts_per_day?: number | null
           name: string
+          notes?: string | null
           preferred_post_times?: string[] | null
           push_notifications?: boolean | null
           region_id?: string | null
@@ -300,6 +308,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          approval_date?: string | null
+          approval_status?: string | null
           auto_post_enabled?: boolean | null
           created_at?: string | null
           id?: string
@@ -308,6 +318,7 @@ export type Database = {
           last_post_at?: string | null
           max_posts_per_day?: number | null
           name?: string
+          notes?: string | null
           preferred_post_times?: string[] | null
           push_notifications?: boolean | null
           region_id?: string | null
@@ -335,40 +346,70 @@ export type Database = {
       }
       channel_automation_settings: {
         Row: {
-          automation_hours: Json | null
-          channel_id: string | null
-          content_types: string[] | null
+          auto_approve_high_quality: boolean | null
+          channel_id: string
+          conditions: Json | null
           created_at: string | null
+          cron_schedule: string
+          disabled_content_types: Json | null
+          enabled_content_types: Json | null
           id: string
-          is_enabled: boolean | null
-          max_daily_posts: number | null
+          is_active: boolean | null
+          last_execution: string | null
+          max_posts_per_day: number | null
+          max_posts_per_hour: number | null
+          min_content_quality: number | null
+          min_interval_minutes: number | null
+          next_scheduled_execution: string | null
+          priority_level: number | null
+          timezone: string | null
           updated_at: string | null
         }
         Insert: {
-          automation_hours?: Json | null
-          channel_id?: string | null
-          content_types?: string[] | null
+          auto_approve_high_quality?: boolean | null
+          channel_id: string
+          conditions?: Json | null
           created_at?: string | null
+          cron_schedule?: string
+          disabled_content_types?: Json | null
+          enabled_content_types?: Json | null
           id?: string
-          is_enabled?: boolean | null
-          max_daily_posts?: number | null
+          is_active?: boolean | null
+          last_execution?: string | null
+          max_posts_per_day?: number | null
+          max_posts_per_hour?: number | null
+          min_content_quality?: number | null
+          min_interval_minutes?: number | null
+          next_scheduled_execution?: string | null
+          priority_level?: number | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Update: {
-          automation_hours?: Json | null
-          channel_id?: string | null
-          content_types?: string[] | null
+          auto_approve_high_quality?: boolean | null
+          channel_id?: string
+          conditions?: Json | null
           created_at?: string | null
+          cron_schedule?: string
+          disabled_content_types?: Json | null
+          enabled_content_types?: Json | null
           id?: string
-          is_enabled?: boolean | null
-          max_daily_posts?: number | null
+          is_active?: boolean | null
+          last_execution?: string | null
+          max_posts_per_day?: number | null
+          max_posts_per_hour?: number | null
+          min_content_quality?: number | null
+          min_interval_minutes?: number | null
+          next_scheduled_execution?: string | null
+          priority_level?: number | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "channel_automation_settings_channel_id_fkey"
             columns: ["channel_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "channels"
             referencedColumns: ["id"]
           },
@@ -376,68 +417,86 @@ export type Database = {
       }
       channels: {
         Row: {
+          affiliate_code: string | null
+          auto_post: boolean | null
           auto_post_enabled: boolean | null
-          automation_hours: number[] | null
+          automation_hours: Json | null
           bot_id: string | null
-          channel_id: string
-          content_types: string[] | null
+          content_types: Json | null
           created_at: string | null
           description: string | null
           id: string
           is_active: boolean | null
           language: string | null
-          last_content_sent: string | null
           last_post_at: string | null
           max_posts_per_day: number | null
+          member_count: number | null
           name: string
           post_approval_required: boolean | null
+          post_frequency_hours: number | null
           preferred_post_times: string[] | null
           push_notifications: boolean | null
+          selected_leagues: Json | null
+          selected_teams: Json | null
           smart_scheduling: boolean | null
+          telegram_channel_id: string | null
+          telegram_channel_username: string | null
           total_posts_sent: number | null
           updated_at: string | null
         }
         Insert: {
+          affiliate_code?: string | null
+          auto_post?: boolean | null
           auto_post_enabled?: boolean | null
-          automation_hours?: number[] | null
+          automation_hours?: Json | null
           bot_id?: string | null
-          channel_id: string
-          content_types?: string[] | null
+          content_types?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
           language?: string | null
-          last_content_sent?: string | null
           last_post_at?: string | null
           max_posts_per_day?: number | null
+          member_count?: number | null
           name: string
           post_approval_required?: boolean | null
+          post_frequency_hours?: number | null
           preferred_post_times?: string[] | null
           push_notifications?: boolean | null
+          selected_leagues?: Json | null
+          selected_teams?: Json | null
           smart_scheduling?: boolean | null
+          telegram_channel_id?: string | null
+          telegram_channel_username?: string | null
           total_posts_sent?: number | null
           updated_at?: string | null
         }
         Update: {
+          affiliate_code?: string | null
+          auto_post?: boolean | null
           auto_post_enabled?: boolean | null
-          automation_hours?: number[] | null
+          automation_hours?: Json | null
           bot_id?: string | null
-          channel_id?: string
-          content_types?: string[] | null
+          content_types?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
           language?: string | null
-          last_content_sent?: string | null
           last_post_at?: string | null
           max_posts_per_day?: number | null
+          member_count?: number | null
           name?: string
           post_approval_required?: boolean | null
+          post_frequency_hours?: number | null
           preferred_post_times?: string[] | null
           push_notifications?: boolean | null
+          selected_leagues?: Json | null
+          selected_teams?: Json | null
           smart_scheduling?: boolean | null
+          telegram_channel_id?: string | null
+          telegram_channel_username?: string | null
           total_posts_sent?: number | null
           updated_at?: string | null
         }
@@ -464,10 +523,13 @@ export type Database = {
           content_type_id: string | null
           created_at: string | null
           id: string
-          image_url: string | null
-          is_published: boolean | null
-          language: string | null
+          language: string
           metadata: Json | null
+          priority: number | null
+          scheduled_for: string | null
+          source_data: Json | null
+          status: string | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
@@ -475,10 +537,13 @@ export type Database = {
           content_type_id?: string | null
           created_at?: string | null
           id?: string
-          image_url?: string | null
-          is_published?: boolean | null
-          language?: string | null
+          language: string
           metadata?: Json | null
+          priority?: number | null
+          scheduled_for?: string | null
+          source_data?: Json | null
+          status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -486,10 +551,13 @@ export type Database = {
           content_type_id?: string | null
           created_at?: string | null
           id?: string
-          image_url?: string | null
-          is_published?: boolean | null
-          language?: string | null
+          language?: string
           metadata?: Json | null
+          priority?: number | null
+          scheduled_for?: string | null
+          source_data?: Json | null
+          status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -505,41 +573,47 @@ export type Database = {
       content_queue: {
         Row: {
           channel_id: string | null
-          content: string
-          content_type: string | null
+          completed_at: string | null
+          content_hash: string | null
+          content_type: string
           created_at: string | null
+          error_message: string | null
           id: string
-          image_url: string | null
-          is_processed: boolean | null
-          metadata: Json | null
           priority: number | null
-          scheduled_for: string | null
+          processing_started_at: string | null
+          retry_count: number | null
+          source_data: Json
+          status: string | null
           updated_at: string | null
         }
         Insert: {
           channel_id?: string | null
-          content: string
-          content_type?: string | null
+          completed_at?: string | null
+          content_hash?: string | null
+          content_type: string
           created_at?: string | null
+          error_message?: string | null
           id?: string
-          image_url?: string | null
-          is_processed?: boolean | null
-          metadata?: Json | null
           priority?: number | null
-          scheduled_for?: string | null
+          processing_started_at?: string | null
+          retry_count?: number | null
+          source_data?: Json
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
           channel_id?: string | null
-          content?: string
-          content_type?: string | null
+          completed_at?: string | null
+          content_hash?: string | null
+          content_type?: string
           created_at?: string | null
+          error_message?: string | null
           id?: string
-          image_url?: string | null
-          is_processed?: boolean | null
-          metadata?: Json | null
           priority?: number | null
-          scheduled_for?: string | null
+          processing_started_at?: string | null
+          retry_count?: number | null
+          source_data?: Json
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -554,39 +628,57 @@ export type Database = {
       }
       content_schedules: {
         Row: {
-          channel_id: string | null
-          content_types: string[] | null
+          avoid_duplicate_with_channels: string[] | null
+          channel_id: string
+          content_priority: number | null
+          content_type: string
           created_at: string | null
-          execution_times: Json | null
+          day_of_week: number | null
+          delay_minutes_range: Json | null
+          hour: number
           id: string
           is_active: boolean | null
-          name: string
-          post_frequency: string | null
-          recurrence_pattern: Json | null
+          last_executed: string | null
+          minute: number | null
+          next_execution: string | null
+          schedule_name: string | null
+          timezone: string | null
           updated_at: string | null
         }
         Insert: {
-          channel_id?: string | null
-          content_types?: string[] | null
+          avoid_duplicate_with_channels?: string[] | null
+          channel_id: string
+          content_priority?: number | null
+          content_type: string
           created_at?: string | null
-          execution_times?: Json | null
+          day_of_week?: number | null
+          delay_minutes_range?: Json | null
+          hour: number
           id?: string
           is_active?: boolean | null
-          name: string
-          post_frequency?: string | null
-          recurrence_pattern?: Json | null
+          last_executed?: string | null
+          minute?: number | null
+          next_execution?: string | null
+          schedule_name?: string | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Update: {
-          channel_id?: string | null
-          content_types?: string[] | null
+          avoid_duplicate_with_channels?: string[] | null
+          channel_id?: string
+          content_priority?: number | null
+          content_type?: string
           created_at?: string | null
-          execution_times?: Json | null
+          day_of_week?: number | null
+          delay_minutes_range?: Json | null
+          hour?: number
           id?: string
           is_active?: boolean | null
-          name?: string
-          post_frequency?: string | null
-          recurrence_pattern?: Json | null
+          last_executed?: string | null
+          minute?: number | null
+          next_execution?: string | null
+          schedule_name?: string | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -601,115 +693,145 @@ export type Database = {
       }
       content_types: {
         Row: {
-          config: Json | null
           created_at: string | null
           description: string | null
-          display_name: string
           id: string
           is_active: boolean | null
           name: string
-          updated_at: string | null
+          priority: number | null
+          template: Json | null
         }
         Insert: {
-          config?: Json | null
           created_at?: string | null
           description?: string | null
-          display_name: string
           id?: string
           is_active?: boolean | null
           name: string
-          updated_at?: string | null
+          priority?: number | null
+          template?: Json | null
         }
         Update: {
-          config?: Json | null
           created_at?: string | null
           description?: string | null
-          display_name?: string
           id?: string
           is_active?: boolean | null
           name?: string
-          updated_at?: string | null
+          priority?: number | null
+          template?: Json | null
         }
         Relationships: []
       }
       coupons: {
         Row: {
-          action_url: string | null
+          affiliate_code: string
+          affiliate_link: string | null
+          affiliate_url: string
+          betting_site: string | null
           bonus_amount: string | null
           bot_id: string | null
-          click_count: number | null
-          code: string | null
+          brand_colors: Json | null
+          brand_logo: string | null
+          brand_name: string | null
+          clicks: number | null
+          conversions: number | null
           created_at: string | null
+          created_by: string | null
+          currency: string | null
+          current_usage: number | null
           description: string | null
-          discount_percentage: number | null
           expiry_date: string | null
           id: string
-          image_url: string | null
-          impressions_count: number | null
+          impressions: number | null
           is_active: boolean | null
           language: string | null
-          last_shown: string | null
-          max_uses: number | null
-          metadata: Json | null
-          name: string
-          priority: number | null
-          show_count: number | null
-          title: string | null
+          languages: string[] | null
+          max_usage: number | null
+          offer_text: string | null
+          priority: string | null
+          target_audience: string[] | null
+          terms_url: string | null
+          title: string
+          trigger_conditions: Json | null
+          trigger_contexts: string[] | null
           type: string | null
           updated_at: string | null
-          uses_count: number | null
+          usage_count: number | null
+          valid_from: string | null
+          valid_until: string | null
         }
         Insert: {
-          action_url?: string | null
+          affiliate_code: string
+          affiliate_link?: string | null
+          affiliate_url: string
+          betting_site?: string | null
           bonus_amount?: string | null
           bot_id?: string | null
-          click_count?: number | null
-          code?: string | null
+          brand_colors?: Json | null
+          brand_logo?: string | null
+          brand_name?: string | null
+          clicks?: number | null
+          conversions?: number | null
           created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          current_usage?: number | null
           description?: string | null
-          discount_percentage?: number | null
           expiry_date?: string | null
           id?: string
-          image_url?: string | null
-          impressions_count?: number | null
+          impressions?: number | null
           is_active?: boolean | null
           language?: string | null
-          last_shown?: string | null
-          max_uses?: number | null
-          metadata?: Json | null
-          name: string
-          priority?: number | null
-          show_count?: number | null
-          title?: string | null
+          languages?: string[] | null
+          max_usage?: number | null
+          offer_text?: string | null
+          priority?: string | null
+          target_audience?: string[] | null
+          terms_url?: string | null
+          title: string
+          trigger_conditions?: Json | null
+          trigger_contexts?: string[] | null
           type?: string | null
           updated_at?: string | null
-          uses_count?: number | null
+          usage_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Update: {
-          action_url?: string | null
+          affiliate_code?: string
+          affiliate_link?: string | null
+          affiliate_url?: string
+          betting_site?: string | null
           bonus_amount?: string | null
           bot_id?: string | null
-          click_count?: number | null
-          code?: string | null
+          brand_colors?: Json | null
+          brand_logo?: string | null
+          brand_name?: string | null
+          clicks?: number | null
+          conversions?: number | null
           created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          current_usage?: number | null
           description?: string | null
-          discount_percentage?: number | null
           expiry_date?: string | null
           id?: string
-          image_url?: string | null
-          impressions_count?: number | null
+          impressions?: number | null
           is_active?: boolean | null
           language?: string | null
-          last_shown?: string | null
-          max_uses?: number | null
-          metadata?: Json | null
-          name?: string
-          priority?: number | null
-          show_count?: number | null
-          title?: string | null
+          languages?: string[] | null
+          max_usage?: number | null
+          offer_text?: string | null
+          priority?: string | null
+          target_audience?: string[] | null
+          terms_url?: string | null
+          title?: string
+          trigger_conditions?: Json | null
+          trigger_contexts?: string[] | null
           type?: string | null
           updated_at?: string | null
-          uses_count?: number | null
+          usage_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -731,39 +853,69 @@ export type Database = {
       daily_important_matches: {
         Row: {
           api_source: string | null
-          away_team: string | null
+          away_team: string
+          away_team_id: string | null
+          competition: string
+          content_generated: Json | null
+          content_opportunities: Json | null
+          content_scheduled: Json | null
           created_at: string | null
-          home_team: string | null
+          discovery_date: string
+          external_match_id: string
+          home_team: string
+          home_team_id: string | null
           id: string
-          importance_score: number | null
-          league: string | null
-          match_date: string | null
-          match_id: string | null
+          importance_score: number
+          kickoff_time: string
+          match_status: string | null
+          raw_match_data: Json | null
+          score_breakdown: Json | null
           updated_at: string | null
+          venue: string | null
         }
         Insert: {
           api_source?: string | null
-          away_team?: string | null
+          away_team: string
+          away_team_id?: string | null
+          competition: string
+          content_generated?: Json | null
+          content_opportunities?: Json | null
+          content_scheduled?: Json | null
           created_at?: string | null
-          home_team?: string | null
+          discovery_date: string
+          external_match_id: string
+          home_team: string
+          home_team_id?: string | null
           id?: string
-          importance_score?: number | null
-          league?: string | null
-          match_date?: string | null
-          match_id?: string | null
+          importance_score: number
+          kickoff_time: string
+          match_status?: string | null
+          raw_match_data?: Json | null
+          score_breakdown?: Json | null
           updated_at?: string | null
+          venue?: string | null
         }
         Update: {
           api_source?: string | null
-          away_team?: string | null
+          away_team?: string
+          away_team_id?: string | null
+          competition?: string
+          content_generated?: Json | null
+          content_opportunities?: Json | null
+          content_scheduled?: Json | null
           created_at?: string | null
-          home_team?: string | null
+          discovery_date?: string
+          external_match_id?: string
+          home_team?: string
+          home_team_id?: string | null
           id?: string
-          importance_score?: number | null
-          league?: string | null
-          match_date?: string | null
-          match_id?: string | null
+          importance_score?: number
+          kickoff_time?: string
+          match_status?: string | null
+          raw_match_data?: Json | null
+          score_breakdown?: Json | null
           updated_at?: string | null
+          venue?: string | null
         }
         Relationships: []
       }
@@ -771,68 +923,68 @@ export type Database = {
         Row: {
           code: string
           created_at: string | null
-          display_name: string
-          id: string
+          direction: string | null
           is_active: boolean | null
-          native_name: string | null
-          updated_at: string | null
+          name: string
+          native_name: string
         }
         Insert: {
           code: string
           created_at?: string | null
-          display_name: string
-          id?: string
+          direction?: string | null
           is_active?: boolean | null
-          native_name?: string | null
-          updated_at?: string | null
+          name: string
+          native_name: string
         }
         Update: {
           code?: string
           created_at?: string | null
-          display_name?: string
-          id?: string
+          direction?: string | null
           is_active?: boolean | null
-          native_name?: string | null
-          updated_at?: string | null
+          name?: string
+          native_name?: string
         }
         Relationships: []
       }
       leagues: {
         Row: {
-          api_id: string | null
           api_source: string | null
           country: string | null
           created_at: string | null
+          external_id: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
           name: string
+          name_translations: Json | null
           priority: number | null
           season: string | null
           updated_at: string | null
         }
         Insert: {
-          api_id?: string | null
           api_source?: string | null
           country?: string | null
           created_at?: string | null
+          external_id?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          name_translations?: Json | null
           priority?: number | null
           season?: string | null
           updated_at?: string | null
         }
         Update: {
-          api_id?: string | null
           api_source?: string | null
           country?: string | null
           created_at?: string | null
+          external_id?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          name_translations?: Json | null
           priority?: number | null
           season?: string | null
           updated_at?: string | null
@@ -841,40 +993,49 @@ export type Database = {
       }
       logs: {
         Row: {
+          action: string
           bot_id: string | null
           channel_id: string | null
+          component: string | null
           created_at: string | null
-          error_message: string | null
+          duration_ms: number | null
+          error_details: string | null
           id: string
           level: string | null
-          message: string
+          message: string | null
           metadata: Json | null
           post_id: string | null
-          source: string | null
+          status: string | null
         }
         Insert: {
+          action: string
           bot_id?: string | null
           channel_id?: string | null
+          component?: string | null
           created_at?: string | null
-          error_message?: string | null
+          duration_ms?: number | null
+          error_details?: string | null
           id?: string
           level?: string | null
-          message: string
+          message?: string | null
           metadata?: Json | null
           post_id?: string | null
-          source?: string | null
+          status?: string | null
         }
         Update: {
+          action?: string
           bot_id?: string | null
           channel_id?: string | null
+          component?: string | null
           created_at?: string | null
-          error_message?: string | null
+          duration_ms?: number | null
+          error_details?: string | null
           id?: string
           level?: string | null
-          message?: string
+          message?: string | null
           metadata?: Json | null
           post_id?: string | null
-          source?: string | null
+          status?: string | null
         }
         Relationships: [
           {
@@ -903,36 +1064,36 @@ export type Database = {
       match_events: {
         Row: {
           created_at: string | null
-          event_type: string | null
+          description: string | null
+          event_type: string
           id: string
           match_id: string | null
           metadata: Json | null
           minute: number | null
-          player: string | null
+          player_name: string | null
           team: string | null
-          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          event_type?: string | null
+          description?: string | null
+          event_type: string
           id?: string
           match_id?: string | null
           metadata?: Json | null
           minute?: number | null
-          player?: string | null
+          player_name?: string | null
           team?: string | null
-          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          event_type?: string | null
+          description?: string | null
+          event_type?: string
           id?: string
           match_id?: string | null
           metadata?: Json | null
           minute?: number | null
-          player?: string | null
+          player_name?: string | null
           team?: string | null
-          updated_at?: string | null
         }
         Relationships: [
           {
@@ -946,52 +1107,55 @@ export type Database = {
       }
       matches: {
         Row: {
-          api_id: string | null
-          api_source: string | null
           away_score: number | null
           away_team_id: string | null
           created_at: string | null
+          external_id: string
           home_score: number | null
           home_team_id: string | null
           id: string
+          kickoff_time: string
           league_id: string | null
-          match_date: string | null
           metadata: Json | null
-          round: string | null
+          minute: number | null
+          referee: string | null
           status: string | null
           updated_at: string | null
+          venue: string | null
         }
         Insert: {
-          api_id?: string | null
-          api_source?: string | null
           away_score?: number | null
           away_team_id?: string | null
           created_at?: string | null
+          external_id: string
           home_score?: number | null
           home_team_id?: string | null
           id?: string
+          kickoff_time: string
           league_id?: string | null
-          match_date?: string | null
           metadata?: Json | null
-          round?: string | null
+          minute?: number | null
+          referee?: string | null
           status?: string | null
           updated_at?: string | null
+          venue?: string | null
         }
         Update: {
-          api_id?: string | null
-          api_source?: string | null
           away_score?: number | null
           away_team_id?: string | null
           created_at?: string | null
+          external_id?: string
           home_score?: number | null
           home_team_id?: string | null
           id?: string
+          kickoff_time?: string
           league_id?: string | null
-          match_date?: string | null
           metadata?: Json | null
-          round?: string | null
+          minute?: number | null
+          referee?: string | null
           status?: string | null
           updated_at?: string | null
+          venue?: string | null
         }
         Relationships: [
           {
@@ -1019,104 +1183,159 @@ export type Database = {
       }
       pending_approvals: {
         Row: {
+          ai_confidence: number | null
           approved_at: string | null
           automation_rule_id: string | null
+          channels: string[] | null
           content: string
-          content_metadata: Json | null
-          content_type: string | null
+          content_type: string
           created_at: string | null
+          delivery_error: string | null
+          delivery_status: string | null
+          edited_content: Json | null
+          estimated_engagement: string | null
+          expires_at: string | null
+          generated_at: string | null
           id: string
+          language: string
+          metadata: Json | null
+          organization_id: string | null
+          quality_score: number | null
           rejection_reason: string | null
+          reviewed_at: string | null
+          rule_name: string | null
+          sent_at: string | null
+          source_data: Json | null
           status: string | null
+          telegram_message_id: number | null
           updated_at: string | null
         }
         Insert: {
+          ai_confidence?: number | null
           approved_at?: string | null
           automation_rule_id?: string | null
+          channels?: string[] | null
           content: string
-          content_metadata?: Json | null
-          content_type?: string | null
+          content_type: string
           created_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string | null
+          edited_content?: Json | null
+          estimated_engagement?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
           id?: string
+          language: string
+          metadata?: Json | null
+          organization_id?: string | null
+          quality_score?: number | null
           rejection_reason?: string | null
+          reviewed_at?: string | null
+          rule_name?: string | null
+          sent_at?: string | null
+          source_data?: Json | null
           status?: string | null
+          telegram_message_id?: number | null
           updated_at?: string | null
         }
         Update: {
+          ai_confidence?: number | null
           approved_at?: string | null
           automation_rule_id?: string | null
+          channels?: string[] | null
           content?: string
-          content_metadata?: Json | null
-          content_type?: string | null
+          content_type?: string
           created_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string | null
+          edited_content?: Json | null
+          estimated_engagement?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
           id?: string
+          language?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          quality_score?: number | null
           rejection_reason?: string | null
+          reviewed_at?: string | null
+          rule_name?: string | null
+          sent_at?: string | null
+          source_data?: Json | null
           status?: string | null
+          telegram_message_id?: number | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "pending_approvals_automation_rule_id_fkey"
-            columns: ["automation_rule_id"]
-            isOneToOne: false
-            referencedRelation: "automation_rules"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       posts: {
         Row: {
           bot_id: string | null
           channel_id: string | null
           content: string
+          content_text: string | null
+          content_translations: Json | null
           content_type: string | null
           created_at: string | null
-          delivered_at: string | null
           engagement_stats: Json | null
           error_message: string | null
           id: string
           image_url: string | null
           language: string | null
-          message_id: string | null
-          post_analytics: Json | null
+          priority: number | null
+          retry_count: number | null
+          scheduled_for: string | null
+          sent_at: string | null
+          source_data: Json | null
           status: string | null
-          telegram_response: Json | null
+          telegram_message_id: number | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
           bot_id?: string | null
           channel_id?: string | null
           content: string
+          content_text?: string | null
+          content_translations?: Json | null
           content_type?: string | null
           created_at?: string | null
-          delivered_at?: string | null
           engagement_stats?: Json | null
           error_message?: string | null
           id?: string
           image_url?: string | null
           language?: string | null
-          message_id?: string | null
-          post_analytics?: Json | null
+          priority?: number | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          source_data?: Json | null
           status?: string | null
-          telegram_response?: Json | null
+          telegram_message_id?: number | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
           bot_id?: string | null
           channel_id?: string | null
           content?: string
+          content_text?: string | null
+          content_translations?: Json | null
           content_type?: string | null
           created_at?: string | null
-          delivered_at?: string | null
           engagement_stats?: Json | null
           error_message?: string | null
           id?: string
           image_url?: string | null
           language?: string | null
-          message_id?: string | null
-          post_analytics?: Json | null
+          priority?: number | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          source_data?: Json | null
           status?: string | null
-          telegram_response?: Json | null
+          telegram_message_id?: number | null
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1138,31 +1357,34 @@ export type Database = {
       }
       regions: {
         Row: {
+          country_code: string
           created_at: string | null
+          flag_emoji: string
           id: string
           is_active: boolean | null
           name: string
           primary_language: string | null
           timezone: string | null
-          updated_at: string | null
         }
         Insert: {
+          country_code: string
           created_at?: string | null
+          flag_emoji: string
           id?: string
           is_active?: boolean | null
           name: string
           primary_language?: string | null
           timezone?: string | null
-          updated_at?: string | null
         }
         Update: {
+          country_code?: string
           created_at?: string | null
+          flag_emoji?: string
           id?: string
           is_active?: boolean | null
           name?: string
           primary_language?: string | null
           timezone?: string | null
-          updated_at?: string | null
         }
         Relationships: [
           {
@@ -1213,36 +1435,39 @@ export type Database = {
       smart_push_analytics: {
         Row: {
           channel_id: string | null
-          click_count: number | null
           coupon_id: string | null
-          ctr: number | null
+          created_at: string | null
           delivery_id: string | null
+          event_data: Json | null
+          event_type: string
           id: string
-          impression_count: number | null
-          metadata: Json | null
-          recorded_at: string | null
+          ip_address: unknown | null
+          language: string
+          user_agent: string | null
         }
         Insert: {
           channel_id?: string | null
-          click_count?: number | null
           coupon_id?: string | null
-          ctr?: number | null
+          created_at?: string | null
           delivery_id?: string | null
+          event_data?: Json | null
+          event_type: string
           id?: string
-          impression_count?: number | null
-          metadata?: Json | null
-          recorded_at?: string | null
+          ip_address?: unknown | null
+          language: string
+          user_agent?: string | null
         }
         Update: {
           channel_id?: string | null
-          click_count?: number | null
           coupon_id?: string | null
-          ctr?: number | null
+          created_at?: string | null
           delivery_id?: string | null
+          event_data?: Json | null
+          event_type?: string
           id?: string
-          impression_count?: number | null
-          metadata?: Json | null
-          recorded_at?: string | null
+          ip_address?: unknown | null
+          language?: string
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -1271,36 +1496,45 @@ export type Database = {
       smart_push_deliveries: {
         Row: {
           channel_id: string | null
+          content_sent: string
           coupon_id: string | null
           created_at: string | null
-          delivered_at: string | null
+          delivery_status: string | null
+          engagement_data: Json | null
+          error_details: string | null
           id: string
-          metadata: Json | null
+          language: string
           queue_id: string | null
-          status: string | null
-          updated_at: string | null
+          sent_at: string | null
+          telegram_message_id: number | null
         }
         Insert: {
           channel_id?: string | null
+          content_sent: string
           coupon_id?: string | null
           created_at?: string | null
-          delivered_at?: string | null
+          delivery_status?: string | null
+          engagement_data?: Json | null
+          error_details?: string | null
           id?: string
-          metadata?: Json | null
+          language: string
           queue_id?: string | null
-          status?: string | null
-          updated_at?: string | null
+          sent_at?: string | null
+          telegram_message_id?: number | null
         }
         Update: {
           channel_id?: string | null
+          content_sent?: string
           coupon_id?: string | null
           created_at?: string | null
-          delivered_at?: string | null
+          delivery_status?: string | null
+          engagement_data?: Json | null
+          error_details?: string | null
           id?: string
-          metadata?: Json | null
+          language?: string
           queue_id?: string | null
-          status?: string | null
-          updated_at?: string | null
+          sent_at?: string | null
+          telegram_message_id?: number | null
         }
         Relationships: [
           {
@@ -1329,35 +1563,44 @@ export type Database = {
       smart_push_queue: {
         Row: {
           channel_id: string | null
-          content: string | null
+          content_type: string
+          context_data: Json | null
           created_at: string | null
+          error_message: string | null
           id: string
-          is_processed: boolean | null
-          metadata: Json | null
           priority: number | null
-          scheduled_for: string | null
+          processed_at: string | null
+          retry_count: number | null
+          scheduled_for: string
+          status: string | null
           updated_at: string | null
         }
         Insert: {
           channel_id?: string | null
-          content?: string | null
+          content_type: string
+          context_data?: Json | null
           created_at?: string | null
+          error_message?: string | null
           id?: string
-          is_processed?: boolean | null
-          metadata?: Json | null
           priority?: number | null
-          scheduled_for?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for: string
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
           channel_id?: string | null
-          content?: string | null
+          content_type?: string
+          context_data?: Json | null
           created_at?: string | null
+          error_message?: string | null
           id?: string
-          is_processed?: boolean | null
-          metadata?: Json | null
           priority?: number | null
-          scheduled_for?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1372,113 +1615,138 @@ export type Database = {
       }
       smart_push_settings: {
         Row: {
+          category: string | null
           created_at: string | null
-          enable_smart_push: boolean | null
+          description: string | null
           id: string
-          max_daily_pushes: number | null
-          probability_settings: Json | null
-          push_intervals: Json | null
+          is_active: boolean | null
+          key: string
           updated_at: string | null
+          value: string
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
-          enable_smart_push?: boolean | null
+          description?: string | null
           id?: string
-          max_daily_pushes?: number | null
-          probability_settings?: Json | null
-          push_intervals?: Json | null
+          is_active?: boolean | null
+          key: string
           updated_at?: string | null
+          value: string
         }
         Update: {
+          category?: string | null
           created_at?: string | null
-          enable_smart_push?: boolean | null
+          description?: string | null
           id?: string
-          max_daily_pushes?: number | null
-          probability_settings?: Json | null
-          push_intervals?: Json | null
+          is_active?: boolean | null
+          key?: string
           updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }
       team_mappings: {
         Row: {
-          api_football_id: string | null
-          api_source: string | null
+          aliases: string[] | null
+          api_mappings: Json
+          confidence: number
+          country: string | null
           created_at: string | null
-          football_data_id: string | null
+          discovered_at: string | null
           id: string
-          team_id: string | null
+          is_verified: boolean | null
+          last_used: string | null
+          league: string | null
+          normalized_name: string
+          notes: string | null
+          sport: string | null
+          tier: string | null
+          universal_name: string
           updated_at: string | null
+          usage_count: number | null
         }
         Insert: {
-          api_football_id?: string | null
-          api_source?: string | null
+          aliases?: string[] | null
+          api_mappings?: Json
+          confidence?: number
+          country?: string | null
           created_at?: string | null
-          football_data_id?: string | null
+          discovered_at?: string | null
           id?: string
-          team_id?: string | null
+          is_verified?: boolean | null
+          last_used?: string | null
+          league?: string | null
+          normalized_name: string
+          notes?: string | null
+          sport?: string | null
+          tier?: string | null
+          universal_name: string
           updated_at?: string | null
+          usage_count?: number | null
         }
         Update: {
-          api_football_id?: string | null
-          api_source?: string | null
+          aliases?: string[] | null
+          api_mappings?: Json
+          confidence?: number
+          country?: string | null
           created_at?: string | null
-          football_data_id?: string | null
+          discovered_at?: string | null
           id?: string
-          team_id?: string | null
+          is_verified?: boolean | null
+          last_used?: string | null
+          league?: string | null
+          normalized_name?: string
+          notes?: string | null
+          sport?: string | null
+          tier?: string | null
+          universal_name?: string
           updated_at?: string | null
+          usage_count?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "team_mappings_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       teams: {
         Row: {
-          api_id: string | null
-          api_source: string | null
           country: string | null
           created_at: string | null
-          founded: number | null
+          external_id: string | null
           id: string
+          is_local: boolean | null
+          league: string | null
           league_id: string | null
           logo_url: string | null
           name: string
+          name_translations: Json | null
           region_id: string | null
-          stadium: string | null
           updated_at: string | null
         }
         Insert: {
-          api_id?: string | null
-          api_source?: string | null
           country?: string | null
           created_at?: string | null
-          founded?: number | null
+          external_id?: string | null
           id?: string
+          is_local?: boolean | null
+          league?: string | null
           league_id?: string | null
           logo_url?: string | null
           name: string
+          name_translations?: Json | null
           region_id?: string | null
-          stadium?: string | null
           updated_at?: string | null
         }
         Update: {
-          api_id?: string | null
-          api_source?: string | null
           country?: string | null
           created_at?: string | null
-          founded?: number | null
+          external_id?: string | null
           id?: string
+          is_local?: boolean | null
+          league?: string | null
           league_id?: string | null
           logo_url?: string | null
           name?: string
+          name_translations?: Json | null
           region_id?: string | null
-          stadium?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1550,9 +1818,54 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_todays_important_matches: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          match_id: string
+          home_team: string
+          away_team: string
+          competition: string
+          kickoff_time: string
+          importance_score: number
+          content_opportunities: Json
+        }[]
+      }
+      get_upcoming_scheduled_content: {
+        Args: { hours_ahead?: number }
+        Returns: {
+          schedule_id: string
+          match_info: string
+          content_type: string
+          scheduled_for: string
+          status: string
+          priority: number
+        }[]
+      }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      search_team_mappings: {
+        Args: { search_term: string }
+        Returns: {
+          aliases: string[] | null
+          api_mappings: Json
+          confidence: number
+          country: string | null
+          created_at: string | null
+          discovered_at: string | null
+          id: string
+          is_verified: boolean | null
+          last_used: string | null
+          league: string | null
+          normalized_name: string
+          notes: string | null
+          sport: string | null
+          tier: string | null
+          universal_name: string
+          updated_at: string | null
+          usage_count: number | null
+        }[]
       }
     }
     Enums: {
@@ -1564,21 +1877,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -1596,14 +1913,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -1619,14 +1938,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -1642,14 +1963,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -1657,14 +1980,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
@@ -1673,163 +1998,4 @@ export const Constants = {
   public: {
     Enums: {},
   },
-} as const 
-
-// Content System Types
-export type ContentType = 
-  | 'news'
-  | 'polls'
-  | 'images'
-  | 'coupons'
-  | 'live_scores'
-  | 'betting_tips'
-  | 'daily_summary'
-  | 'match_analysis'
-  | 'live_update'
-  | 'summary'
-  | 'betting_tip'
-  | 'poll'
-  | 'coupon'
-  | 'meme'
-  | 'image'
-  | 'lineup'
-  | 'trend'
-  | 'weekly_summary';
-
-export type PostStatus = 
-  | 'pending'
-  | 'scheduled'
-  | 'sent'
-  | 'failed'
-  | 'draft';
-
-export type QueueStatus = 
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed';
-
-export interface Post {
-  id: string;
-  bot_id?: string;
-  channel_id?: string;
-  content: string;
-  content_text?: string;
-  content_translations?: Record<string, string>;
-  content_type?: ContentType;
-  image_url?: string;
-  language?: 'en' | 'am' | 'sw';
-  type?: string; // Legacy field
-  status: PostStatus;
-  scheduled_for?: string;
-  sent_at?: string;
-  telegram_message_id?: number;
-  source_data?: Record<string, any>;
-  priority?: number;
-  retry_count?: number;
-  error_message?: string;
-  engagement_stats?: Record<string, any>;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ContentQueue {
-  id: string;
-  channel_id?: string;
-  content_type: ContentType;
-  source_data: Record<string, any>;
-  priority: number;
-  status: QueueStatus;
-  processing_started_at?: string;
-  completed_at?: string;
-  error_message?: string;
-  retry_count: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface RSSSource {
-  id: string;
-  name: string;
-  url: string;
-  language: 'en' | 'am' | 'sw';
-  category: string;
-  is_active: boolean;
-  last_fetched_at?: string;
-  last_item_count?: number;
-  fetch_frequency_minutes?: number; // Legacy field
-  fetch_frequency_seconds?: number;
-  error_count?: number;
-  last_error?: string;
-  metadata?: Record<string, any>;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Content Generation Types
-export interface ContentGenerationParams {
-  contentType: ContentType;
-  sourceData: any;
-  channelId: string;
-  language: 'en' | 'am' | 'sw';
-  tone?: string;
-  length?: 'short' | 'medium' | 'long';
-}
-
-export interface GeneratedContent {
-  text: string;
-  imageUrl?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface RSSItem {
-  title: string;
-  description: string;
-  link: string;
-  pubDate: Date;
-  language: 'en' | 'am' | 'sw';
-  category: string;
-  source: string;
-}
-
-// Enhanced Channel type with content system fields
-export interface Channel {
-  id: string;
-  bot_id?: string;
-  name: string;
-  telegram_channel_id?: string;
-  telegram_channel_username?: string;
-  description?: string;
-  is_active: boolean;
-  auto_post: boolean;
-  post_frequency_hours: number;
-  preferred_post_times: string[];
-  member_count?: number;
-  last_post_at?: string;
-  total_posts_sent: number;
-  language: 'en' | 'am' | 'sw';
-  affiliate_code?: string;
-  content_types: {
-    news?: boolean;
-    polls?: boolean;
-    images?: boolean;
-    coupons?: boolean;
-    live_scores?: boolean;
-    betting_tips?: boolean;
-    daily_summary?: boolean;
-    weekly_summary?: boolean;
-    match_analysis?: boolean;
-    live_update?: boolean;
-    summary?: boolean;
-    betting_tip?: boolean;
-    poll?: boolean;
-    coupon?: boolean;
-    meme?: boolean;
-    image?: boolean;
-    lineup?: boolean;
-    trend?: boolean;
-  };
-  max_posts_per_day: number;
-  created_at?: string;
-  updated_at?: string;
-} 
+} as const

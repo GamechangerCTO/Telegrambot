@@ -22,6 +22,12 @@ export interface ChannelResolutionResult {
     name: string;
     language: Language;
     telegram_channel_id: string;
+    // 🎯 Additional channel settings for targeted content
+    selected_leagues?: string[];
+    selected_teams?: string[];
+    affiliate_code?: string;
+    smart_scheduling?: boolean;
+    max_posts_per_day?: number;
   }>;
 }
 
@@ -204,12 +210,17 @@ export class ChannelResolver {
     name: string;
     language: Language;
     telegram_channel_id: string;
+    selected_leagues?: string[];
+    selected_teams?: string[];
+    affiliate_code?: string;
+    smart_scheduling?: boolean;
+    max_posts_per_day?: number;
   }>> {
     if (channelIds.length === 0) return [];
 
     const { data: channels, error } = await supabase
       .from('channels')
-      .select('id, name, language, telegram_channel_id, is_active')
+      .select('id, name, language, telegram_channel_id, is_active, selected_leagues, selected_teams, affiliate_code, smart_scheduling, max_posts_per_day')
       .in('id', channelIds)
       .eq('is_active', true);
 

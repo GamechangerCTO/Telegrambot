@@ -27,8 +27,6 @@ const LANGUAGES = [
   { code: 'sw', name: 'Swahili', flag: '🇰🇪' }
 ];
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-
 export default function AddChannel() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -45,8 +43,6 @@ export default function AddChannel() {
     // Automation Settings
     is_active: true,
     auto_post_enabled: true,
-    automation_hours: [9, 15, 21] as number[], // Default hours: 9 AM, 3 PM, 9 PM
-    preferred_post_times: ['09:00', '15:00', '21:00'] as string[],
     smart_scheduling: true,
     
     // Posting Limits
@@ -75,24 +71,17 @@ export default function AddChannel() {
         return;
       }
 
-      if (formData.automation_hours.length === 0) {
-        alert('Please select at least one automation hour');
-        return;
-      }
-
       // Create channel with advanced settings
       const { data: channel, error } = await supabase
         .from('channels')
         .insert([{
           name: formData.name,
-          channel_id: formData.channel_id,
+          telegram_channel_id: formData.channel_id,
           language: formData.language,
           description: formData.description,
           content_types: formData.content_types,
           is_active: formData.is_active,
           auto_post_enabled: formData.auto_post_enabled,
-          automation_hours: formData.automation_hours,
-          preferred_post_times: formData.preferred_post_times,
           smart_scheduling: formData.smart_scheduling,
           max_posts_per_day: formData.max_posts_per_day,
           post_approval_required: formData.post_approval_required,
@@ -105,10 +94,10 @@ export default function AddChannel() {
 
       if (error) throw error;
 
-      // Create automation rules for this channel
-      await createAutomationRules(channel.id, formData);
+      // Note: Automation rules are handled by external cron jobs for dynamic content scheduling
+      // No need to create automation rules as content is posted dynamically
 
-      alert('Channel added successfully with automation rules!');
+      alert('Channel added successfully!');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error adding channel:', error);
@@ -116,90 +105,6 @@ export default function AddChannel() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const createAutomationRules = async (channelId: string, settings: typeof formData) => {
-    try {
-      const supabase = createClient();
-      
-      // Create automation rules for each content type
-      const automationRules = settings.content_types.map(contentType => ({
-        name: `${settings.name} - ${contentType.charAt(0).toUpperCase() + contentType.slice(1)} Auto`,
-        channel_id: channelId,
-        content_types: [contentType],
-        is_active: settings.auto_post_enabled,
-        priority: getContentTypePriority(contentType),
-        execution_schedule: {
-          type: 'dynamic_based_on_matches',
-          automation_hours: settings.automation_hours,
-          preferred_times: settings.preferred_post_times,
-          max_posts_per_day: Math.ceil(settings.max_posts_per_day / settings.content_types.length)
-        },
-        rule_config: {
-          language: settings.language,
-          smart_scheduling: settings.smart_scheduling,
-          auto_approve: !settings.post_approval_required,
-          push_notifications: settings.push_notifications
-        },
-        trigger_conditions: {
-          match_importance_threshold: getMatchThreshold(contentType),
-          timing_rules: getTimingRules(contentType)
-        }
-      }));
-
-      const { error: rulesError } = await supabase
-        .from('automation_rules')
-        .insert(automationRules);
-
-      if (rulesError) {
-        console.error('Error creating automation rules:', rulesError);
-        throw rulesError;
-      }
-
-      console.log(`✅ Created ${automationRules.length} automation rules for channel`);
-    } catch (error) {
-      console.error('Error in createAutomationRules:', error);
-      throw error;
-    }
-  };
-
-  const getContentTypePriority = (contentType: string): number => {
-    const priorities = {
-      live: 10,
-      betting: 8,
-      analysis: 7,
-      news: 6,
-      polls: 5,
-      summary: 4,
-      coupons: 3
-    };
-    return priorities[contentType as keyof typeof priorities] || 5;
-  };
-
-  const getMatchThreshold = (contentType: string): number => {
-    const thresholds = {
-      live: 18,
-      betting: 16,
-      analysis: 15,
-      news: 12,
-      polls: 14,
-      summary: 10,
-      coupons: 8
-    };
-    return thresholds[contentType as keyof typeof thresholds] || 15;
-  };
-
-  const getTimingRules = (contentType: string): any => {
-    const timingRules = {
-      analysis: { hours_before_kickoff: 8 },
-      news: { hours_before_kickoff: 6 },
-      betting: { hours_before_kickoff: 4 },
-      polls: { hours_before_kickoff: 2 },
-      live: { at_kickoff: true },
-      summary: { hours_after_kickoff: 3 },
-      coupons: { hours_before_kickoff: 12 }
-    };
-    return timingRules[contentType as keyof typeof timingRules] || { hours_before_kickoff: 6 };
   };
 
   const handleContentTypeChange = (typeId: string, checked: boolean) => {
@@ -216,24 +121,7 @@ export default function AddChannel() {
     }
   };
 
-  const handleHourChange = (hour: number, checked: boolean) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        automation_hours: [...prev.automation_hours, hour].sort((a, b) => a - b)
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        automation_hours: prev.automation_hours.filter(h => h !== hour)
-      }));
-    }
-  };
 
-  const updatePreferredTimes = (hours: number[]) => {
-    const times = hours.map(h => `${h.toString().padStart(2, '0')}:00`);
-    setFormData(prev => ({ ...prev, preferred_post_times: times }));
-  };
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -419,38 +307,24 @@ export default function AddChannel() {
           </CardContent>
         </Card>
 
-        {/* Automation Hours */}
+        {/* Dynamic Posting Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Automation Hours</CardTitle>
-            <p className="text-sm text-gray-600">Select preferred hours for automatic content posting</p>
+            <CardTitle>🤖 Dynamic Posting</CardTitle>
+            <p className="text-sm text-gray-600">Content is posted dynamically based on cron jobs and real-time events</p>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-6 md:grid-cols-8 gap-2 mb-4">
-              {HOURS.map(hour => (
-                <div key={hour} className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id={`hour-${hour}`}
-                    checked={formData.automation_hours.includes(hour)}
-                    onCheckedChange={(checked) => {
-                      handleHourChange(hour, checked as boolean);
-                      updatePreferredTimes(checked 
-                        ? [...formData.automation_hours, hour].sort((a, b) => a - b)
-                        : formData.automation_hours.filter(h => h !== hour)
-                      );
-                    }}
-                  />
-                  <Label htmlFor={`hour-${hour}`} className="text-sm">
-                    {hour.toString().padStart(2, '0')}:00
-                  </Label>
-                </div>
-              ))}
+          <CardContent className="space-y-3">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 className="font-medium text-green-800 mb-2">✅ Automated Content Scheduling</h4>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• Content is sent automatically based on match schedules</li>
+                <li>• Real-time live updates during active games</li>
+                <li>• Smart timing based on team rankings and importance</li>
+                <li>• No manual scheduling required</li>
+              </ul>
             </div>
             <p className="text-xs text-gray-500">
-              Selected hours: {formData.automation_hours.map(h => `${h.toString().padStart(2, '0')}:00`).join(', ')}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Note: With smart scheduling enabled, these are preferred times. The AI may adjust timing based on match schedules and engagement patterns.
+              ℹ️ The system uses intelligent cron jobs and event triggers to determine optimal posting times automatically.
             </p>
           </CardContent>
         </Card>
@@ -470,7 +344,7 @@ export default function AddChannel() {
             disabled={loading}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >
-            {loading ? 'Creating Channel & Automation Rules...' : 'Create Channel'}
+            {loading ? 'Creating Channel...' : 'Create Channel'}
           </Button>
         </div>
       </form>

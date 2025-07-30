@@ -108,13 +108,26 @@ export async function POST(request: NextRequest) {
 
     const { targetChannels, language } = channelResolution;
 
-    // Generate content using the content router
+    // 🎯 Extract channel settings for targeted content generation
+    const firstChannel = channelResolution.resolvedChannels[0];
+    const channelSettings = firstChannel ? {
+      selected_leagues: firstChannel.selected_leagues,
+      selected_teams: firstChannel.selected_teams,
+      affiliate_code: firstChannel.affiliate_code,
+      smart_scheduling: firstChannel.smart_scheduling,
+      max_posts_per_day: firstChannel.max_posts_per_day,
+      channel_name: firstChannel.name,
+      telegram_channel_id: firstChannel.telegram_channel_id
+    } : undefined;
+
+    // Generate content using the content router with channel-specific settings
     const contentResult = await contentRouter.generateContent({
       type,
       language,
       maxItems,
       channelId: 'unified-content',
-      customContent: body.custom_content
+      customContent: body.custom_content,
+      channelSettings  // 🎯 Pass channel settings for targeted content
     });
 
     // Check if content generation failed
@@ -259,7 +272,7 @@ export async function PUT(request: NextRequest) {
 
     const matches = await unifiedFootballService.getSmartMatches({
       type: type === 'live' ? 'live_update' : type === 'betting' ? 'betting_tip' : 'news',
-      language,
+      language: language as 'en' | 'am' | 'sw',
       maxResults: 5
     });
 

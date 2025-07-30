@@ -6,9 +6,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Plus, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, Plus, Menu, X, LogOut, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,38 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isAuthenticated, loading, signOut } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isAuthenticated, loading, router]);
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show nothing if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/auth/login');
+  };
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -48,8 +80,8 @@ export default function DashboardLayout({
           </button>
         </div>
         
-        <nav className="mt-6 px-3">
-          <div className="space-y-1">
+        <nav className="mt-6 px-3 flex flex-col h-full">
+          <div className="space-y-1 flex-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -78,6 +110,21 @@ export default function DashboardLayout({
               );
             })}
           </div>
+          
+          {/* User Info & Logout */}
+          <div className="border-t pt-4 pb-4">
+            <div className="px-3 py-2 text-xs text-gray-500 flex items-center">
+              <User className="w-4 h-4 mr-2" />
+              <span className="truncate">{user?.email}</span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors group"
+            >
+              <LogOut className="ml-3 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-red-500" />
+              <span className="mr-3">Sign Out</span>
+            </button>
+          </div>
         </nav>
       </div>
 
@@ -92,7 +139,13 @@ export default function DashboardLayout({
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold">TeleBots Pro</h1>
-          <div className="w-9"></div> {/* Spacer for centering */}
+          <button
+            onClick={handleSignOut}
+            className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+            title="Sign Out"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
 
         <main className="min-h-screen">

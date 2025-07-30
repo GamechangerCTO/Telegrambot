@@ -229,148 +229,155 @@ export default function EditChannel() {
               <CardTitle>Basic Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Channel Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter channel name"
-                    required
-                  />
-                </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Channel Name *</label>
+                   <TextInput
+                     id="name"
+                     value={formData.name}
+                     onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                     placeholder="Enter channel name"
+                     required
+                   />
+                 </div>
 
-                <div>
-                  <Label htmlFor="telegram_channel_id">Telegram Channel ID *</Label>
-                  <Input
-                    id="telegram_channel_id"
-                    value={formData.telegram_channel_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, telegram_channel_id: e.target.value }))}
-                    placeholder="-1001234567890"
-                    required
-                  />
-                </div>
+                 <div>
+                   <label htmlFor="telegram_channel_id" className="block text-sm font-medium text-gray-700 mb-1">Telegram Channel ID *</label>
+                   <TextInput
+                     id="telegram_channel_id"
+                     value={formData.telegram_channel_id}
+                     onChange={(value) => setFormData(prev => ({ ...prev, telegram_channel_id: value }))}
+                     placeholder="-1001234567890"
+                     required
+                   />
+                 </div>
 
-                <div>
-                  <Label htmlFor="telegram_channel_username">Channel Username</Label>
-                  <Input
-                    id="telegram_channel_username"
-                    value={formData.telegram_channel_username}
-                    onChange={(e) => setFormData(prev => ({ ...prev, telegram_channel_username: e.target.value }))}
-                    placeholder="@channelname"
-                  />
-                </div>
+                 <div>
+                   <label htmlFor="telegram_channel_username" className="block text-sm font-medium text-gray-700 mb-1">Channel Username</label>
+                   <TextInput
+                     id="telegram_channel_username"
+                     value={formData.telegram_channel_username}
+                     onChange={(value) => setFormData(prev => ({ ...prev, telegram_channel_username: value }))}
+                     placeholder="@channelname"
+                   />
+                 </div>
 
-                <div>
-                  <Label htmlFor="language">Language</Label>
-                  <select
-                    id="language"
-                    value={formData.language}
-                    onChange={(e) => setFormData(prev => ({ ...prev, language: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {LANGUAGES.map(lang => (
-                      <option key={lang.code} value={lang.code}>
-                        {lang.flag} {lang.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                 <div>
+                   <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                   <select
+                     id="language"
+                     value={formData.language}
+                     onChange={(e) => setFormData(prev => ({ ...prev, language: e.target.value }))}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   >
+                     {LANGUAGES.map(lang => (
+                       <option key={lang.code} value={lang.code}>
+                         {lang.flag} {lang.name}
+                       </option>
+                     ))}
+                   </select>
+                 </div>
+               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Channel description (optional)"
-                />
-              </div>
+               <div>
+                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                 <TextInput
+                   id="description"
+                   value={formData.description}
+                   onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                   placeholder="Channel description (optional)"
+                 />
+               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="max_posts">Max Posts Per Day</Label>
-                  <Input
-                    id="max_posts"
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={formData.max_posts_per_day}
-                    onChange={(e) => setFormData(prev => ({ ...prev, max_posts_per_day: parseInt(e.target.value) || 10 }))}
-                  />
-                </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <label htmlFor="max_posts" className="block text-sm font-medium text-gray-700 mb-1">Max Posts Per Day</label>
+                   <TextInput
+                     id="max_posts"
+                     type="text"
+                     value={formData.max_posts_per_day.toString()}
+                     onChange={(value) => setFormData(prev => ({ ...prev, max_posts_per_day: parseInt(value) || 10 }))}
+                     placeholder="10"
+                   />
+                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="is_active"
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: !!checked }))}
-                    />
-                    <Label htmlFor="is_active">Channel Active</Label>
-                  </div>
+                 <div className="flex items-center space-x-4">
+                   <div className="flex items-center space-x-2">
+                     <input
+                       type="checkbox"
+                       id="is_active"
+                       checked={formData.is_active}
+                       onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                       className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                     />
+                     <label htmlFor="is_active" className="text-sm font-medium text-gray-700">Channel Active</label>
+                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="auto_post_enabled"
-                      checked={formData.auto_post_enabled}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, auto_post_enabled: !!checked }))}
-                    />
-                    <Label htmlFor="auto_post_enabled">Auto Posting</Label>
-                  </div>
-                </div>
-              </div>
+                   <div className="flex items-center space-x-2">
+                     <input
+                       type="checkbox"
+                       id="auto_post_enabled"
+                       checked={formData.auto_post_enabled}
+                       onChange={(e) => setFormData(prev => ({ ...prev, auto_post_enabled: e.target.checked }))}
+                       className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                     />
+                     <label htmlFor="auto_post_enabled" className="text-sm font-medium text-gray-700">Auto Posting</label>
+                   </div>
+                 </div>
+               </div>
             </CardContent>
           </Card>
 
-          {/* Content Types */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {CONTENT_TYPES.map(type => (
-                  <div key={type.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <Checkbox
-                      id={type.id}
-                      checked={formData.content_types.includes(type.id)}
-                      onCheckedChange={(checked) => handleContentTypeChange(type.id, !!checked)}
-                    />
-                    <div className="flex-1">
-                      <Label htmlFor={type.id} className="font-medium">{type.label}</Label>
-                      <p className="text-sm text-gray-600">{type.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                     {/* Content Types */}
+           <Card>
+             <CardHeader>
+               <CardTitle>Content Types</CardTitle>
+             </CardHeader>
+             <CardContent>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {CONTENT_TYPES.map(type => (
+                   <div key={type.id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                     <input
+                       type="checkbox"
+                       id={type.id}
+                       checked={formData.content_types.includes(type.id)}
+                       onChange={(e) => handleContentTypeChange(type.id, e.target.checked)}
+                       className="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                     />
+                     <div className="flex-1">
+                       <label htmlFor={type.id} className="font-medium text-gray-900 cursor-pointer">{type.label}</label>
+                       <p className="text-sm text-gray-600">{type.description}</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </CardContent>
+           </Card>
 
-          {/* Automation Hours */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Automation Hours</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
-                {HOURS.map(hour => (
-                  <div key={hour} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`hour-${hour}`}
-                      checked={formData.automation_hours.includes(hour)}
-                      onCheckedChange={(checked) => handleHourChange(hour, !!checked)}
-                    />
-                    <Label htmlFor={`hour-${hour}`} className="text-sm">
-                      {hour.toString().padStart(2, '0')}:00
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+           {/* Automation Hours */}
+           <Card>
+             <CardHeader>
+               <CardTitle>Automation Hours</CardTitle>
+             </CardHeader>
+             <CardContent>
+               <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2">
+                 {HOURS.map(hour => (
+                   <div key={hour} className="flex items-center space-x-2">
+                     <input
+                       type="checkbox"
+                       id={`hour-${hour}`}
+                       checked={formData.automation_hours.includes(hour)}
+                       onChange={(e) => handleHourChange(hour, e.target.checked)}
+                       className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                     />
+                     <label htmlFor={`hour-${hour}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                       {hour.toString().padStart(2, '0')}:00
+                     </label>
+                   </div>
+                 ))}
+               </div>
+             </CardContent>
+           </Card>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-between">

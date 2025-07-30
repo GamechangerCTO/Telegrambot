@@ -37,6 +37,11 @@ export interface NewsGenerationRequest {
   channelId: string;
   maxResults?: number;
   excludeUsedContent?: boolean;
+  
+  // 🎯 NEW: Channel-specific targeting for personalized news content
+  selectedLeagues?: string[];
+  selectedTeams?: string[];
+  channelName?: string;
 }
 
 export interface GeneratedNews {
@@ -75,8 +80,8 @@ export class OptimizedNewsContentGenerator {
       }
       console.log(`✅ Fetched ${rssNews.length} news items in ${Date.now() - startTime}ms`);
 
-      // Step 2: Score and rank news items (batch processing)
-      const scoredNews = this.scoreAndRankNewsOptimized(rssNews);
+      // Step 2: Score and rank news items with channel preferences (batch processing)
+      const scoredNews = this.scoreAndRankNewsOptimized(rssNews, request);
       
       // Step 3: Check uniqueness and get best unused news
       const bestNews = await this.getBestUnusedNewsOptimized(scoredNews, request.channelId);
@@ -217,10 +222,14 @@ export class OptimizedNewsContentGenerator {
   }
 
   /**
-   * 🏆 OPTIMIZED: Score with caching and batch processing
+   * 🏆 OPTIMIZED: Score with caching, batch processing and channel preferences
    */
-  private scoreAndRankNewsOptimized(newsItems: NewsItem[]): NewsItem[] {
-    console.log(`🏆 Scoring ${newsItems.length} news items`);
+  private scoreAndRankNewsOptimized(newsItems: NewsItem[], request?: NewsGenerationRequest): NewsItem[] {
+    console.log(`🏆 Scoring ${newsItems.length} news items${request?.channelName ? ` for channel: ${request.channelName}` : ''}`);
+    
+    if (request?.selectedTeams?.length || request?.selectedLeagues?.length) {
+      console.log(`🎯 Channel preferences: ${request.selectedTeams?.length || 0} teams, ${request.selectedLeagues?.length || 0} leagues`);
+    }
     
     // Pre-compile regex patterns for better performance
     const patterns = {
@@ -274,6 +283,35 @@ export class OptimizedNewsContentGenerator {
         if (fullText.includes(team)) {
           score += 10;
           break; // One team match is enough
+        }
+      }
+      
+      // 🎯 CHANNEL-SPECIFIC TEAM PREFERENCES (High Priority Scoring)
+      if (request?.selectedTeams?.length) {
+        for (const preferredTeam of request.selectedTeams) {
+          // Get team name from database or use ID as fallback
+          const teamName = preferredTeam.toLowerCase();
+          if (fullText.includes(teamName)) {
+            score += 25; // Higher score for channel's preferred teams
+            console.log(`🎯 Boosted score (+25) for preferred team: ${preferredTeam}`);
+          }
+        }
+      }
+      
+      // 🎯 CHANNEL-SPECIFIC LEAGUE PREFERENCES  
+      if (request?.selectedLeagues?.length) {
+        // This would need league name mapping from database
+        // For now, give a small boost if it's a major league
+        const hasPreferredLeague = request.selectedLeagues.some(leagueId => {
+          // Simple check - in production would map league IDs to names
+          return patterns.premierLeague.test(fullText) || 
+                 patterns.championsLeague.test(fullText) ||
+                 patterns.europaLeague.test(fullText);
+        });
+        
+        if (hasPreferredLeague) {
+          score += 15; // Boost for preferred leagues
+          console.log(`🎯 Boosted score (+15) for preferred league content`);
         }
       }
       

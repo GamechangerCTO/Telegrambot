@@ -95,6 +95,12 @@ export interface BettingTipRequest {
   channelId: string;
   maxPredictions?: number;
   riskTolerance?: 'conservative' | 'moderate' | 'aggressive';
+  
+  // 🎯 NEW: Channel-specific targeting for personalized betting content
+  selectedLeagues?: string[];
+  selectedTeams?: string[];
+  affiliateCode?: string;
+  channelName?: string;
 }
 
 export interface GeneratedBettingTip {
@@ -122,8 +128,8 @@ export class BettingTipsGenerator {
     console.log(`🎯 Generating betting tips in ${request.language}`);
     
     try {
-      // Step 1: Get best match for betting analysis
-      const bestMatch = await this.getBestMatchForBetting(request.language);
+      // Step 1: Get best match for betting analysis with channel preferences
+      const bestMatch = await this.getBestMatchForBetting(request);
       if (!bestMatch) {
         console.log(`❌ No suitable match found for betting tips`);
         return null;
@@ -143,8 +149,8 @@ export class BettingTipsGenerator {
       // Step 4: Generate and upload image
       const imageUrl = await this.generateBettingImage(analysis);
       
-      // Step 5: Generate text content with AI editing
-      const { content, aiEditedContent } = await this.generateBettingContent(analysis, request.language);
+      // Step 5: Generate text content with AI editing and channel branding
+      const { content, aiEditedContent } = await this.generateBettingContent(analysis, request);
       
       // Step 6: Add responsible gambling disclaimers
       const disclaimers = this.getDisclaimers(request.language);
@@ -183,26 +189,117 @@ export class BettingTipsGenerator {
   }
 
   /**
-   * 🏆 Step 1: Get best match for betting analysis - from daily important matches
+   * 🏆 Step 1: Get best match for betting analysis - with channel preferences
    */
-  private async getBestMatchForBetting(language: 'en' | 'am' | 'sw') {
-    console.log(`🎯 Getting daily important match for betting tips`);
+  private async getBestMatchForBetting(request: BettingTipRequest) {
+    console.log(`🎯 Getting match for betting tips${request.channelName ? ` for channel: ${request.channelName}` : ''}`);
+    
+    if (request.selectedLeagues?.length || request.selectedTeams?.length) {
+      console.log(`🎯 Filtering by channel preferences: ${request.selectedLeagues?.length || 0} leagues, ${request.selectedTeams?.length || 0} teams`);
+    }
     
     try {
-      // First try to get match from daily important matches table
+      // First try to get targeted match based on channel preferences
+      const targetedMatch = await this.getTargetedMatchForChannel(request);
+      if (targetedMatch) {
+        console.log(`✅ Using targeted match for channel: ${targetedMatch.home_team} vs ${targetedMatch.away_team}`);
+        return this.convertDailyMatchToUnifiedFormat(targetedMatch);
+      }
+
+      // Fallback to any daily important match
       const dailyMatch = await this.getDailyImportantMatch();
       if (dailyMatch) {
-        console.log(`✅ Using daily important match: ${dailyMatch.home_team} vs ${dailyMatch.away_team}`);
+        console.log(`✅ Using general daily important match: ${dailyMatch.home_team} vs ${dailyMatch.away_team}`);
         return this.convertDailyMatchToUnifiedFormat(dailyMatch);
       }
 
-      // Fallback to unified service if no daily matches available
+      // Final fallback to unified service
       console.log(`⚠️ No daily matches found, falling back to unified service`);
-      return await unifiedFootballService.getBestMatchForContent('betting_tip', language);
+      return await unifiedFootballService.getBestMatchForContent('betting_tip', request.language);
       
     } catch (error) {
-      console.error('❌ Error getting daily match, using fallback:', error);
-      return await unifiedFootballService.getBestMatchForContent('betting_tip', language);
+      console.error('❌ Error getting targeted match, using fallback:', error);
+      return await unifiedFootballService.getBestMatchForContent('betting_tip', request.language);
+    }
+  }
+
+  /**
+   * 🎯 NEW: Get targeted match based on channel preferences (leagues/teams)
+   */
+  private async getTargetedMatchForChannel(request: BettingTipRequest) {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      console.log(`🔍 Searching for matches based on channel preferences...`);
+
+      // Build query based on channel preferences
+      let query = supabase
+        .from('daily_important_matches')
+        .select('*')
+        .eq('discovery_date', new Date().toISOString().split('T')[0])
+        .order('importance_score', { ascending: false });
+
+      // Filter by selected teams first (highest priority)
+      if (request.selectedTeams?.length) {
+        console.log(`🎯 Filtering by selected teams: ${request.selectedTeams.join(', ')}`);
+        query = query.or(
+          request.selectedTeams
+            .map(team => `home_team.ilike.%${team}%,away_team.ilike.%${team}%`)
+            .join(',')
+        );
+      }
+
+      const { data: matches, error } = await query.limit(10);
+
+      if (error) {
+        console.error('❌ Error fetching targeted matches:', error);
+        return null;
+      }
+
+      if (!matches || matches.length === 0) {
+        console.log(`⚠️ No matches found for channel preferences`);
+        return null;
+      }
+
+      // Additional filtering by leagues if specified
+      let filteredMatches = matches;
+      if (request.selectedLeagues?.length) {
+        console.log(`🎯 Further filtering by selected leagues: ${request.selectedLeagues.length} leagues`);
+        
+        // Get league details to match by name
+        const { data: leagues } = await supabase
+          .from('leagues')
+          .select('id, name, display_name')
+          .in('id', request.selectedLeagues);
+
+        if (leagues?.length) {
+          const leagueNames = leagues.map(l => l.name?.toLowerCase() || l.display_name?.toLowerCase()).filter(Boolean);
+          filteredMatches = matches.filter(match => 
+            leagueNames.some(leagueName => 
+              match.competition?.toLowerCase().includes(leagueName)
+            )
+          );
+        }
+      }
+
+      if (filteredMatches.length === 0) {
+        console.log(`⚠️ No matches found after league filtering`);
+        return null;
+      }
+
+      // Return the highest importance score match that matches preferences
+      const bestMatch = filteredMatches[0];
+      console.log(`✅ Found targeted match: ${bestMatch.home_team} vs ${bestMatch.away_team} (Score: ${bestMatch.importance_score})`);
+      
+      return bestMatch;
+
+    } catch (error) {
+      console.error('❌ Error getting targeted match for channel:', error);
+      return null;
     }
   }
 
@@ -717,35 +814,35 @@ export class BettingTipsGenerator {
   }
 
   /**
-   * 📝 Generate betting content with AI editing
+   * 📝 Generate betting content with AI editing and channel branding
    */
-  private async generateBettingContent(analysis: BettingAnalysis, language: 'en' | 'am' | 'sw'): Promise<{
+  private async generateBettingContent(analysis: BettingAnalysis, request: BettingTipRequest): Promise<{
     content: string;
     aiEditedContent: string;
   }> {
-    // Generate base content
-    const content = this.generateBaseContent(analysis, language);
-    console.log(`📝 Base content generated (${language}): "${content.substring(0, 150)}..."`);
+    // Generate base content with channel branding
+    const content = this.generateBaseContent(analysis, request);
+    console.log(`📝 Base content generated (${request.language}): "${content.substring(0, 150)}..."`);
     console.log(`📏 Base content length: ${content.length} characters`);
     
-    // AI edit for quality and engagement
-    const aiEditedContent = await this.aiEditBettingContent(content, analysis, language);
-    console.log(`🤖 AI edited content (${language}): "${aiEditedContent.substring(0, 150)}..."`);
+    // AI edit for quality and engagement with channel context
+    const aiEditedContent = await this.aiEditBettingContent(content, analysis, request);
+    console.log(`🤖 AI edited content (${request.language}): "${aiEditedContent.substring(0, 150)}..."`);
     console.log(`📏 AI edited content length: ${aiEditedContent.length} characters`);
     
     return { content, aiEditedContent };
   }
 
   /**
-   * 📄 Generate base betting content - REAL BETTING TIPS
+   * 📄 Generate base betting content with channel branding - REAL BETTING TIPS
    */
-  private generateBaseContent(analysis: BettingAnalysis, language: 'en' | 'am' | 'sw'): string {
+  private generateBaseContent(analysis: BettingAnalysis, request: BettingTipRequest): string {
     const { homeTeam, awayTeam, competition, predictions, matchAssessment, teamStats } = analysis;
     
-    console.log(`🎯 GenerateBaseContent Debug: ${language}, Predictions count: ${predictions?.length || 0}`);
+    console.log(`🎯 GenerateBaseContent Debug: ${request.language}, Predictions count: ${predictions?.length || 0}`);
     console.log(`🔍 Predictions data:`, predictions?.slice(0, 3));
     
-    if (language === 'en') {
+    if (request.language === 'en') {
       let content = `🎯 BETTING TIPS: ${homeTeam} vs ${awayTeam}\n\n`;
       
       // מציג את הטיפים האמיתיים
@@ -766,10 +863,15 @@ export class BettingTipsGenerator {
       content += `⚠️ Bet responsibly. Only stake what you can afford to lose.\n`;
       content += `🔞 18+ only. Gambling can be addictive.`;
       
+      // 🎯 ADD CHANNEL AFFILIATE CODE if available
+      if (request.affiliateCode) {
+        content += `\n\n🔗 Use code: ${request.affiliateCode} for exclusive offers`;
+      }
+      
       return content;
     }
     
-    if (language === 'am') {
+    if (request.language === 'am') {
       let content = `🎯 የውርርድ ምክሮች: ${homeTeam} በተቃ ${awayTeam}\n\n`;
       
       // ዋና ውርርድ ምክሮች
@@ -793,10 +895,15 @@ export class BettingTipsGenerator {
       content += `⚠️ በመልከም ሁኔታ ውርርድ ያድርጉ። መጥፋት የሚችሉትን ብቻ ይወርርዱ።\n`;
       content += `🔞 ከ18 አመት በላይ ብቻ። ውርርድ አሳዛኝ ሊሆን ይችላል።`;
       
+      // 🎯 ADD CHANNEL AFFILIATE CODE if available
+      if (request.affiliateCode) {
+        content += `\n\n🔗 ኮድ ይጠቀሙ: ${request.affiliateCode} ለልዩ ድጋፎች`;
+      }
+      
       return content;
     }
     
-    if (language === 'sw') {
+    if (request.language === 'sw') {
       let content = `🎯 MAPENDEKEZO YA KAMARI: ${homeTeam} dhidi ya ${awayTeam}\n\n`;
       
       // Mapendekezo ya kamari
@@ -820,6 +927,11 @@ export class BettingTipsGenerator {
       content += `⚠️ Kamari kwa busara. Tia tu kile unachoweza kupoteza.\n`;
       content += `🔞 Miaka 18+ tu. Kamari inaweza kusababisha ulezi.`;
       
+      // 🎯 ADD CHANNEL AFFILIATE CODE if available
+      if (request.affiliateCode) {
+        content += `\n\n🔗 Tumia msimbo: ${request.affiliateCode} kwa matoleo maalum`;
+      }
+      
       return content;
     }
     
@@ -828,16 +940,16 @@ export class BettingTipsGenerator {
   }
 
   /**
-   * 🤖 AI edit betting content - ENHANCED VERSION
+   * 🤖 AI edit betting content with channel context - ENHANCED VERSION
    */
-  private async aiEditBettingContent(content: string, analysis: BettingAnalysis, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): Promise<string> {
-    console.log(`🤖 AI editing betting content for language: ${language}`);
+  private async aiEditBettingContent(content: string, analysis: BettingAnalysis, request: BettingTipRequest): Promise<string> {
+    console.log(`🤖 AI editing betting content for language: ${request.language}${request.channelName ? ` (Channel: ${request.channelName})` : ''}`);
     
     try {
       const openai = await getOpenAIClient();
       if (!openai) {
         console.log('❌ OpenAI client not available, using template-based editing');
-        return this.enhanceBettingContent(content, analysis, language);
+        return this.enhanceBettingContent(content, analysis, request.language);
       }
 
       const systemPrompts = {
@@ -973,11 +1085,11 @@ export class BettingTipsGenerator {
         messages: [
           { 
             role: "system", 
-            content: systemPrompts[language]
+            content: systemPrompts[request.language]
           },
           { 
             role: "user", 
-            content: `${languageInstructions[language]}
+            content: `${languageInstructions[request.language]}
 
 MATCH ANALYSIS DATA:
 ${JSON.stringify(analysisData, null, 2)}
@@ -1000,7 +1112,7 @@ Create betting tips that are specific to this exact match with the provided data
       const enhancedContent = response.choices[0]?.message?.content?.trim();
       
       if (enhancedContent) {
-        console.log(`✅ AI enhanced betting content in ${language}: "${enhancedContent.substring(0, 100)}..."`);
+        console.log(`✅ AI enhanced betting content in ${request.language}: "${enhancedContent.substring(0, 100)}..."`);
         console.log(`📏 Enhanced content length: ${enhancedContent.length} characters`);
         return enhancedContent;
       } else {
@@ -1012,7 +1124,7 @@ Create betting tips that are specific to this exact match with the provided data
     }
     
     // Fallback to template-based editing
-    return this.enhanceBettingContent(content, analysis, language);
+    return this.enhanceBettingContent(content, analysis, request.language);
   }
 
   /**
