@@ -95,6 +95,7 @@ export default function ChannelSettings() {
 
   const fetchChannelData = async () => {
     try {
+      console.log('🔄 Fetching channel data for ID:', channelId);
       const supabase = createClient();
       
       // Fetch channel data
@@ -103,6 +104,8 @@ export default function ChannelSettings() {
         .select('*')
         .eq('id', channelId)
         .single();
+
+      console.log('📊 Channel data response:', { channelData, channelError });
 
       if (channelError) throw channelError;
       
@@ -309,13 +312,22 @@ export default function ChannelSettings() {
               Manage {formData.name} channel configuration and preferences
             </p>
           </div>
-          <Button 
-            onClick={() => router.push('/dashboard')}
-            variant="outline"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => router.push(`/dashboard/channels/${channelId}/automation`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              View Automation
+            </Button>
+            <Button 
+              onClick={() => router.push('/dashboard')}
+              variant="outline"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
