@@ -287,7 +287,7 @@ export class BackgroundScheduler {
 
     switch (rule.automation_type) {
       case 'scheduled':
-        ({ shouldExecute, reason } = this.checkScheduledRule(rule, now, currentTimeMinutes));
+        ({ shouldExecute, reason } = await this.checkScheduledRule(rule, now, currentTimeMinutes));
         break;
       
       case 'event_driven':
@@ -307,12 +307,14 @@ export class BackgroundScheduler {
   }
 
   /**
-   * Check scheduled rule
+   * Check scheduled rule - Updated to use dynamic timeline
    */
-  private checkScheduledRule(rule: any, now: Date, currentTime: number): { shouldExecute: boolean, reason: string } {
-    const schedule = rule.schedule || {};
-    const times = schedule.times || [];
+  private async checkScheduledRule(rule: any, now: Date, currentTime: number): Promise<{ shouldExecute: boolean, reason: string }> {
+    // Check for fixed times first (like news)
+    const config = rule.config || {};
+    const times = config.times || [];
 
+    // Check fixed times (like news)
     for (const time of times) {
       const [hour, minute] = time.split(':').map(Number);
       const scheduleTime = hour * 60 + minute;
@@ -326,7 +328,94 @@ export class BackgroundScheduler {
       }
     }
 
-    return { shouldExecute: false, reason: '' };
+    // If no fixed times, check dynamic scheduling based on matches
+    return this.checkDynamicScheduling(rule, now, currentTime);
+  }
+
+  /**
+   * Check dynamic scheduling based on matches
+   */
+  private async checkDynamicScheduling(rule: any, now: Date, currentTime: number): Promise<{ shouldExecute: boolean, reason: string }> {
+    try {
+      // Dynamic scheduling configuration
+      const dynamicConfig: Record<string, any> = {
+        'betting': { beforeMatch: 45, description: '45 min before match' },
+        'analysis': { beforeMatch: 120, description: '2 hours before match' },
+        'live': { duringMatch: true, description: 'During match' },
+        'daily_summary': { afterMatch: 30, description: '30 min after match' },
+        'smart_push': { afterContent: true, description: 'After content' }
+      };
+
+      const scheduling = dynamicConfig[rule.content_type];
+      if (!scheduling) {
+        return { shouldExecute: false, reason: 'No dynamic scheduling config' };
+      }
+
+      // Get today's matches
+      const todayMatches = await this.getTodayMatches();
+      if (todayMatches.length === 0) {
+        return { shouldExecute: false, reason: 'No matches today' };
+      }
+
+      // Check each match for timing
+      for (const match of todayMatches) {
+        const matchTime = new Date(match.kickoff_time);
+        let targetTime: Date | null = null;
+
+        if ('beforeMatch' in scheduling && scheduling.beforeMatch) {
+          targetTime = new Date(matchTime.getTime() - (scheduling.beforeMatch * 60 * 1000));
+        } else if ('duringMatch' in scheduling && scheduling.duringMatch) {
+          targetTime = new Date(matchTime.getTime() + (15 * 60 * 1000)); // 15 min into match
+        } else if ('afterMatch' in scheduling && scheduling.afterMatch) {
+          targetTime = new Date(matchTime.getTime() + (90 * 60 * 1000) + (scheduling.afterMatch * 60 * 1000));
+        }
+
+        if (targetTime) {
+          const targetTimeMinutes = targetTime.getHours() * 60 + targetTime.getMinutes();
+          
+          // Check if we're in the time window (5 minutes)
+          if (Math.abs(currentTime - targetTimeMinutes) <= 5) {
+            return {
+              shouldExecute: true,
+              reason: `${scheduling.description} - ${match.home_team} vs ${match.away_team}`
+            };
+          }
+        }
+      }
+
+      return { shouldExecute: false, reason: 'No matching dynamic timing' };
+    } catch (error) {
+      console.error('Error in checkDynamicScheduling:', error);
+      return { shouldExecute: false, reason: 'Dynamic scheduling error' };
+    }
+  }
+
+  /**
+   * Get today's important matches for dynamic scheduling
+   */
+  private async getTodayMatches(): Promise<any[]> {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    try {
+      const { data: matches, error } = await supabase
+        .from('daily_important_matches')
+        .select('*')
+        .in('discovery_date', [today, yesterday])
+        .gte('importance_score', 15)
+        .order('importance_score', { ascending: false })
+        .limit(5); // Top 5 matches
+
+      if (error) {
+        console.error('Error fetching matches for dynamic scheduling:', error);
+        return [];
+      }
+
+      return matches || [];
+    } catch (error) {
+      console.error('Error in getTodayMatches:', error);
+      return [];
+    }
   }
 
   /**
