@@ -229,7 +229,16 @@ export class SmartCouponsGenerator {
           generatedAt: new Date().toISOString(),
           contentId: `coupon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           placementReason: placement.placementReason,
-          expectedConversion: this.calculateExpectedConversion(placement.selectedCoupon, context)
+          expectedConversion: this.calculateExpectedConversion(placement.selectedCoupon, context),
+          // 🎫 Enhanced Telegram Features
+          couponUrl: placement.selectedCoupon.affiliateUrl || placement.selectedCoupon.url,
+          couponCode: placement.selectedCoupon.couponCode,
+          telegramEnhancements: {
+            protectContent: true,  // 🛡️ Protect exclusive coupon content
+            enableCopyButton: !!placement.selectedCoupon.couponCode,  // 📋 Copy button if code exists
+            enableShareButton: true,  // 📤 Viral sharing enabled
+            priority: 'high'  // High priority content
+          }
         }
       };
 

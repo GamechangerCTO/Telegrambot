@@ -205,11 +205,18 @@ export class RuleExecutor {
         }
       }
       
+      // 🌙 Smart silent messaging for night hours (11 PM - 6 AM UTC)
+      const currentHour = new Date().getUTCHours();
+      const isNightTime = currentHour >= 23 || currentHour < 6;
+      
+      console.log(`⏰ Current UTC hour: ${currentHour}, Night time: ${isNightTime}`);
+      
       const result = await this.telegramSender.sendMessage({
         botToken: botToken,
         channelId: channelDetails.telegram_channel_id,
         content: content,
-        parseMode: 'HTML'
+        parseMode: 'HTML',
+        disableNotification: isNightTime  // 🔇 Silent messages during night hours
       })
 
       if (result.success) {

@@ -151,6 +151,16 @@ export interface GeneratedLiveUpdate {
     matchMinute: number;
     eventImportance: string;
     fixtureId: number;
+    telegramEnhancements?: {
+      protectContent?: boolean;
+      enableShareButton?: boolean;
+      enableWebApp?: boolean;
+      priority?: string;
+      spoilerImage?: boolean;
+      disablePreview?: boolean;
+      disableNotification?: boolean;
+      urgentUpdate?: boolean;
+    };
   };
 }
 
@@ -648,7 +658,18 @@ export class LiveUpdatesGenerator {
           contentId: `live_${liveMatchData.fixture_id}_${Date.now()}`,
           matchMinute: liveMatchData.status.elapsed || 0,
           eventImportance: event.importance,
-          fixtureId: liveMatchData.fixture_id
+          fixtureId: liveMatchData.fixture_id,
+          // 🔴 Enhanced Telegram Features for Live Updates
+          telegramEnhancements: {
+            protectContent: false,  // Live updates should be shareable
+            enableShareButton: true,  // 📤 Share live moments
+            enableWebApp: false,  // No web app for live updates
+            priority: event.importance === 'HIGH' ? 'high' : 'normal',
+            spoilerImage: false,  // No spoiler for live updates
+            disablePreview: true,  // No link preview for live updates
+            disableNotification: this.shouldUseSilentMode(event.importance, liveMatchData.status.elapsed || 0),  // 🌙 Smart silent mode
+            urgentUpdate: event.importance === 'HIGH'  // Mark urgent updates
+          }
         }
       };
     } catch (error) {
@@ -1518,7 +1539,18 @@ export class LiveUpdatesGenerator {
           contentId: `live_${liveMatch.fixture_id}_${Date.now()}`,
           matchMinute: liveMatch.status.elapsed || 0,
           eventImportance: updateContent.importance || 'MEDIUM',
-          fixtureId: liveMatch.fixture_id
+          fixtureId: liveMatch.fixture_id,
+          // 🔴 Enhanced Telegram Features for Live Updates
+          telegramEnhancements: {
+            protectContent: false,  // Live updates should be shareable
+            enableShareButton: true,  // 📤 Share live moments
+            enableWebApp: false,  // No web app for live updates
+            priority: (updateContent.importance || 'MEDIUM') === 'HIGH' ? 'high' : 'normal',
+            spoilerImage: false,  // No spoiler for live updates
+            disablePreview: true,  // No link preview for live updates
+            disableNotification: this.shouldUseSilentMode(updateContent.importance || 'MEDIUM', liveMatch.status.elapsed || 0),  // 🌙 Smart silent mode
+            urgentUpdate: (updateContent.importance || 'MEDIUM') === 'HIGH'  // Mark urgent updates
+          }
         }
       };
     } catch (error) {
@@ -1796,6 +1828,37 @@ export class LiveUpdatesGenerator {
       content_opportunities: dailyMatch.content_opportunities,
       source: 'daily_important_matches'
     };
+  }
+
+  /**
+   * 🌙 Smart silent mode logic for live updates
+   * Determines when to use silent messaging based on importance and match time
+   */
+  private shouldUseSilentMode(importance: string, matchMinute: number): boolean {
+    // Always send important events with sound
+    if (importance === 'HIGH') {
+      return false; // No silent mode for goals, red cards, etc.
+    }
+    
+    // Check time-based conditions
+    const currentHour = new Date().getUTCHours();
+    const isNightTime = currentHour >= 23 || currentHour < 6;
+    
+    // During night time, use silent mode for medium/low importance
+    if (isNightTime && importance !== 'HIGH') {
+      return true;
+    }
+    
+    // During halftime break (45-50 min, 90-95 min), use silent mode for stats updates
+    const isHalftimeBreak = (matchMinute >= 45 && matchMinute <= 50) || 
+                           (matchMinute >= 90 && matchMinute <= 95);
+    
+    if (isHalftimeBreak && importance === 'LOW') {
+      return true;
+    }
+    
+    // Default: no silent mode for live updates during active play
+    return false;
   }
 }
 

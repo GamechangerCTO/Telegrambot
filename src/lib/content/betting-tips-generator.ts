@@ -116,6 +116,15 @@ export interface GeneratedBettingTip {
     contentId: string;
     confidenceLevel: number;
     riskLevel: string;
+    bookmakerUrl?: string;
+    affiliateCode?: string;
+    telegramEnhancements?: {
+      protectContent?: boolean;
+      enableShareButton?: boolean;
+      enableWebApp?: boolean;
+      priority?: string;
+      spoilerImage?: boolean;
+    };
   };
 }
 
@@ -178,7 +187,17 @@ export class BettingTipsGenerator {
           generatedAt: new Date().toISOString(),
           contentId: `betting_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           confidenceLevel: analysis.matchAssessment.overallConfidence,
-          riskLevel: analysis.matchAssessment.predictability
+          riskLevel: analysis.matchAssessment.predictability,
+          // 🎯 Enhanced Telegram Features for Betting
+          bookmakerUrl: `https://1xbet.com/?code=${request.affiliateCode || 'default'}`,
+          affiliateCode: request.affiliateCode,
+          telegramEnhancements: {
+            protectContent: analysis.matchAssessment.overallConfidence >= 80,  // 🛡️ Protect high-confidence tips
+            enableShareButton: true,  // 📤 Share betting tips
+            enableWebApp: true,  // 🌐 Link to detailed analysis
+            priority: analysis.matchAssessment.overallConfidence >= 75 ? 'high' : 'normal',
+            spoilerImage: false  // Regular images for betting tips
+          }
         }
       };
 

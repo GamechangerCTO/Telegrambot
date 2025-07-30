@@ -163,6 +163,17 @@ export interface GeneratedPoll {
     expectedParticipants: number;
     engagementScore: number; // 0-100 predicted engagement
     educationalScore: number; // 0-100 educational value
+    telegramEnhancements?: {
+      protectContent?: boolean;
+      enableShareButton?: boolean;
+      enableWebApp?: boolean;
+      priority?: string;
+      spoilerImage?: boolean;
+      disablePreview?: boolean;
+      isAnonymous?: boolean;
+      openPeriod?: number;
+      pollType?: string;
+    };
   };
 }
 
@@ -224,7 +235,19 @@ export class PollsGenerator {
           pollType,
           expectedParticipants: this.estimateParticipants(pollContent.expectedEngagement, analysis.matchImportance),
           engagementScore,
-          educationalScore
+          educationalScore,
+          // 📊 Enhanced Telegram Features for Polls
+          telegramEnhancements: {
+            protectContent: false,  // Polls need to be shareable for virality
+            enableShareButton: true,  // 📤 Share polls for community engagement
+            enableWebApp: engagementScore >= 85,  // 🌐 Web app for high-engagement polls
+            priority: engagementScore >= 80 ? 'high' : 'normal',
+            spoilerImage: false,  // No spoiler for polls
+            disablePreview: true,  // No link preview needed for polls
+            isAnonymous: pollContent.telegramPoll.is_anonymous !== false,  // Default anonymous
+            openPeriod: pollContent.telegramPoll.open_period || 3600,  // 1 hour default
+            pollType: pollContent.telegramPoll.type || 'regular'
+          }
         }
       };
 

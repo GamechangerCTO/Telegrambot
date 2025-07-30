@@ -13,23 +13,19 @@
   "crons": [
     {
       "path": "/api/automation/cron/morning-discovery",
-      "schedule": "0 7 * * *",
-      "comment": "Daily match discovery and importance scoring"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/automation/cron/dynamic-content", 
-      "schedule": "0,30 6-11,13-17,19-23 * * *",
-      "comment": "🎯 OPTIMIZED SMART SCHEDULER - Runs twice per hour during active periods, skips lunch (12-13) for efficiency"
+      "schedule": "0,30 6-11,13-17,19-23 * * *"
     },
     {
       "path": "/api/automation/cron/live-updates",
-      "schedule": "*/3 14-23 * * *",
-      "comment": "⚡ OPTIMIZED Live updates - Every 3 mins during prime match hours (14-23 UTC)"
+      "schedule": "*/3 14-23 * * *"
     },
     {
       "path": "/api/automation/cron/hourly", 
-      "schedule": "0 8,12,16,20 * * *",
-      "comment": "General automation rules and system maintenance"
+      "schedule": "0 8,12,16,20 * * *"
     }
   ],
   "regions": ["iad1"],

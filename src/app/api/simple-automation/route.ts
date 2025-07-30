@@ -155,6 +155,12 @@ async function sendToTelegram(contentItem: any): Promise<{ success: boolean; err
     const botToken = (channelWithBot as any).bots.telegram_token_encrypted;
     const channelId = channelWithBot.channel_id;
 
+    // 🌙 Smart silent messaging for night hours (11 PM - 6 AM UTC)
+    const currentHour = new Date().getUTCHours();
+    const isNightTime = currentHour >= 23 || currentHour < 6;
+    
+    console.log(`⏰ Simple automation - UTC hour: ${currentHour}, Night time: ${isNightTime}`);
+
     // שלח הודעה לטלגרם
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
@@ -166,7 +172,8 @@ async function sendToTelegram(contentItem: any): Promise<{ success: boolean; err
       body: JSON.stringify({
         chat_id: channelId,
         text: contentItem.content,
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        disable_notification: isNightTime  // 🔇 Silent messages during night hours
       }),
     });
 

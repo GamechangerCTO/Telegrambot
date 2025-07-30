@@ -12,9 +12,12 @@ interface TelegramSendOptions {
   channelId: string
   content: string
   imageUrl?: string
-  inlineKeyboard?: Array<Array<{text: string, url?: string, callback_data?: string}>>
+  inlineKeyboard?: Array<Array<TelegramKeyboardButton>>
   parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2'
   disablePreview?: boolean
+  disableNotification?: boolean  // 🔇 Silent messages for automation
+  protectContent?: boolean       // 🛡️ Content protection for exclusive content
+  hasSpoiler?: boolean          // 🙈 Spoiler images for sensitive content
   poll?: {
     question: string
     options: string[]
@@ -26,6 +29,17 @@ interface TelegramSendOptions {
     openPeriod?: number
     closeDate?: number
   }
+}
+
+// Enhanced keyboard button interface with all Telegram options
+interface TelegramKeyboardButton {
+  text: string
+  url?: string
+  callback_data?: string
+  copy_text?: { text: string }    // 📋 Copy text buttons for coupon codes
+  web_app?: { url: string }       // 🌐 Web app integration
+  switch_inline_query?: string    // 📤 Share functionality
+  switch_inline_query_current_chat?: string
 }
 
 interface TelegramResponse {
@@ -41,20 +55,42 @@ export class TelegramSender {
   }
 
   async sendMessage(options: TelegramSendOptions): Promise<TelegramResponse> {
-    const { botToken, channelId, content, imageUrl, inlineKeyboard, parseMode = 'HTML', disablePreview = false, poll } = options
+    const { 
+      botToken, 
+      channelId, 
+      content, 
+      imageUrl, 
+      inlineKeyboard, 
+      parseMode = 'HTML', 
+      disablePreview = false, 
+      disableNotification = false,
+      protectContent = false,
+      hasSpoiler = false,
+      poll 
+    } = options
     const apiUrl = `https://api.telegram.org/bot${botToken}`
 
     try {
       let response: Response;
       
       if (poll) {
-        // Send poll
-        return await this.sendPoll(botToken, channelId, poll);
+        // Send poll with enhanced options
+        return await this.sendPoll(botToken, channelId, poll, disableNotification, protectContent);
       } else if (imageUrl) {
         // Try to send with image first
         try {
           console.log('📷 Attempting to send message with image');
-          response = await this.sendPhoto(apiUrl, channelId, content, imageUrl, inlineKeyboard, parseMode);
+          response = await this.sendPhoto(
+            apiUrl, 
+            channelId, 
+            content, 
+            imageUrl, 
+            inlineKeyboard, 
+            parseMode,
+            hasSpoiler,
+            disableNotification,
+            protectContent
+          );
           
           if (!response.ok) {
             throw new Error(`Photo send failed: ${response.status} ${response.statusText}`);
@@ -65,11 +101,29 @@ export class TelegramSender {
           console.log('🔄 Falling back to text-only message...');
           
           // Fallback: Send text without image
-          response = await this.sendTextMessage(apiUrl, channelId, content, inlineKeyboard, parseMode, disablePreview);
+          response = await this.sendTextMessage(
+            apiUrl, 
+            channelId, 
+            content, 
+            inlineKeyboard, 
+            parseMode, 
+            disablePreview,
+            disableNotification,
+            protectContent
+          );
         }
       } else {
         // Send text message only
-        response = await this.sendTextMessage(apiUrl, channelId, content, inlineKeyboard, parseMode, disablePreview);
+        response = await this.sendTextMessage(
+          apiUrl, 
+          channelId, 
+          content, 
+          inlineKeyboard, 
+          parseMode, 
+          disablePreview,
+          disableNotification,
+          protectContent
+        );
       }
 
       const result = await response.json()
@@ -137,8 +191,11 @@ export class TelegramSender {
     chatId: string,
     caption: string,
     photoUrl: string,
-    keyboard?: Array<Array<{text: string, url?: string, callback_data?: string}>>,
-    parseMode: string = 'HTML'
+    keyboard?: Array<Array<TelegramKeyboardButton>>,
+    parseMode: string = 'HTML',
+    hasSpoiler: boolean = false,
+    disableNotification: boolean = false,
+    protectContent: boolean = false
   ) {
     try {
       console.log('📷 Attempting to send photo via Telegram:', photoUrl);
@@ -174,16 +231,31 @@ export class TelegramSender {
       
       console.log(`📊 Image downloaded successfully: ${imageBuffer.byteLength} bytes`);
       
-      // Create FormData to send image as file
+      // Create FormData to send image as file with enhanced options
       const formData = new FormData();
       formData.append('chat_id', chatId);
       formData.append('photo', imageBlob, 'image.png');
       formData.append('caption', cleanedCaption);
       formData.append('parse_mode', parseMode);
+      
+      // 🔇 Silent messages for automation
+      if (disableNotification) {
+        formData.append('disable_notification', 'true');
+      }
+      
+      // 🛡️ Content protection for exclusive content
+      if (protectContent) {
+        formData.append('protect_content', 'true');
+      }
+      
+      // 🙈 Spoiler images for sensitive content
+      if (hasSpoiler) {
+        formData.append('has_spoiler', 'true');
+      }
 
       if (keyboard && keyboard.length > 0) {
         formData.append('reply_markup', JSON.stringify({
-          inline_keyboard: keyboard
+          inline_keyboard: this.enhanceKeyboard(keyboard)
         }));
       }
 
@@ -214,10 +286,25 @@ export class TelegramSender {
         caption: cleanedCaption,
         parse_mode: parseMode
       }
+      
+      // 🔇 Silent messages for automation
+      if (disableNotification) {
+        payload.disable_notification = true;
+      }
+      
+      // 🛡️ Content protection for exclusive content
+      if (protectContent) {
+        payload.protect_content = true;
+      }
+      
+      // 🙈 Spoiler images for sensitive content
+      if (hasSpoiler) {
+        payload.has_spoiler = true;
+      }
 
       if (keyboard && keyboard.length > 0) {
         payload.reply_markup = {
-          inline_keyboard: keyboard
+          inline_keyboard: this.enhanceKeyboard(keyboard)
         }
       }
 
@@ -237,9 +324,11 @@ export class TelegramSender {
     apiUrl: string,
     chatId: string,
     text: string,
-    keyboard?: Array<Array<{text: string, url?: string, callback_data?: string}>>,
+    keyboard?: Array<Array<TelegramKeyboardButton>>,
     parseMode: string = 'HTML',
-    disablePreview: boolean = false
+    disablePreview: boolean = false,
+    disableNotification: boolean = false,
+    protectContent: boolean = false
   ) {
     // 🧹 CRITICAL: Validate and clean HTML before sending
     const cleanedText = this.validateAndCleanHTML(text);
@@ -253,10 +342,20 @@ export class TelegramSender {
       parse_mode: parseMode,
       disable_web_page_preview: disablePreview
     }
+    
+    // 🔇 Silent messages for automation
+    if (disableNotification) {
+      payload.disable_notification = true;
+    }
+    
+    // 🛡️ Content protection for exclusive content
+    if (protectContent) {
+      payload.protect_content = true;
+    }
 
     if (keyboard && keyboard.length > 0) {
       payload.reply_markup = {
-        inline_keyboard: keyboard
+        inline_keyboard: this.enhanceKeyboard(keyboard)
       }
     }
 
@@ -325,7 +424,10 @@ export class TelegramSender {
     channels: Array<{botToken: string, channelId: string, name: string}>,
     content: string,
     imageUrl?: string,
-    keyboard?: Array<Array<{text: string, url?: string, callback_data?: string}>>
+    keyboard?: Array<Array<TelegramKeyboardButton>>,
+    disableNotification?: boolean,
+    protectContent?: boolean,
+    hasSpoiler?: boolean
   ): Promise<{
     success: number
     failed: number
@@ -343,7 +445,10 @@ export class TelegramSender {
         channelId: channel.channelId,
         content,
         imageUrl,
-        inlineKeyboard: keyboard
+        inlineKeyboard: keyboard,
+        disableNotification: disableNotification || false,
+        protectContent: protectContent || false,
+        hasSpoiler: hasSpoiler || false
       })
 
       if (result.success) {
@@ -449,7 +554,7 @@ export class TelegramSender {
   }
 
   /**
-   * 🗳️ שליחת סקר אמיתי ב-Telegram
+   * 🗳️ שליחת סקר אמיתי ב-Telegram עם תכונות מתקדמות
    */
   private async sendPoll(
     botToken: string,
@@ -464,7 +569,9 @@ export class TelegramSender {
       explanation?: string
       openPeriod?: number
       closeDate?: number
-    }
+    },
+    disableNotification: boolean = false,
+    protectContent: boolean = false
   ): Promise<TelegramResponse> {
     try {
       const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendPoll`
@@ -493,6 +600,16 @@ export class TelegramSender {
       }
       if (pollData.closeDate) {
         payload.close_date = pollData.closeDate
+      }
+      
+      // 🔇 Silent messages for automation
+      if (disableNotification) {
+        payload.disable_notification = true;
+      }
+      
+      // 🛡️ Content protection for exclusive content
+      if (protectContent) {
+        payload.protect_content = true;
       }
 
       console.log('🗳️ Sending poll with payload:', JSON.stringify(payload, null, 2))
@@ -552,6 +669,51 @@ export class TelegramSender {
         timestamp: new Date()
       }
     }
+  }
+
+  /**
+   * 🔧 Enhanced keyboard processing with all Telegram button options
+   */
+  private enhanceKeyboard(keyboard: Array<Array<TelegramKeyboardButton>>): Array<Array<any>> {
+    return keyboard.map(row => 
+      row.map(button => {
+        const telegramButton: any = {
+          text: button.text
+        };
+
+        // Regular URL button
+        if (button.url) {
+          telegramButton.url = button.url;
+        }
+        
+        // Callback data button
+        else if (button.callback_data) {
+          telegramButton.callback_data = button.callback_data;
+        }
+        
+        // 📋 Copy text button (for coupon codes)
+        else if (button.copy_text) {
+          telegramButton.copy_text = button.copy_text;
+        }
+        
+        // 🌐 Web app button
+        else if (button.web_app) {
+          telegramButton.web_app = button.web_app;
+        }
+        
+        // 📤 Share inline query
+        else if (button.switch_inline_query !== undefined) {
+          telegramButton.switch_inline_query = button.switch_inline_query;
+        }
+        
+        // 📤 Share inline query in current chat
+        else if (button.switch_inline_query_current_chat !== undefined) {
+          telegramButton.switch_inline_query_current_chat = button.switch_inline_query_current_chat;
+        }
+
+        return telegramButton;
+      })
+    );
   }
 }
 

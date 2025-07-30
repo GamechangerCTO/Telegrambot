@@ -94,13 +94,19 @@ export class TelegramDistributor {
       // Handle image generation/retrieval
       let imageUrl = await this.handleImageGeneration(content, language, includeImages);
 
+      // 🎛️ Smart Telegram settings based on content metadata
+      const telegramSettings = this.extractTelegramSettings(content);
+      
+      console.log(`⏰ Distribution - Enhanced settings:`, telegramSettings);
+
       // Send content to allowed channels only
       const distributionResult = await this.distributeToChannels(
         allowedChannels,
         messageContent,
         imageUrl,
         keyboard,
-        content
+        content,
+        telegramSettings  // Pass enhanced settings to distribution
       );
 
       // 📊 TRACK SENT MESSAGES - Record successful sends for spam prevention
@@ -251,9 +257,7 @@ export class TelegramDistributor {
           contentType: content.content_type as 'news' | 'betting' | 'analysis' | 'live' | 'poll' | 'daily_summary' | 'weekly_summary',
           language: language,
           teams: teamsFromContent.length > 0 ? teamsFromContent : undefined,
-          competition: competition || undefined,
-          size: '1024x1024',
-          quality: 'high'
+          competition: competition || undefined
         });
         
         if (generatedImage) {
@@ -275,7 +279,7 @@ export class TelegramDistributor {
   }
 
   /**
-   * Distribute content to multiple channels
+   * Distribute content to multiple channels with enhanced Telegram settings
    */
   private async distributeToChannels(
     channels: Array<{
@@ -288,7 +292,8 @@ export class TelegramDistributor {
     messageContent: string,
     imageUrl: string | undefined,
     keyboard: any,
-    content: any
+    content: any,
+    telegramSettings: any
   ): Promise<TelegramDistributionResult> {
     const allResults: Array<{
       channelName: string;
@@ -324,7 +329,10 @@ export class TelegramDistributor {
         telegramChannels,
         messageContent,
         imageUrl,
-        keyboard
+        keyboard,
+        telegramSettings.disableNotification,  // 🌙 Smart silent messaging
+        telegramSettings.protectContent,      // 🛡️ Content protection
+        telegramSettings.hasSpoiler          // 🙈 Spoiler images
       );
 
       console.log(`✅ Distribution completed: ${telegramResult.success}/${telegramResult.success + telegramResult.failed} channels`);
@@ -393,17 +401,25 @@ export class TelegramDistributor {
   }
 
   /**
-   * Create Telegram keyboard for content
+   * Create enhanced Telegram keyboard for content with all button types
    */
   createTelegramKeyboard(content: any, mode: string): Array<Array<{
     text: string;
     url?: string;
     callback_data?: string;
+    copy_text?: { text: string };
+    web_app?: { url: string };
+    switch_inline_query?: string;
+    switch_inline_query_current_chat?: string;
   }>> | undefined {
     const keyboard: Array<Array<{
       text: string;
       url?: string;
       callback_data?: string;
+      copy_text?: { text: string };
+      web_app?: { url: string };
+      switch_inline_query?: string;
+      switch_inline_query_current_chat?: string;
     }>> = [];
 
     // Get language from content for all buttons
@@ -427,7 +443,7 @@ export class TelegramDistributor {
     }
 
     if (content.type === 'coupons' && content.metadata?.couponUrl) {
-      // Coupon button text in all languages
+      // First row: Main coupon button
       const getCouponText = {
         en: '🎁 Get Coupon',
         am: '🎁 ኩፖን ያግኙ',
@@ -439,6 +455,44 @@ export class TelegramDistributor {
       keyboard.push([{
         text: getCouponText[contentLanguage as keyof typeof getCouponText] || getCouponText.en,
         url: content.metadata.couponUrl
+      }]);
+
+      // Second row: Copy code button (if coupon code exists)
+      if (content.metadata?.couponCode) {
+        const copyCodeText = {
+          en: '📋 Copy Code',
+          am: '📋 ኮድ ቅዳ',
+          sw: '📋 Nakili Msimbo',
+          fr: '📋 Copier le Code',
+          ar: '📋 انسخ الكود'
+        };
+
+        keyboard.push([{
+          text: copyCodeText[contentLanguage as keyof typeof copyCodeText] || copyCodeText.en,
+          copy_text: { text: content.metadata.couponCode }
+        }]);
+      }
+
+      // Third row: Share button for viral marketing
+      const shareText = {
+        en: '📤 Share Deal',
+        am: '📤 ውል አጋራ',
+        sw: '📤 Shiriki Ofa',
+        fr: '📤 Partager l\'Offre',
+        ar: '📤 شارك العرض'
+      };
+
+      const shareMessage = {
+        en: `🎁 Amazing deal: ${content.title || 'Special Offer'} - `,
+        am: `🎁 እውነተኛ ስምምነት: ${content.title || 'ልዩ ድረስ'} - `,
+        sw: `🎁 Ofa kubwa: ${content.title || 'Ofa Maalum'} - `,
+        fr: `🎁 Offre incroyable: ${content.title || 'Offre Spéciale'} - `,
+        ar: `🎁 عرض رائع: ${content.title || 'عرض خاص'} - `
+      };
+
+      keyboard.push([{
+        text: shareText[contentLanguage as keyof typeof shareText] || shareText.en,
+        switch_inline_query: shareMessage[contentLanguage as keyof typeof shareMessage] || shareMessage.en
       }]);
     }
 
@@ -634,6 +688,48 @@ export class TelegramDistributor {
         channels_with_bots: 0
       };
     }
+  }
+
+  /**
+   * 🎛️ Extract enhanced Telegram settings from content metadata
+   */
+  private extractTelegramSettings(content: any): {
+    disableNotification: boolean;
+    protectContent: boolean;
+    hasSpoiler: boolean;
+    priority: string;
+  } {
+    // Default settings
+    const currentHour = new Date().getUTCHours();
+    const isNightTime = currentHour >= 23 || currentHour < 6;
+    
+    const defaults = {
+      disableNotification: isNightTime,  // Default night mode
+      protectContent: false,
+      hasSpoiler: false,
+      priority: 'normal'
+    };
+
+    // Check if content has enhanced metadata
+    const metadata = content.metadata || content.content_items?.[0]?.metadata;
+    const telegramEnhancements = metadata?.telegramEnhancements;
+    
+    if (!telegramEnhancements) {
+      console.log('📋 Using default Telegram settings');
+      return defaults;
+    }
+
+    console.log('🎛️ Found enhanced Telegram metadata:', telegramEnhancements);
+
+    // Extract settings from content metadata
+    return {
+      disableNotification: telegramEnhancements.disableNotification !== undefined 
+        ? telegramEnhancements.disableNotification 
+        : defaults.disableNotification,
+      protectContent: telegramEnhancements.protectContent || false,
+      hasSpoiler: telegramEnhancements.spoilerImage || false,
+      priority: telegramEnhancements.priority || 'normal'
+    };
   }
 }
 

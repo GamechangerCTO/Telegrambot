@@ -56,6 +56,15 @@ export interface GeneratedNews {
     contentId: string;
     generatedAt: string;
     relevanceScore: number;
+    detailsUrl?: string;
+    telegramEnhancements?: {
+      protectContent?: boolean;
+      enableShareButton?: boolean;
+      enableWebApp?: boolean;
+      priority?: string;
+      spoilerImage?: boolean;
+      disablePreview?: boolean;
+    };
   };
 }
 
@@ -117,7 +126,18 @@ export class OptimizedNewsContentGenerator {
           source: bestNews.source,
           contentId: bestNews.id,
           generatedAt: new Date().toISOString(),
-          relevanceScore: bestNews.relevanceScore || 0
+          relevanceScore: bestNews.relevanceScore || 0,
+          // 📰 Enhanced Telegram Features for News
+          detailsUrl: bestNews.sourceUrl,
+          telegramEnhancements: {
+            protectContent: (bestNews.relevanceScore || 0) >= 85,  // 🛡️ Protect high-value exclusive news
+            enableShareButton: true,  // 📤 Share breaking news
+            enableWebApp: false,  // No web app for news
+            priority: (bestNews.relevanceScore || 0) >= 80 ? 'high' : 'normal',
+            spoilerImage: bestNews.title?.toLowerCase().includes('transfer') || 
+                         bestNews.title?.toLowerCase().includes('breaking'),  // 🙈 Spoiler for transfers/breaking
+            disablePreview: false  // Show link preview for news
+          }
         }
       };
 
