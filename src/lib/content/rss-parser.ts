@@ -217,10 +217,26 @@ export class RSSParser {
   }
 
   /**
-   * Clean and normalize text content
+   * Clean and normalize text content - Enhanced for malformed HTML
    */
   private cleanText(text: string): string {
     return text
+      // First, fix malformed HTML tags (missing angle brackets)
+      .replace(/\bp\b(?![a-z])/gi, '') // Remove standalone 'p' tags
+      .replace(/\bstrong\b(?![a-z])/gi, '') // Remove standalone 'strong' tags
+      .replace(/\bem\b(?![a-z])/gi, '') // Remove standalone 'em' tags
+      .replace(/\bb\b(?![a-z])/gi, '') // Remove standalone 'b' tags
+      .replace(/\bi\b(?![a-z])/gi, '') // Remove standalone 'i' tags
+      .replace(/\bdiv\b(?![a-z])/gi, '') // Remove standalone 'div' tags
+      .replace(/\bspan\b(?![a-z])/gi, '') // Remove standalone 'span' tags
+      .replace(/\/p\b/gi, '') // Remove closing p tags
+      .replace(/\/strong\b/gi, '') // Remove closing strong tags
+      .replace(/\/em\b/gi, '') // Remove closing em tags
+      .replace(/\/b\b/gi, '') // Remove closing b tags
+      .replace(/\/i\b/gi, '') // Remove closing i tags
+      .replace(/\/div\b/gi, '') // Remove closing div tags
+      .replace(/\/span\b/gi, '') // Remove closing span tags
+      // Then remove proper HTML tags
       .replace(/<[^>]*>/g, '') // Remove HTML tags
       .replace(/\s+/g, ' ') // Normalize whitespace
       .replace(/&quot;/g, '"')

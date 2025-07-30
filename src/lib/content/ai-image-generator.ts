@@ -6,10 +6,15 @@ import { getOpenAIClient } from '../api-keys';
 import { createClient } from '@supabase/supabase-js';
 
 interface ImageGenerationOptions {
-  prompt: string;
+  prompt?: string;
+  content?: string;
+  title?: string;
+  contentType?: 'news' | 'betting' | 'analysis' | 'live' | 'poll' | 'daily_summary' | 'weekly_summary';
   size?: '1024x1024' | '1792x1024' | '1024x1792';
   quality?: 'low' | 'medium' | 'high' | 'auto' | 'standard' | 'hd'; // Support both GPT-Image-1 and DALL-E 3 values
   language?: 'en' | 'am' | 'sw' | 'fr' | 'ar';
+  teams?: string[];
+  competition?: string;
 }
 
 interface ContentAnalysisOptions {
@@ -158,7 +163,14 @@ export class AIImageGenerator {
       }
       
       // Build the full prompt with style guidance
-      const fullPrompt = this.buildPrompt(options);
+      const fullPrompt = options.prompt || this.buildImagePromptFromContent({
+        content: options.content || '',
+        contentType: options.contentType || 'news',
+        title: options.title,
+        language: options.language,
+        teams: options.teams,
+        competition: options.competition
+      });
       console.log(`🎨 Generating image with GPT-Image-1 model: ${fullPrompt.substring(0, 100)}...`);
       
       // Map quality values for GPT-Image-1 (supports: low, medium, high, auto)
@@ -213,7 +225,7 @@ export class AIImageGenerator {
             if (supabaseUrl) {
               return {
                 url: supabaseUrl,
-                prompt: options.prompt,
+                prompt: fullPrompt,
                 revisedPrompt: imageData.revised_prompt,
                 filename: filename // Store filename for potential cleanup
               };
@@ -239,7 +251,7 @@ export class AIImageGenerator {
               
               return {
                 url: fullUrl,
-                prompt: options.prompt,
+                prompt: fullPrompt,
                 revisedPrompt: imageData.revised_prompt,
                 filename: filename
               };
@@ -523,7 +535,7 @@ Create an image that directly relates to and enhances the specific content being
     const { content, contentType, teams, competition, language } = options;
     
     // Enhanced prompt engineering
-    let prompt = this.generateSpecificPromptForContentType(contentType, content, teams);
+    let prompt = this.generateSpecificPromptForContentType(contentType, content, teams || [], competition);
     
     // Add realistic photographic modifiers for professional look
     const realisticModifiers = 'photorealistic, professional sports photography, high resolution, detailed';
@@ -542,7 +554,7 @@ Create an image that directly relates to and enhances the specific content being
   /**
    * Generate a specific prompt for a given content type
    */
-  private generateSpecificPromptForContentType(contentType: string, content: string, teams: string[]): string {
+  private generateSpecificPromptForContentType(contentType: string, content: string, teams: string[], competition?: string): string {
     const typeSpecificGuidance = {
       'news': 'Generate prompts for breaking news photography - action shots, press conferences, stadium scenes, celebration moments',
       'betting': 'Generate prompts for analytical sports photography - tactical shots, player comparisons, statistical overlays, professional analysis scenes',

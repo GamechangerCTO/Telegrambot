@@ -428,11 +428,7 @@ export class OptimizedNewsContentGenerator {
    * 🤖 OPTIMIZED: AI edit with fallback
    */
   private async aiEditNewsContentOptimized(news: NewsItem, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): Promise<string> {
-    // Quick template for non-English languages if content is already short
-    if (language !== 'en' && news.content.length < 300) {
-      return this.createTemplateNewsContent(news, language);
-    }
-
+    // Always try AI translation for non-English languages - don't skip for short content
     console.log(`🤖 AI editing news content for language: ${language}`);
     
     try {
@@ -443,7 +439,14 @@ export class OptimizedNewsContentGenerator {
 
       const systemPrompts = {
         'en': `You are a football journalist. Create a complete 4-5 line summary with emojis. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with hashtags.`,
-        'am': `You are a football journalist writing for Ethiopian readers. Write ONLY in proper Amharic language. Create a natural, flowing 4-5 line news summary. CRITICAL: Always complete your sentences fully - never stop in the middle of a word or sentence. Use ⚽ emoji. End with Amharic hashtags: #እግርኳስዜና #ስፖርት`,
+        'am': `You are an Ethiopian football journalist. TRANSLATE and REWRITE this English football news into proper, fluent Amharic language. Requirements:
+1. Write ONLY in natural Amharic - no English words
+2. Create a complete news story (4-5 sentences minimum)
+3. CRITICAL: Always finish your sentences completely - never cut off mid-sentence
+4. Include all key details from the original news
+5. Use ⚽ emoji at the start
+6. End with source and hashtags: #እግርኳስዜና #ስፖርት #ዝማኔ
+7. Make it sound like native Amharic journalism`,
         'sw': `You are a football journalist writing ONLY in Swahili. Create 4-5 complete lines. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with Swahili & English hashtags.`,
         'fr': `Vous êtes un journaliste de football écrivant UNIQUEMENT en français. Créez un résumé complet de 4-5 lignes. IMPORTANT: Terminez toujours vos phrases complètement - ne coupez jamais au milieu. Utilisez des emojis ⚽. Terminez par des hashtags français.`,
         'ar': `أنت صحفي كرة قدم تكتب باللغة العربية فقط. أنشئ ملخصاً كاملاً من 4-5 أسطر. مهم: اكمل جملك دائماً - لا تقطع أبداً في المنتصف. استخدم رموز ⚽. انته بهاشتاغات عربية.`
@@ -459,23 +462,33 @@ export class OptimizedNewsContentGenerator {
 
       const response = await Promise.race([
         openai.chat.completions.create({
-          model: "gpt-4o", // Faster model
+          model: "gpt-4o-mini", // Fastest model for translations
           messages: [
             { role: "system", content: systemPrompts[language] },
             { 
               role: "user", 
-              content: `Create a complete news summary in ${languageNames[language]}. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 500)}` 
+              content: `Create a complete news summary in ${languageNames[language]}. Translate ALL the information. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 800)}` 
             }
           ],
-          max_tokens: 300,
+          max_tokens: 800, // Increased for complete content
           temperature: 0.7
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('AI_TIMEOUT_30_SECONDS')), 30000))
       ]) as any;
 
-      return response.choices[0]?.message?.content?.trim() || this.createTemplateNewsContent(news, language);
+      const aiResult = response.choices[0]?.message?.content?.trim();
+      console.log(`🤖 AI Result for ${language}:`, aiResult ? aiResult.substring(0, 200) + '...' : 'EMPTY/NULL');
+      
+      if (aiResult && aiResult.length > 50) {
+        console.log(`✅ Using AI result for ${language}`);
+        return aiResult;
+      } else {
+        console.log(`❌ AI result invalid for ${language}, using template`);
+        return this.createTemplateNewsContent(news, language);
+      }
     } catch (error) {
-      console.log(`⚠️ AI editing failed for ${language}, using template`);
+      console.log(`❌ AI editing failed for ${language}, error:`, error?.message || error);
+      console.log(`🔍 Error details:`, error);
       return this.createTemplateNewsContent(news, language);
     }
   }
@@ -484,7 +497,7 @@ export class OptimizedNewsContentGenerator {
    * 📝 Create template-based news content for all languages
    */
   private createTemplateNewsContent(news: NewsItem, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): string {
-    const shortContent = this.shortenContent(news.content, 200);
+    const shortContent = this.shortenContent(news.content, 400); // Increased from 200 to 400
     
     const templates = {
       en: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 ${news.source}\n\n#FootballNews #Breaking`,
@@ -583,7 +596,7 @@ export class OptimizedNewsContentGenerator {
   }
 
   /**
-   * 📝 Process content for better Amharic presentation
+   * 📝 Process content for better Amharic presentation with basic translation
    */
   private processContentForAmharic(content: string): string {
     // Basic improvement - add context for Amharic readers
@@ -592,18 +605,33 @@ export class OptimizedNewsContentGenerator {
     }
     
     // Clean up content and provide better Amharic context
-    const cleanContent = content
-      .replace(/[<>]/g, '') // Remove any HTML
-      .replace(/\s+/g, ' ') // Clean whitespace
+    let cleanContent = content
+      // Remove HTML tags completely
+      .replace(/(<\/?)strong[^>]*>/gi, '')
+      .replace(/(<\/?)p[^>]*>/gi, '\n')
+      .replace(/(<\/?)div[^>]*>/gi, '\n')
+      .replace(/(<\/?)span[^>]*>/gi, '')
+      .replace(/(<\/?)br[^>]*>/gi, '\n')
+      .replace(/(<\/?)em[^>]*>/gi, '')
+      .replace(/(<\/?)b[^>]*>/gi, '')
+      .replace(/(<\/?)i[^>]*>/gi, '')
+      .replace(/(<\/?)a[^>]*>/gi, '')
+      .replace(/(<\/?)h[1-6][^>]*>/gi, '\n')
+      .replace(/<[^>]*>/g, '') // Remove any remaining HTML
+      .replace(/\s{2,}/g, ' ') // Clean whitespace
+      .replace(/\n{2,}/g, '\n')
       .trim();
+
+    // Basic football terminology translation for better readability
+    cleanContent = this.translateBasicFootballTerms(cleanContent);
     
     // Extract key team/player names for better context
     const teamNames = this.extractTeamNames(cleanContent);
-    let contextualContent = cleanContent.substring(0, 200);
+    let contextualContent = cleanContent.substring(0, 400); // Increased from 200 to 400
     
     // Make sure we don't cut in the middle of a word
     const lastSpace = contextualContent.lastIndexOf(' ');
-    if (lastSpace > 150) {
+    if (lastSpace > 300) { // Adjusted threshold accordingly
       contextualContent = contextualContent.substring(0, lastSpace);
     }
     
@@ -612,7 +640,65 @@ export class OptimizedNewsContentGenerator {
       return `የ${teamNames[0]} እና ተያያዥ ክለቦች ዜና፡\n\n${contextualContent}...\n\nተጨማሪ ዝርዝሮች ከምንጩ ይመልከቱ።`;
     }
     
-    return `ከአለም አቀፍ እግር ኳስ ዓለም የደረሰ ወቅታዊ ዜና፡\n\n${contextualContent}...\n\nለሙሉ ዝርዝር ምንጩን ይመልከቱ።`;
+    return `ከአለም አቀፍ እግር ኳስ ዓለም የደረሰ ወቅታዊ ዜና፡\n\n${contextualContent}...\n\nለሙሉ ዝርዝር ምንጹን ይመልከቱ።`;
+  }
+
+  /**
+   * 🔤 Basic football terminology translation to Amharic
+   */
+  private translateBasicFootballTerms(content: string): string {
+    const translations = {
+      'football': 'እግር ኳስ',
+      'soccer': 'እግር ኳስ', 
+      'penalty': 'ቅጣት ምት',
+      'goal': 'ጎል',
+      'match': 'ጨዋታ',
+      'game': 'ጨዋታ',
+      'team': 'ቡድን',
+      'player': 'ተጫዋች',
+      'coach': 'አሰልጣኝ',
+      'manager': 'አስተዳዳሪ',
+      'win': 'ድል',
+      'victory': 'ድል',
+      'defeat': 'ሽንፈት',
+      'score': 'ውጤት',
+      'league': 'ሊግ',
+      'championship': 'ሻምፒዮንሺፕ',
+      'tournament': 'ውድድር',
+      'season': 'ወቅት',
+      'transfer': 'ዝውውር',
+      'contract': 'ውል',
+      'stadium': 'ስታዲየም',
+      'fans': 'ደጋፊዎች',
+      'supporters': 'ደጋፊዎች'
+    };
+
+    let translatedContent = content;
+    
+    // Apply translations while preserving original context
+    Object.entries(translations).forEach(([english, amharic]) => {
+      // Only translate standalone words, not parts of names
+      const regex = new RegExp(`\\b${english}\\b`, 'gi');
+      if (regex.test(translatedContent) && !this.isPartOfProperName(translatedContent, english)) {
+        translatedContent = translatedContent.replace(regex, `${english} (${amharic})`);
+      }
+    });
+
+    return translatedContent;
+  }
+
+  /**
+   * Check if a word is part of a proper name (team, player, etc.)
+   */
+  private isPartOfProperName(content: string, word: string): boolean {
+    const wordIndex = content.toLowerCase().indexOf(word.toLowerCase());
+    if (wordIndex === -1) return false;
+    
+    // Check if the word is preceded or followed by a capital letter (indicating a proper name)
+    const beforeChar = wordIndex > 0 ? content[wordIndex - 1] : ' ';
+    const afterChar = wordIndex + word.length < content.length ? content[wordIndex + word.length] : ' ';
+    
+    return /[A-Z]/.test(beforeChar) || /[A-Z]/.test(afterChar);
   }
 
   /**

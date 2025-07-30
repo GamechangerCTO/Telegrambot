@@ -45,7 +45,9 @@ export class ContentFormatter {
     }
 
     // 🧹 CRITICAL: Clean HTML tags for Telegram before any processing
+    console.log('🔍 Before HTML cleaning:', formattedText.substring(0, 200));
     formattedText = this.cleanHTMLForTelegram(formattedText);
+    console.log('🧹 After HTML cleaning:', formattedText.substring(0, 200));
 
     // 🎯 SMART CONTENT OPTIMIZATION FOR TELEGRAM
     formattedText = this.optimizeContentForTelegram(formattedText, content.content_type, contentLanguage);

@@ -1,0 +1,708 @@
+
+> telegram-bot-management-system@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.2s
+ ○ Compiling /api/unified-content ...
+ ✓ Compiled /api/unified-content in 1228ms (363 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+⏱️ Rate Limiter initialized for 5 APIs
+⚠️ FOOTBALL_DATA_API_KEY not found - Football-Data.org API disabled
+🎯 Football API Manager initializing...
+⚽ API-Football v3 initialized
+✅ Football API Manager initialized with 1 APIs
+🚀 UnifiedFootballService initialized with FootballAPIManager
+🚀 Unified Content API: send_now | Type: news | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: undefined,
+  target_channels_type: 'undefined',
+  target_channels_isArray: false,
+  body_keys: []
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 1 channels for language 'am':
+  - AfircaSportCenter (am)
+🎯 Using primary channel: AfircaSportCenter
+🎯 Content Router: Generating news content for am (Channel: AfircaSportCenter)
+📋 Channel settings: Leagues: 20, Teams: 0, Affiliate: TESTING
+📰 Using news content generator for am
+📰 Generating news content in am
+📡 Fetching fresh RSS feeds
+📡 RSS fetch attempt 1/2
+📡 Fetching 3 RSS feeds
+🔍 Fetching RSS feed directly: https://feeds.bbci.co.uk/sport/football/rss.xml
+🔍 Fetching RSS feed directly: https://www.theguardian.com/football/rss
+🔍 Fetching RSS feed directly: https://talksport.com/football/feed/
+✅ The Guardian Football: 51 items
+✅ The Guardian Football: 51 items
+✅ BBC Sport Football: 89 items
+✅ BBC Sport Football: 89 items
+✅ TalkSport: 100 items
+✅ TalkSport: 100 items
+📰 Total items: 240, Unique: 228
+✅ RSS fetch successful on attempt 1
+📰 Fetched and cached 228 news items
+✅ Fetched 228 news items in 3387ms
+🏆 Scoring 228 news items for channel: AfircaSportCenter
+🎯 Channel preferences: 0 teams, 20 leagues
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🔍 Finding best unused news for channel unified-content
+❌ Error fetching used content: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.content_uniqueness" does not exist'
+}
+✅ Found unused news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory"
+✅ Selected news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory" (Score: 155)
+🎨 Generating AI image
+🤖 AI editing news content for language: am
+✅ Using OpenAI key from environment (fallback)
+✅ OpenAI client initialized
+✅ Using OpenAI key from environment (fallback)
+✅ OpenAI client initialized
+🎨 Generating image with GPT-Image-1 model: Real football news photo: penalty kick, authentic stadium scene, professional sports journalism phot...
+🤖 AI Result for am: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች።
+
+ይህ የወቅቱ ፈተና ወደ ወቅቱ ወደ ወቅቱ ማለት ነው። ቁርጥ ወደ ምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ የሚኖረው ዝርዝር ይህንን የወቅቱ የሥርዓት ክርክር ...
+✅ Using AI result for am
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753895556396.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1548632 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753895556396.png',
+  id: 'b159e4b2-f652-4036-a3b0-c245528be5f9',
+  fullPath: 'generated-images/football_image_1753895556396.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895556396.png
+🌐 URL accessibility test: 200 OK
+✅ News generation completed in 29955ms
+📤 Starting Telegram distribution...
+🎯 Using target channels: 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+🔓 Decoded base64 token for channel: AfircaSportCenter
+📊 Found 1 active channels for language am:
+  - AfircaSportCenter (am)
+✅ Content sending allowed: news for channel 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች።
+
+ይህ የወቅቱ ፈተና ወደ ወቅቱ ወደ ወቅቱ ማለት ነው። ቁርጥ ወደ ምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ የሚኖረው ዝርዝር ይህንን የወቅቱ የሥርዓት ክርክር 
+🧹 Cleaning HTML for Telegram: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች።
+
+ይህ ...
+✅ HTML cleaned for Telegram: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች። ይህ የ...
+🧹 After HTML cleaning: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች። ይህ የወቅቱ ፈተና ወደ ወቅቱ ወደ ወቅቱ ማለት ነው። ቁርጥ ወደ ምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ የሚኖረው ዝርዝር ይህንን የወቅቱ የሥርዓት ክርክር በ
+🧹 Cleaning HTML for Telegram: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች። ይህ የ...
+✅ HTML cleaned for Telegram: አንቀጽ: ቁርጥ እና አዳዲስ የወቅቱ ትንበያ ቃለ ምልክት አለች፣ በምዕራብ አውሮፓ ውድድር 2025 ውስጥ እንግሊዝ ድል እንዲሰጥ እንደ ትምህርት አለች። ይህ የ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895556396.png
+📤 Sending to channel: AfircaSportCenter
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895556396.png
+🧹 HTML validation complete. Clean text length: 289
+📊 Image downloaded successfully: 1548632 bytes
+✅ Message sent successfully to @africansportdata
+✅ Successfully sent to AfircaSportCenter
+✅ Distribution completed: 1/1 channels
+📊 Recording sent message: news to channel 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+✅ Message recorded successfully
+📝 Skipping content save to database (RLS policy needs update)
+ ✓ Compiled /api/smart-push/trigger in 221ms (365 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+🎯 Smart Push Trigger received: {
+  trigger_type: 'after_content',
+  content_type: 'news',
+  content_id: 'content_1753895561138',
+  channel_ids: 1
+}
+🎫 Evaluating smart coupon for news in am
+❌ No suitable coupon for this context: No active coupons available
+ POST /api/smart-push/trigger 200 in 538ms
+🎫 Smart coupon system triggered: No suitable coupon found for current context
+ POST /api/unified-content?action=send_now&type=news&language=am 200 in 35430ms
+⏱️ Rate Limiter initialized for 5 APIs
+⚠️ FOOTBALL_DATA_API_KEY not found - Football-Data.org API disabled
+🎯 Football API Manager initializing...
+⚽ API-Football v3 initialized
+✅ Football API Manager initialized with 1 APIs
+🚀 UnifiedFootballService initialized with FootballAPIManager
+🚀 Unified Content API: send_now | Type: news | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: undefined,
+  target_channels_type: 'undefined',
+  target_channels_isArray: false,
+  body_keys: []
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 1 channels for language 'am':
+  - AfircaSportCenter (am)
+🎯 Using primary channel: AfircaSportCenter
+🎯 Content Router: Generating news content for am (Channel: AfircaSportCenter)
+📋 Channel settings: Leagues: 20, Teams: 0, Affiliate: TESTING
+📰 Using news content generator for am
+📰 Generating news content in am
+📡 Fetching fresh RSS feeds
+📡 RSS fetch attempt 1/2
+📡 Fetching 3 RSS feeds
+🔍 Fetching RSS feed directly: https://feeds.bbci.co.uk/sport/football/rss.xml
+🔍 Fetching RSS feed directly: https://www.theguardian.com/football/rss
+🔍 Fetching RSS feed directly: https://talksport.com/football/feed/
+✅ TalkSport: 100 items
+✅ TalkSport: 100 items
+✅ The Guardian Football: 51 items
+✅ The Guardian Football: 51 items
+✅ BBC Sport Football: 89 items
+✅ BBC Sport Football: 89 items
+📰 Total items: 240, Unique: 228
+✅ RSS fetch successful on attempt 1
+📰 Fetched and cached 228 news items
+✅ Fetched 228 news items in 317ms
+🏆 Scoring 228 news items for channel: AfircaSportCenter
+🎯 Channel preferences: 0 teams, 20 leagues
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🔍 Finding best unused news for channel unified-content
+❌ Error fetching used content: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.content_uniqueness" does not exist'
+}
+✅ Found unused news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory"
+✅ Selected news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory" (Score: 155)
+🎨 Generating AI image
+🤖 AI editing news content for language: am
+✅ Using OpenAI key from environment (fallback)
+✅ OpenAI client initialized
+✅ Using OpenAI key from environment (fallback)
+✅ OpenAI client initialized
+🎨 Generating image with GPT-Image-1 model: Real football news photo: penalty kick, authentic stadium scene, professional sports journalism phot...
+🤖 AI Result for am: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት
+
+ይህን የተለየ የፈተና ስርዓት ይኖርበታል የሚሉት ክሎይ ከሌሊ በእንግሊዝ ወቅታዊ አውሮፓ አሸናፊነት ዝርዝር ላይ ገንዘብ እንዲል ተናገረ።
+
+ክሎይ ከሌሊ ዳግመ የጠላት ቡድን ስፔንን በፈተና አሸናፊ ማድረ...
+✅ Using AI result for am
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753895610436.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1591608 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753895610436.png',
+  id: '20d0bd1b-3f8c-4a84-8107-a8155628c57f',
+  fullPath: 'generated-images/football_image_1753895610436.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895610436.png
+🌐 URL accessibility test: 200 OK
+✅ News generation completed in 24811ms
+📤 Starting Telegram distribution...
+🎯 Using target channels: 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+🔓 Decoded base64 token for channel: AfircaSportCenter
+📊 Found 1 active channels for language am:
+  - AfircaSportCenter (am)
+✅ Content sending allowed: news for channel 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት
+
+ይህን የተለየ የፈተና ስርዓት ይኖርበታል የሚሉት ክሎይ ከሌሊ በእንግሊዝ ወቅታዊ አውሮፓ አሸናፊነት ዝርዝር ላይ ገንዘብ እንዲል ተናገረ።
+
+ክሎይ ከሌሊ ዳግመ የጠላት ቡድን ስፔንን በፈተና አሸናፊ ማድረ
+🧹 Cleaning HTML for Telegram: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት
+
+ይህን የተለየ የፈተና ስርዓት ይኖርበታል የ...
+✅ HTML cleaned for Telegram: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት ይህን የተለየ የፈተና ስርዓት ይኖርበታል የሚ...
+🧹 After HTML cleaning: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት ይህን የተለየ የፈተና ስርዓት ይኖርበታል የሚሉት ክሎይ ከሌሊ በእንግሊዝ ወቅታዊ አውሮፓ አሸናፊነት ዝርዝር ላይ ገንዘብ እንዲል ተናገረ። ክሎይ ከሌሊ ዳግመ የጠላት ቡድን ስፔንን በፈተና አሸናፊ ማድረግ 
+🧹 Cleaning HTML for Telegram: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት ይህን የተለየ የፈተና ስርዓት ይኖርበታል የሚ...
+✅ HTML cleaned for Telegram: ርዕሰ ጉዳይ: ክሎይ ከሌሊ የተለየ የፈተና አይነት መነሻ ተመልክቷል የአውሮፓ 2025 አሸናፊነት ዝርዝር ለመግኘት ይህን የተለየ የፈተና ስርዓት ይኖርበታል የሚ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895610436.png
+📤 Sending to channel: AfircaSportCenter
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895610436.png
+🧹 HTML validation complete. Clean text length: 286
+📊 Image downloaded successfully: 1591608 bytes
+✅ Message sent successfully to @africansportdata
+✅ Successfully sent to AfircaSportCenter
+✅ Distribution completed: 1/1 channels
+📊 Recording sent message: news to channel 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+✅ Message recorded successfully
+📝 Skipping content save to database (RLS policy needs update)
+🎯 Smart Push Trigger received: {
+  trigger_type: 'after_content',
+  content_type: 'news',
+  content_id: 'content_1753895614697',
+  channel_ids: 1
+}
+🎫 Evaluating smart coupon for news in am
+❌ No suitable coupon for this context: No active coupons available
+ POST /api/smart-push/trigger 200 in 112ms
+🎫 Smart coupon system triggered: No suitable coupon found for current context
+ POST /api/unified-content?action=send_now&type=news&language=am 200 in 27877ms
+ ✓ Compiled in 546ms (365 modules)
+ ✓ Compiled in 222ms (365 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+⏱️ Rate Limiter initialized for 5 APIs
+⚠️ FOOTBALL_DATA_API_KEY not found - Football-Data.org API disabled
+🎯 Football API Manager initializing...
+⚽ API-Football v3 initialized
+✅ Football API Manager initialized with 1 APIs
+🚀 UnifiedFootballService initialized with FootballAPIManager
+🚀 Unified Content API: send_now | Type: news | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: undefined,
+  target_channels_type: 'undefined',
+  target_channels_isArray: false,
+  body_keys: []
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 1 channels for language 'am':
+  - AfircaSportCenter (am)
+🎯 Using primary channel: AfircaSportCenter
+🎯 Content Router: Generating news content for am (Channel: AfircaSportCenter)
+📋 Channel settings: Leagues: 20, Teams: 0, Affiliate: TESTING
+📰 Using news content generator for am
+📰 Generating news content in am
+📡 Fetching fresh RSS feeds
+📡 RSS fetch attempt 1/2
+📡 Fetching 3 RSS feeds
+🔍 Fetching RSS feed directly: https://feeds.bbci.co.uk/sport/football/rss.xml
+🔍 Fetching RSS feed directly: https://www.theguardian.com/football/rss
+🔍 Fetching RSS feed directly: https://talksport.com/football/feed/
+✅ The Guardian Football: 51 items
+✅ The Guardian Football: 51 items
+✅ BBC Sport Football: 89 items
+✅ BBC Sport Football: 89 items
+✅ TalkSport: 100 items
+✅ TalkSport: 100 items
+📰 Total items: 240, Unique: 228
+✅ RSS fetch successful on attempt 1
+📰 Fetched and cached 228 news items
+✅ Fetched 228 news items in 2732ms
+🏆 Scoring 228 news items for channel: AfircaSportCenter
+🎯 Channel preferences: 0 teams, 20 leagues
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🎯 Boosted score (+15) for preferred league content
+🔍 Finding best unused news for channel unified-content
+❌ Error fetching used content: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.content_uniqueness" does not exist'
+}
+✅ Found unused news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory"
+✅ Selected news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory" (Score: 155)
+🎨 Generating AI image
+🤖 AI editing news content for language: am
+✅ Using OpenAI key from environment (fallback)
+✅ OpenAI client initialized
+✅ Using OpenAI key from environment (fallback)
+✅ OpenAI client initialized
+🎨 Generating image with GPT-Image-1 model: Real football news photo: penalty kick, authentic stadium scene, professional sports journalism phot...
+🤖 AI Result for am: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለው ገለጸ።
+
+ኬሊ ነው በሊዮነስ የሚታወቀው ተንሳፋፊ የገንዘብ መሪ የቆሞት ከሆነ እና ወደ ስፔን በፈተና ማቅረብ ሳይረዳ ላይ እንደ ወዲያው ሂደት ብለው የሚለው...
+✅ Using AI result for am
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753895688255.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1587469 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753895688255.png',
+  id: '1fc5146b-0aee-4741-a3e6-7f67a51b25d6',
+  fullPath: 'generated-images/football_image_1753895688255.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895688255.png
+🌐 URL accessibility test: 200 OK
+✅ News generation completed in 26703ms
+📤 Starting Telegram distribution...
+🎯 Using target channels: 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+🔓 Decoded base64 token for channel: AfircaSportCenter
+📊 Found 1 active channels for language am:
+  - AfircaSportCenter (am)
+✅ Content sending allowed: news for channel 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለው ገለጸ።
+
+ኬሊ ነው በሊዮነስ የሚታወቀው ተንሳፋፊ የገንዘብ መሪ የቆሞት ከሆነ እና ወደ ስፔን በፈተና ማቅረብ ሳይረዳ ላይ እንደ ወዲያው ሂደት ብለው የሚለው
+🧹 Cleaning HTML for Telegram: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለ...
+✅ HTML cleaned for Telegram: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለ...
+🧹 After HTML cleaning: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለው ገለጸ። ኬሊ ነው በሊዮነስ የሚታወቀው ተንሳፋፊ የገንዘብ መሪ የቆሞት ከሆነ እና ወደ ስፔን በፈተና ማቅረብ ሳይረዳ ላይ እንደ ወዲያው ሂደት ብለው የሚለው 
+🧹 Cleaning HTML for Telegram: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለ...
+✅ HTML cleaned for Telegram: ⚽ ክሎይ ኬሊ ለአዲስ የተለየ ፈተና ዘዴዋ መረጃ አጋራች የሆነውን ወደ ዩሮ 2025 ድል ገብስ አስቀድሞ እንደ ሚያስታውስ እንደ ውድድር መሠረቱ ይቀጥል እንዳለ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895688255.png
+📤 Sending to channel: AfircaSportCenter
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753895688255.png
+🧹 HTML validation complete. Clean text length: 420
+📊 Image downloaded successfully: 1587469 bytes
+✅ Message sent successfully to @africansportdata
+✅ Successfully sent to AfircaSportCenter
+✅ Distribution completed: 1/1 channels
+📊 Recording sent message: news to channel 3f41f4a4-ec2a-4e95-a99d-c713b2718d22
+✅ Message recorded successfully
+📝 Skipping content save to database (RLS policy needs update)
+🎯 Smart Push Trigger received: {
+  trigger_type: 'after_content',
+  content_type: 'news',
+  content_id: 'content_1753895692299',
+  channel_ids: 1
+}
+🎫 Evaluating smart coupon for news in am
+❌ No suitable coupon for this context: No active coupons available
+ POST /api/smart-push/trigger 200 in 130ms
+🎫 Smart coupon system triggered: No suitable coupon found for current context
+ POST /api/unified-content?action=send_now&type=news&language=am 200 in 30061ms
+ ✓ Compiled in 243ms (324 modules)

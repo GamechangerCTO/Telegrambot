@@ -57,15 +57,17 @@ export default function AddCoupon() {
         return;
       }
 
-      // Get the current bot (assuming africasportbot is the main one)
-      const { data: botsData } = await supabase
+      // Get the first active bot (simplified approach)
+      const { data: botsData, error: botError } = await supabase
         .from('bots')
-        .select('id')
-        .eq('name', 'africasportbot')
+        .select('id, name, telegram_bot_username')
+        .eq('is_active', true)
+        .limit(1)
         .single();
 
-      if (!botsData) {
-        alert('Bot not found. Please contact support.');
+      if (botError || !botsData) {
+        console.error('Bot query error:', botError);
+        alert('No active bot found. Please configure a bot first.');
         setLoading(false);
         return;
       }
