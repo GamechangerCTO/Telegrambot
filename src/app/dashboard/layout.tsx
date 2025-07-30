@@ -7,7 +7,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Plus, Menu, X, LogOut, User } from 'lucide-react';
+import { Home, Plus, Menu, X, LogOut, User, Bot, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -52,7 +52,9 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Automation Center', href: '/automation', icon: Bot },
     { name: 'Add Channel', href: '/dashboard/channels/add', icon: Plus },
+    { name: 'Manage Coupons', href: '/dashboard/coupons', icon: Settings },
   ];
 
   return (

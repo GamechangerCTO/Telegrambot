@@ -706,3 +706,5 @@
 🎫 Smart coupon system triggered: No suitable coupon found for current context
  POST /api/unified-content?action=send_now&type=news&language=am 200 in 30061ms
  ✓ Compiled in 243ms (324 modules)
+ ✓ Compiled in 2.5s (201 modules)
+ ✓ Compiled in 302ms (201 modules)

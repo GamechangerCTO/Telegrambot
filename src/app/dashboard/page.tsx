@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Settings, Power, PowerOff, Send, Newspaper, TrendingUp, Activity, Users, BarChart3, MessageSquare, Calendar, Clock, Zap, CreditCard } from 'lucide-react';
+import { Plus, Settings, Power, PowerOff, Send, Newspaper, TrendingUp, Activity, Users, BarChart3, MessageSquare, Calendar, Clock, Zap, CreditCard, Bot } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
 interface Channel {
@@ -46,6 +46,12 @@ export default function Dashboard() {
   const [dailyMatches, setDailyMatches] = useState<DailyMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingContent, setSendingContent] = useState<{ [key: string]: boolean }>({});
+  const [automationStats, setAutomationStats] = useState({
+    totalRules: 0,
+    activeRules: 0,
+    manualPosts: 0,
+    executionsToday: 0
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -68,14 +74,42 @@ export default function Dashboard() {
         setChannels(Array.isArray(channelsData) ? channelsData : []);
       }
 
-      // Fetch automation rules separately
-      const { data: rulesData, error: rulesError } = await supabase
-        .from('automation_rules')
-        .select('*')
-        .eq('enabled', true);
+      // Fetch automation statistics
+      try {
+        // Count automation rules
+        const { data: allRulesData, error: allRulesError } = await supabase
+          .from('automation_rules')
+          .select('id, enabled');
 
-      if (rulesError) {
-        console.error('Error fetching automation rules:', rulesError);
+        const { data: activeRulesData, error: activeRulesError } = await supabase
+          .from('automation_rules')
+          .select('id')
+          .eq('enabled', true);
+
+        // Count manual posts scheduled for today or later
+        const { data: manualPostsData, error: manualPostsError } = await supabase
+          .from('manual_posts')
+          .select('id')
+          .gte('scheduled_time', new Date().toISOString().split('T')[0]);
+
+        // Count automation executions today
+        const { data: executionsData, error: executionsError } = await supabase
+          .from('automation_logs')
+          .select('id')
+          .gte('created_at', new Date().toISOString().split('T')[0]);
+
+        setAutomationStats({
+          totalRules: allRulesData?.length || 0,
+          activeRules: activeRulesData?.length || 0,
+          manualPosts: manualPostsData?.length || 0,
+          executionsToday: executionsData?.length || 0
+        });
+
+        if (allRulesError) console.error('Error fetching rules:', allRulesError);
+        if (manualPostsError) console.error('Error fetching manual posts:', manualPostsError);
+        if (executionsError) console.error('Error fetching executions:', executionsError);
+      } catch (automationError) {
+        console.error('Error fetching automation stats:', automationError);
       }
 
       // Try to fetch daily matches (but handle gracefully if table doesn't exist)
@@ -265,8 +299,6 @@ export default function Dashboard() {
 
   const safeChannels = Array.isArray(channels) ? channels : [];
   const activeChannels = safeChannels.filter(c => c.is_active);
-  // For now, we'll show 0 automation rules until we properly connect them
-  const totalAutomationRules = 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -276,10 +308,17 @@ export default function Dashboard() {
           <div className="w-full sm:w-auto">
             <h1 className="text-xl sm:text-2xl font-bold">Channel Management Dashboard</h1>
             <p className="text-gray-600 text-sm">
-              Manage channels, automation rules, and daily match content
+              Manage channels, automation rules, manual posts, and live content scheduling with our new automation system
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={() => router.push('/automation')}
+              className="bg-purple-600 hover:bg-purple-700 shrink-0 w-full sm:w-auto"
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              Automation Center
+            </Button>
             <Button 
               onClick={() => router.push('/dashboard/channels/add')}
               className="bg-blue-600 hover:bg-blue-700 shrink-0 w-full sm:w-auto"
@@ -299,7 +338,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
           <Card>
             <CardContent className="p-2 sm:p-3">
               <div className="flex items-center justify-between">
@@ -330,9 +369,9 @@ export default function Dashboard() {
             <CardContent className="p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Rules</p>
+                  <p className="text-xs font-medium text-gray-600">Active Rules</p>
                   <p className="text-sm sm:text-lg font-bold text-blue-600">
-                    {totalAutomationRules}
+                    {automationStats.activeRules}
                   </p>
                 </div>
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
@@ -350,6 +389,20 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Manual Posts</p>
+                  <p className="text-sm sm:text-lg font-bold text-orange-600">
+                    {automationStats.manualPosts}
+                  </p>
+                </div>
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
               </div>
             </CardContent>
           </Card>
@@ -444,7 +497,7 @@ export default function Dashboard() {
                     >
                       {/* Channel Header */}
                       <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => router.push(`/dashboard/channels/${channel.id}/settings`)}>
+                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => router.push(`/dashboard/channels/${channel.id}/automation`)}>
                           <h3 className="font-semibold text-sm truncate hover:text-blue-600 transition-colors">{channel.name}</h3>
                           <div className="flex flex-wrap items-center gap-1 mt-1">
                             <Badge variant={channel.is_active ? 'default' : 'secondary'} className="text-xs">
@@ -460,8 +513,19 @@ export default function Dashboard() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => router.push(`/dashboard/channels/${channel.id}/automation`)}
+                            className="h-7 w-7 p-0"
+                            title="Channel Automation"
+                          >
+                            <Bot className="w-3 h-3" />
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => router.push(`/dashboard/channels/${channel.id}/edit`)}
                             className="h-7 w-7 p-0"
+                            title="Channel Settings"
                           >
                             <Settings className="w-3 h-3" />
                           </Button>
@@ -471,6 +535,7 @@ export default function Dashboard() {
                             size="sm"
                             onClick={() => toggleChannelActive(channel.id, channel.is_active)}
                             className="h-7 w-7 p-0"
+                            title={channel.is_active ? "Deactivate Channel" : "Activate Channel"}
                           >
                             {channel.is_active ? (
                               <PowerOff className="w-3 h-3" />
