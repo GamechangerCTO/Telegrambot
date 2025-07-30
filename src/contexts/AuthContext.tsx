@@ -70,10 +70,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    // Timeout for better UX
+    // Timeout for better UX - faster loading
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 500);
 
     getInitialSession().finally(() => {
       clearTimeout(timeout);

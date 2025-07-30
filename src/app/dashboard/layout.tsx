@@ -21,15 +21,18 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isAuthenticated, loading, signOut } = useAuth();
 
-  // Redirect to login if not authenticated
+  // For development: Allow bypass of auth
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // Redirect to login if not authenticated (unless in development)
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated && !isDevelopment) {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, loading, router, isDevelopment]);
 
-  // Show loading spinner while checking authentication
-  if (loading) {
+  // Show loading spinner while checking authentication (bypass in development)
+  if (loading && !isDevelopment) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -40,8 +43,8 @@ export default function DashboardLayout({
     );
   }
 
-  // Show nothing if not authenticated (will redirect)
-  if (!isAuthenticated) {
+  // Show nothing if not authenticated (will redirect) unless in development
+  if (!isAuthenticated && !isDevelopment) {
     return null;
   }
 

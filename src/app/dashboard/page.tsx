@@ -44,7 +44,7 @@ interface DailyMatch {
 export default function Dashboard() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [dailyMatches, setDailyMatches] = useState<DailyMatch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(process.env.NODE_ENV === 'production');
   const [sendingContent, setSendingContent] = useState<{ [key: string]: boolean }>({});
   const [automationStats, setAutomationStats] = useState({
     totalRules: 0,
@@ -56,6 +56,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Emergency timeout to prevent infinite loading
+    const emergencyTimeout = setTimeout(() => {
+      console.log('Emergency timeout triggered - forcing dashboard to load');
+      setLoading(false);
+    }, 3000);
+    
+    return () => clearTimeout(emergencyTimeout);
   }, []);
 
   const fetchDashboardData = async () => {
