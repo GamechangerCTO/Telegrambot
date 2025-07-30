@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -30,10 +30,12 @@ const LANGUAGES = [
 export default function AddChannel() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     // Basic Channel Info
     name: '',
     channel_id: '',
+    bot_id: '',
     language: 'en',
     description: '',
     
@@ -53,6 +55,34 @@ export default function AddChannel() {
     push_notifications: true
   });
 
+  // Load the single bot that manages all channels
+  useEffect(() => {
+    const loadSingleBot = async () => {
+      try {
+        const supabase = createClient();
+        const { data: bots, error } = await supabase
+          .from('bots')
+          .select('id, name, is_active')
+          .eq('is_active', true)
+          .limit(1)
+          .single();
+
+        if (!error && bots) {
+          // Auto-assign the single bot to all new channels
+          setFormData(prev => ({ ...prev, bot_id: bots.id }));
+        } else {
+          console.error('Error loading bot:', error);
+          alert('שגיאה: לא נמצא בוט פעיל במערכת');
+        }
+      } catch (error) {
+        console.error('Error loading bot:', error);
+        alert('שגיאה בטעינת פרטי הבוט');
+      }
+    };
+
+    loadSingleBot();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -62,14 +92,25 @@ export default function AddChannel() {
       
       // Validate required fields
       if (!formData.name || !formData.channel_id) {
-        alert('Please fill in all required fields');
+        alert('אנא מלא את כל השדות הנדרשים');
+        return;
+      }
+
+      if (!formData.bot_id) {
+        alert('שגיאה: לא נטען בוט במערכת. אנא נסה שוב או פנה למנהל המערכת');
         return;
       }
 
       if (formData.content_types.length === 0) {
-        alert('Please select at least one content type');
+        alert('אנא בחר לפחות סוג תוכן אחד');
         return;
       }
+
+      // Convert content_types array to object format expected by database
+      const contentTypesObject = CONTENT_TYPES.reduce((acc, type) => {
+        acc[type.id] = formData.content_types.includes(type.id);
+        return acc;
+      }, {} as Record<string, boolean>);
 
       // Create channel with advanced settings
       const { data: channel, error } = await supabase
@@ -77,17 +118,17 @@ export default function AddChannel() {
         .insert([{
           name: formData.name,
           telegram_channel_id: formData.channel_id,
+          bot_id: formData.bot_id,
           language: formData.language,
           description: formData.description,
-          content_types: formData.content_types,
+          content_types: contentTypesObject,
           is_active: formData.is_active,
           auto_post_enabled: formData.auto_post_enabled,
           smart_scheduling: formData.smart_scheduling,
           max_posts_per_day: formData.max_posts_per_day,
           post_approval_required: formData.post_approval_required,
           push_notifications: formData.push_notifications,
-          total_posts_sent: 0,
-          created_at: new Date().toISOString()
+          total_posts_sent: 0
         }])
         .select()
         .single();
@@ -97,11 +138,11 @@ export default function AddChannel() {
       // Note: Automation rules are handled by external cron jobs for dynamic content scheduling
       // No need to create automation rules as content is posted dynamically
 
-      alert('Channel added successfully!');
+      alert('הערוץ נוסף בהצלחה! 🎉');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error adding channel:', error);
-      alert('Error adding channel. Please try again.');
+      alert('שגיאה בהוספת הערוץ. אנא נסה שוב.');
     } finally {
       setLoading(false);
     }
