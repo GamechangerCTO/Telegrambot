@@ -466,21 +466,38 @@ export class BackgroundScheduler {
   }
 
   /**
-   * Execute automation rule
+   * Execute automation rule - Updated to use unified-content API
    */
   private async executeRule(rule: any): Promise<void> {
     try {
       console.log(`🚀 Executing rule: ${rule.name} (${rule.content_type})`);
 
-      // Call auto-scheduler API
-      const response = await fetch('http://localhost:3000/api/automation/auto-scheduler', {
+      // Get active channels for this rule
+      const activeChannels = await this.getActiveChannelsForRule(rule);
+      
+      if (activeChannels.length === 0) {
+        console.log(`⚠️ No active channels found for rule ${rule.name}`);
+        return;
+      }
+
+      // Execute content generation for each channel
+      for (const channel of activeChannels) {
+        try {
+          console.log(`📤 Executing for channel: ${channel.name} (${channel.language})`);
+          
+          // Call unified-content API directly
+          const response = await fetch('http://localhost:3001/api/unified-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-background-scheduler': 'true'
         },
         body: JSON.stringify({
-          force_rule_id: rule.id // Execute specific rule
+              content_type: rule.content_type,
+              target_channels: [channel.id],
+              language: channel.language || 'en',
+              automation_execution: true,
+              rule_id: rule.id
         })
       });
 
@@ -491,14 +508,72 @@ export class BackgroundScheduler {
       const result = await response.json();
       
       if (result.success) {
-        console.log(`✅ Rule ${rule.name} executed successfully`);
-        console.log(`📊 Content generated: ${result.results?.content_generated || 0}`);
+            console.log(`✅ Rule ${rule.name} executed successfully for ${channel.name}`);
+            console.log(`📊 Content generated: ${result.content_generated || 0}, Messages sent: ${result.messages_sent || 0}`);
+            
+            // Log successful execution
+            await this.logExecution(rule.id, channel.id, 'success', {
+              content_generated: result.content_generated || 0,
+              messages_sent: result.messages_sent || 0
+            });
       } else {
-        console.error(`❌ Failed to execute rule ${rule.name}:`, result.error);
+            console.error(`❌ Failed to execute rule ${rule.name} for ${channel.name}:`, result.error);
+            await this.logExecution(rule.id, channel.id, 'failed', { error: result.error });
+          }
+
+        } catch (channelError) {
+          console.error(`❌ Error executing rule ${rule.name} for channel ${channel.name}:`, channelError);
+          await this.logExecution(rule.id, channel.id, 'failed', { 
+            error: channelError instanceof Error ? channelError.message : 'Unknown error' 
+          });
+        }
       }
 
     } catch (error) {
       console.error(`❌ Error executing rule ${rule.name}:`, error);
+    }
+  }
+
+  /**
+   * Get active channels for a rule
+   */
+  private async getActiveChannelsForRule(rule: any): Promise<any[]> {
+    try {
+      const { data: channels, error } = await supabase
+        .from('channels')
+        .select('*')
+        .eq('is_active', true)
+        .eq('auto_post_enabled', true);
+
+      if (error) {
+        console.error('Error fetching active channels:', error);
+        return [];
+      }
+
+      return channels || [];
+    } catch (error) {
+      console.error('Error in getActiveChannelsForRule:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Log rule execution
+   */
+  private async logExecution(ruleId: string, channelId: string, status: string, details: any): Promise<void> {
+    try {
+      await supabase
+        .from('automation_logs')
+        .insert({
+          automation_rule_id: ruleId,
+          channel_id: channelId,
+          status: status,
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          details: details
+        });
+    } catch (error) {
+      console.error('Error logging execution:', error);
     }
   }
 

@@ -18,6 +18,7 @@ export interface TelegramDistributionOptions {
   mode: string;
   targetChannels?: string[];
   includeImages?: boolean;
+  manualExecution?: boolean;
 }
 
 export interface TelegramDistributionResult {
@@ -37,7 +38,7 @@ export class TelegramDistributor {
    * Main method to send content to Telegram channels
    */
   async sendContentToTelegram(options: TelegramDistributionOptions): Promise<TelegramDistributionResult> {
-    const { content, language, mode, targetChannels, includeImages = true } = options;
+    const { content, language, mode, targetChannels, includeImages = true, manualExecution = false } = options;
     
     try {
       console.log('📤 Starting Telegram distribution...');
@@ -65,7 +66,9 @@ export class TelegramDistributor {
       for (const channel of channels) {
         const canSend = await contentSpamPreventer.canSendContent(
           content.content_type || 'unknown',
-          channel.id
+          channel.id,
+          'default',
+          manualExecution
         );
         
         if (canSend.allowed) {
@@ -106,7 +109,8 @@ export class TelegramDistributor {
         imageUrl,
         keyboard,
         content,
-        telegramSettings  // Pass enhanced settings to distribution
+        telegramSettings,  // Pass enhanced settings to distribution
+        options.manualExecution || false  // Pass manual execution flag
       );
 
       // 📊 TRACK SENT MESSAGES - Record successful sends for spam prevention
@@ -293,7 +297,8 @@ export class TelegramDistributor {
     imageUrl: string | undefined,
     keyboard: any,
     content: any,
-    telegramSettings: any
+    telegramSettings: any,
+    manualExecution: boolean = false
   ): Promise<TelegramDistributionResult> {
     const allResults: Array<{
       channelName: string;

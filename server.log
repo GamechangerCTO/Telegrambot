@@ -1427,3 +1427,23 @@ Error fetching coupon events: {
 <w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
 <w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
 <w>  at resolve commonjs /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 2.7s (390 modules)
+ ✓ Compiled in 725ms (390 modules)
+ ✓ Compiled in 570ms (390 modules)
+ ○ Compiling /api/smart-push/trigger ...
+ ✓ Compiled /api/smart-push/trigger in 2s (324 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+🎯 Smart Push Trigger received: {
+  trigger_type: 'after_content',
+  content_type: 'news',
+  content_id: 'content_1753916080175',
+  channel_ids: 1
+}
+ POST /api/smart-push/trigger 200 in 2668ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1820ms (1009 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+ POST /api/smart-push/trigger 404 in 2199ms
+ ✓ Compiled in 719ms (392 modules)

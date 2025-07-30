@@ -305,25 +305,89 @@ async function executeChannelRule(channelId: string, ruleId: string) {
     }, { status: 400 });
   }
 
-  // Log the execution
-  const { data: logEntry } = await supabase
-    .from('automation_logs')
-    .insert({
-      automation_rule_id: ruleId,
-      channel_id: channelId,
-      status: 'success',
-      started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-      details: { message: 'Manual execution completed' }
-    })
-    .select()
-    .single();
+  try {
+    // Execute the rule by calling the automation API
+    console.log(`🎯 Executing rule ${rule.name} for channel ${channelId}`);
+    
+    // Get channel info for execution
+    const { data: channel } = await supabase
+      .from('channels')
+      .select('*')
+      .eq('id', channelId)
+      .single();
 
-  return NextResponse.json({
-    success: true,
-    message: 'Rule executed successfully',
-    execution_id: logEntry?.id
-  });
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    // Execute the rule by calling unified-content API
+    const executeResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'}/api/unified-content`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content_type: rule.content_type,
+        target_channels: [channelId],
+        language: channel.language || 'en',
+        manual_execution: true,
+        rule_id: ruleId
+      })
+    });
+
+    const executeResult = await executeResponse.json();
+    
+    if (!executeResult.success) {
+      throw new Error(executeResult.error || 'Content execution failed');
+    }
+
+    // Log successful execution
+    const { data: logEntry } = await supabase
+      .from('automation_logs')
+      .insert({
+        automation_rule_id: ruleId,
+        channel_id: channelId,
+        status: 'success',
+        started_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        details: { 
+          message: 'Manual execution completed',
+          content_generated: executeResult.content_generated || 0,
+          messages_sent: executeResult.messages_sent || 0
+        }
+      })
+      .select()
+      .single();
+
+    return NextResponse.json({
+      success: true,
+      message: `Rule executed successfully! Generated content and sent to channel.`,
+      execution_id: logEntry?.id,
+      content_generated: executeResult.content_generated || 0,
+      messages_sent: executeResult.messages_sent || 0
+    });
+
+  } catch (error) {
+    console.error('Error executing rule:', error);
+    
+    // Log failed execution
+    await supabase
+      .from('automation_logs')
+      .insert({
+        automation_rule_id: ruleId,
+        channel_id: channelId,
+        status: 'failed',
+        started_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        details: { 
+          message: 'Manual execution failed',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
 }
 
 // Toggle automation for channel

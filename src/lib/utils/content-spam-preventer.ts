@@ -47,11 +47,18 @@ export class ContentSpamPreventer {
   async canSendContent(
     contentType: string, 
     channelId: string,
-    organizationId: string = 'default'
+    organizationId: string = 'default',
+    manualExecution: boolean = false
   ): Promise<{ allowed: boolean; reason?: string; waitTime?: number }> {
     
     const today = new Date().toISOString().split('T')[0];
     const currentHour = new Date().getHours();
+    
+    // Manual execution bypasses most restrictions
+    if (manualExecution) {
+      console.log(`🔓 MANUAL EXECUTION: Bypassing spam prevention for ${contentType} on channel ${channelId}`);
+      return { allowed: true, reason: 'Manual execution - restrictions bypassed' };
+    }
     
     try {
       // Get today's content count from automation_logs
