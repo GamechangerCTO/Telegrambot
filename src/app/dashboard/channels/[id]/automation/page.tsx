@@ -42,6 +42,15 @@ interface ChannelAutomationData {
   manualPosts: any[];
 }
 
+interface TodayMatch {
+  id: string;
+  home_team: string;
+  away_team: string;
+  kickoff_time: string;
+  importance_score: number;
+  league: string;
+}
+
 export default function ChannelAutomationPage() {
   const params = useParams();
   const router = useRouter();
@@ -49,12 +58,14 @@ export default function ChannelAutomationPage() {
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ChannelAutomationData | null>(null);
+  const [todayMatches, setTodayMatches] = useState<TodayMatch[]>([]);
   const [automationEnabled, setAutomationEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState('timeline');
 
   useEffect(() => {
     if (channelId) {
       loadAutomationData();
+      loadTodayMatches();
     }
   }, [channelId]);
 
@@ -74,6 +85,23 @@ export default function ChannelAutomationPage() {
       console.error('Error loading automation data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTodayMatches = async () => {
+    try {
+      const response = await fetch('/api/daily-matches');
+      const result = await response.json();
+      
+      if (result.success) {
+        // Show top 5 high priority matches
+        const highPriorityMatches = result.matches
+          .filter((match: any) => match.importance_score >= 20)
+          .slice(0, 5);
+        setTodayMatches(highPriorityMatches);
+      }
+    } catch (error) {
+      console.error('Error loading today matches:', error);
     }
   };
 
@@ -320,6 +348,44 @@ export default function ChannelAutomationPage() {
             />
           )}
         </div>
+
+        {/* Today's Important Matches */}
+        {todayMatches.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Today's Important Matches ({todayMatches.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {todayMatches.map((match) => (
+                  <div key={match.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm font-semibold">
+                        {match.home_team} vs {match.away_team}
+                      </div>
+                      <Badge variant={match.importance_score >= 25 ? 'default' : 'secondary'} className="text-xs">
+                        {match.importance_score}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-gray-600 mb-1">
+                      {match.league}
+                    </div>
+                    <div className="text-xs text-blue-600 font-mono">
+                      {new Date(match.kickoff_time).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: false 
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

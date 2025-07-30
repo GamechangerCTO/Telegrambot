@@ -76,11 +76,10 @@ async function getChannelAutomationOverview(channelId: string) {
     .eq('id', channelId)
     .single();
 
-  // Get automation rules for this channel
+  // Get automation rules for this channel (show all enabled rules for now)
   const { data: rules } = await supabase
     .from('automation_rules')
     .select('*')
-    .or(`channels.cs.{"${channelId}"},channels.is.null,channels.eq.[]`)
     .eq('enabled', true);
 
   // Get today's executions

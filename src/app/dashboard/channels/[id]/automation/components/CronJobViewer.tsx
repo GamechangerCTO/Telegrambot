@@ -204,13 +204,13 @@ export default function CronJobViewer({ channelId }: CronJobViewerProps) {
             <div className="text-center p-3 bg-gray-50 rounded">
               <p className="text-sm text-gray-600">Status</p>
               <div className="flex items-center justify-center gap-1">
-                {cronStatus?.liveUpdates.isActive ? (
+                {cronStatus?.liveUpdates?.isActive ? (
                   <CheckCircle className="w-4 h-4 text-green-500" />
                 ) : (
                   <XCircle className="w-4 h-4 text-red-500" />
                 )}
                 <span className="font-semibold text-sm">
-                  {cronStatus?.liveUpdates.isActive ? 'Active' : 'Inactive'}
+                  {cronStatus?.liveUpdates?.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </div>
@@ -218,29 +218,29 @@ export default function CronJobViewer({ channelId }: CronJobViewerProps) {
             <div className="text-center p-3 bg-gray-50 rounded">
               <p className="text-sm text-gray-600">Live Matches</p>
               <p className="font-semibold">
-                {cronStatus?.liveUpdates.liveMatches || 0}
+                {cronStatus?.liveUpdates?.liveMatches || 0}
               </p>
             </div>
 
             <div className="text-center p-3 bg-gray-50 rounded">
               <p className="text-sm text-gray-600">Events Processed</p>
               <p className="font-semibold">
-                {cronStatus?.liveUpdates.eventsProcessed || 0}
+                {cronStatus?.liveUpdates?.eventsProcessed || 0}
               </p>
             </div>
 
             <div className="text-center p-3 bg-gray-50 rounded">
               <p className="text-sm text-gray-600">Updates Generated</p>
               <p className="font-semibold">
-                {cronStatus?.liveUpdates.updatesGenerated || 0}
+                {cronStatus?.liveUpdates?.updatesGenerated || 0}
               </p>
             </div>
           </div>
 
-          {cronStatus?.liveUpdates.startTime && (
+          {cronStatus?.liveUpdates?.startTime && (
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Uptime: {formatUptime(cronStatus.liveUpdates.startTime)}
+                Uptime: {formatUptime(cronStatus.liveUpdates?.startTime)}
               </p>
             </div>
           )}

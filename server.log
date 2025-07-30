@@ -1272,3 +1272,72 @@ Error fetching coupon events: {
 <w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
 <w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
 <w>  at resolve commonjs /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 1778ms (390 modules)
+ ✓ Compiled in 405ms (390 modules)
+ ✓ Compiled in 914ms (390 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/idosegev/Downloads/TriRoars/telegrambotsport/.next/server/app/api/unified-content'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/unified-content/route' in /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/idosegev/Downloads/TriRoars/telegrambotsport/.next/server/app/api/unified-content/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/unified-content/route' in '/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/unified-content/route (expected /Users/idosegev/Downloads/TriRoars/telegrambotsport/.next/server/app/api/unified-content/route.js)
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/require.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/utils.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/flight-client-entry-plugin.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/flight-client-entry-plugin.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack-config.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack-config.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 1268ms (390 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/idosegev/Downloads/TriRoars/telegrambotsport/.next/server/app/api/unified-content'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/unified-content/route' in /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/idosegev/Downloads/TriRoars/telegrambotsport/.next/server/app/api/unified-content/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/unified-content/route' in '/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/unified-content/route (expected /Users/idosegev/Downloads/TriRoars/telegrambotsport/.next/server/app/api/unified-content/route.js)
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/require.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/utils.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/entries.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/entries.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/next-types-plugin/index.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/next-types-plugin/index.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack-config.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack-config.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/swc/index.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ✓ Compiled in 2s (390 modules)
+ ✓ Compiled in 325ms (390 modules)
+ ✓ Compiled in 273ms (390 modules)
+ ✓ Compiled in 276ms (390 modules)
+ ✓ Compiled in 418ms (390 modules)
