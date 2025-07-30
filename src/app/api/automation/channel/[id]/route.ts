@@ -436,8 +436,11 @@ async function generateDailyTimeline(rules: any[], executions: any[], manualPost
             note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
           }
 
-          // Only schedule if time is today
-          if (scheduledTime.toDateString() === today.toDateString()) {
+          // Only schedule if time is within reasonable range (today or close to it)
+          const timeDiff = Math.abs(scheduledTime.getTime() - today.getTime());
+          const isWithinRange = timeDiff < 24 * 60 * 60 * 1000; // Within 24 hours
+          
+          if (isWithinRange) {
             const execution = executions.find(ex => 
               ex.automation_rule_id === rule.id &&
               Math.abs(new Date(ex.created_at).getTime() - scheduledTime.getTime()) < 30 * 60 * 1000 // Within 30 min
@@ -485,12 +488,13 @@ async function generateDailyTimeline(rules: any[], executions: any[], manualPost
 // Get today's important matches
 async function getTodayMatches() {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Yesterday
   
   try {
     const { data: matches, error } = await supabase
       .from('daily_important_matches')
       .select('*')
-      .eq('discovery_date', today)
+      .in('discovery_date', [today, yesterday]) // Check today and yesterday
       .gte('importance_score', 15) // Only important matches
       .order('importance_score', { ascending: false })
       .order('kickoff_time', { ascending: true })
