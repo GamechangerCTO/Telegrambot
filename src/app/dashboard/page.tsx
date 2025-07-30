@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Settings, Power, PowerOff, Send, Newspaper, TrendingUp, Activity, Users, BarChart3, MessageSquare, Calendar, Clock, Zap } from 'lucide-react';
+import { Plus, Settings, Power, PowerOff, Send, Newspaper, TrendingUp, Activity, Users, BarChart3, MessageSquare, Calendar, Clock, Zap, CreditCard } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 
 interface Channel {
@@ -279,13 +279,23 @@ export default function Dashboard() {
               Manage channels, automation rules, and daily match content
             </p>
           </div>
-          <Button 
-            onClick={() => router.push('/dashboard/channels/add')}
-            className="bg-blue-600 hover:bg-blue-700 shrink-0 w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Channel
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={() => router.push('/dashboard/channels/add')}
+              className="bg-blue-600 hover:bg-blue-700 shrink-0 w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Channel
+            </Button>
+            <Button 
+              onClick={() => router.push('/dashboard/coupons')}
+              variant="outline"
+              className="shrink-0 w-full sm:w-auto"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Manage Coupons
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -434,8 +444,8 @@ export default function Dashboard() {
                     >
                       {/* Channel Header */}
                       <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-sm truncate">{channel.name}</h3>
+                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => router.push(`/dashboard/channels/${channel.id}/settings`)}>
+                          <h3 className="font-semibold text-sm truncate hover:text-blue-600 transition-colors">{channel.name}</h3>
                           <div className="flex flex-wrap items-center gap-1 mt-1">
                             <Badge variant={channel.is_active ? 'default' : 'secondary'} className="text-xs">
                               {channel.is_active ? 'Active' : 'Inactive'}
