@@ -127,10 +127,10 @@ async function getChannelAutomationOverview(channelId: string) {
 async function getChannelRules(channelId: string) {
   try {
     // Get all automation rules (they are global, not channel-specific in current setup)
-    const { data: rules, error } = await supabase
-      .from('automation_rules')
-      .select('*')
-      .order('created_at', { ascending: false });
+  const { data: rules, error } = await supabase
+    .from('automation_rules')
+    .select('*')
+    .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching automation rules:', error);
@@ -140,10 +140,10 @@ async function getChannelRules(channelId: string) {
       }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: rules || []
-    });
+  return NextResponse.json({
+    success: true,
+    data: rules || []
+  });
   } catch (error) {
     console.error('Error in getChannelRules:', error);
     return NextResponse.json({
@@ -356,8 +356,8 @@ async function executeChannelRule(channelId: string, ruleId: string) {
       })
       .select()
       .single();
-
-    return NextResponse.json({
+  
+  return NextResponse.json({
       success: true,
       message: `Rule executed successfully! Generated content and sent to channel.`,
       execution_id: logEntry?.id,
@@ -414,61 +414,46 @@ async function toggleChannelAutomation(channelId: string, enabled: boolean) {
 // Generate daily timeline combining rules and executions
 async function generateDailyTimeline(rules: any[], executions: any[], manualPosts: any[]) {
   const timeline: any[] = [];
+  
+  // Use local timezone (Israel/Jerusalem)
   const today = new Date();
+  const israelOffset = 3 * 60 * 60 * 1000; // Israel is UTC+3 during summer
+  const localToday = new Date(today.getTime() + israelOffset);
   
   // Get today's important matches for dynamic scheduling
   const todayMatches = await getTodayMatches();
   
-  // Dynamic scheduling configuration
+  // Dynamic scheduling configuration with time spreading
   const dynamicScheduling: Record<string, any> = {
-    'betting': { beforeMatch: 45, description: '45 min before match' }, // 45 minutes before
-    'analysis': { beforeMatch: 120, description: '2 hours before match' }, // 2 hours before  
-    'live': { duringMatch: true, description: 'During match' }, // During match
-    'daily_summary': { afterMatch: 30, description: '30 min after match' }, // 30 minutes after
-    'smart_push': { afterContent: true, description: 'After content' } // After other content
+    'betting': { beforeMatch: 45, description: '45 min before match', spread: 15 }, // ±15 min spread
+    'analysis': { beforeMatch: 120, description: '2 hours before match', spread: 30 }, // ±30 min spread
+    'live': { duringMatch: true, description: 'During match', spread: 5 }, // ±5 min spread
+    'daily_summary': { afterMatch: 30, description: '30 min after match', spread: 20 }, // ±20 min spread
+    'smart_push': { afterContent: true, description: 'After content', spread: 10 } // ±10 min spread
   };
+
+  // Helper function to add random spread to time
+  function addTimeSpread(time: Date, spreadMinutes: number = 15): Date {
+    const spread = (Math.random() - 0.5) * 2 * spreadMinutes; // Random between -spread and +spread
+    return new Date(time.getTime() + spread * 60 * 1000);
+  }
 
   // Add scheduled rules to timeline
   rules.forEach((rule: any, index: number) => {
     if (rule.config?.times) {
       rule.config.times.forEach((time: string) => {
         const [hour, minute] = time.split(':').map(Number);
-        const scheduledTime = new Date(today);
-        scheduledTime.setHours(hour, minute, 0, 0);
+        const baseTime = new Date(localToday);
+        baseTime.setHours(hour, minute, 0, 0);
+        
+        // Add spread for fixed times too (but smaller spread for news)
+        const spreadMinutes = rule.content_type === 'news' ? 10 : 20; // Less spread for news
+        const scheduledTime = addTimeSpread(baseTime, spreadMinutes);
 
         // Check if this rule was executed
         const execution = executions.find(ex => 
           ex.automation_rule_id === rule.id &&
-          new Date(ex.created_at).getHours() === hour
-        );
-
-        timeline.push({
-          id: `rule-${rule.id}-${time}`,
-          type: 'automated',
-          time: scheduledTime.toISOString(),
-          content_type: rule.content_type,
-          rule_name: rule.name,
-          status: execution ? (execution.status === 'success' ? 'executed' : 'failed') : 'pending',
-          source: 'automation',
-          execution_id: execution?.id
-        });
-      });
-    } else {
-      // Dynamic scheduling based on content type and matches
-      const scheduling = dynamicScheduling[rule.content_type as keyof typeof dynamicScheduling];
-      
-      if (rule.content_type === 'news') {
-        // News gets fixed times if not configured
-        const defaultNewsTimes = ['09:00', '13:00', '18:00'];
-        const timeIndex = index % defaultNewsTimes.length;
-        const time = defaultNewsTimes[timeIndex];
-        const [hour, minute] = time.split(':').map(Number);
-        const scheduledTime = new Date(today);
-        scheduledTime.setHours(hour, minute, 0, 0);
-
-        const execution = executions.find(ex => 
-          ex.automation_rule_id === rule.id &&
-          new Date(ex.created_at).getHours() === hour
+          Math.abs(new Date(ex.created_at).getTime() - baseTime.getTime()) < 60 * 60 * 1000 // Within 1 hour
         );
 
         timeline.push({
@@ -480,34 +465,72 @@ async function generateDailyTimeline(rules: any[], executions: any[], manualPost
           status: execution ? (execution.status === 'success' ? 'executed' : 'failed') : 'pending',
           source: 'automation',
           execution_id: execution?.id,
-          note: 'Fixed time for news'
+          note: `Fixed time with ±${spreadMinutes}min spread`
+        });
+      });
+    } else {
+      // Dynamic scheduling based on content type and matches
+      const scheduling = dynamicScheduling[rule.content_type as keyof typeof dynamicScheduling];
+      
+      if (rule.content_type === 'news') {
+        // News gets distributed throughout the day
+        const defaultNewsTimes = ['08:00', '12:00', '16:00', '20:00'];
+        const timeIndex = index % defaultNewsTimes.length;
+        const time = defaultNewsTimes[timeIndex];
+        const [hour, minute] = time.split(':').map(Number);
+        const baseTime = new Date(localToday);
+        baseTime.setHours(hour, minute, 0, 0);
+        
+        // Add small spread for news (±10 minutes)
+        const scheduledTime = addTimeSpread(baseTime, 10);
+
+        const execution = executions.find(ex => 
+          ex.automation_rule_id === rule.id &&
+          Math.abs(new Date(ex.created_at).getTime() - baseTime.getTime()) < 60 * 60 * 1000 // Within 1 hour
+        );
+
+        timeline.push({
+          id: `rule-${rule.id}-${time}`,
+          type: 'automated',
+          time: scheduledTime.toISOString(),
+          content_type: rule.content_type,
+          rule_name: rule.name,
+          status: execution ? (execution.status === 'success' ? 'executed' : 'failed') : 'pending',
+          source: 'automation',
+          execution_id: execution?.id,
+          note: `Spread news time (±10min)`
         });
       } else if (scheduling && todayMatches.length > 0) {
         // Dynamic scheduling based on matches
         todayMatches.forEach((match: any, matchIndex: number) => {
           const matchTime = new Date(match.kickoff_time);
-          let scheduledTime = new Date(matchTime);
+          let baseScheduledTime = new Date(matchTime);
           let note = '';
 
           if ('beforeMatch' in scheduling && scheduling.beforeMatch) {
-            scheduledTime = new Date(matchTime.getTime() - (scheduling.beforeMatch * 60 * 1000));
+            baseScheduledTime = new Date(matchTime.getTime() - (scheduling.beforeMatch * 60 * 1000));
             note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
           } else if ('duringMatch' in scheduling && scheduling.duringMatch) {
-            scheduledTime = new Date(matchTime.getTime() + (15 * 60 * 1000)); // 15 min into match
+            baseScheduledTime = new Date(matchTime.getTime() + (15 * 60 * 1000)); // 15 min into match
             note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
           } else if ('afterMatch' in scheduling && scheduling.afterMatch) {
-            scheduledTime = new Date(matchTime.getTime() + (90 * 60 * 1000) + (scheduling.afterMatch * 60 * 1000)); // After 90min + offset
+            baseScheduledTime = new Date(matchTime.getTime() + (90 * 60 * 1000) + (scheduling.afterMatch * 60 * 1000)); // After 90min + offset
             note = `${scheduling.description} - ${match.home_team} vs ${match.away_team}`;
           }
 
+          // Apply time spread for this content type
+          const spreadMinutes = scheduling.spread || 15;
+          const scheduledTime = addTimeSpread(baseScheduledTime, spreadMinutes);
+          note += ` (±${spreadMinutes}min spread)`;
+
           // Only schedule if time is within reasonable range (today or close to it)
-          const timeDiff = Math.abs(scheduledTime.getTime() - today.getTime());
+          const timeDiff = Math.abs(scheduledTime.getTime() - localToday.getTime());
           const isWithinRange = timeDiff < 24 * 60 * 60 * 1000; // Within 24 hours
           
           if (isWithinRange) {
             const execution = executions.find(ex => 
               ex.automation_rule_id === rule.id &&
-              Math.abs(new Date(ex.created_at).getTime() - scheduledTime.getTime()) < 30 * 60 * 1000 // Within 30 min
+              Math.abs(new Date(ex.created_at).getTime() - baseScheduledTime.getTime()) < 30 * 60 * 1000 // Check against base time
             );
 
             timeline.push({
@@ -562,7 +585,7 @@ async function getTodayMatches() {
       .gte('importance_score', 15) // Only important matches
       .order('importance_score', { ascending: false })
       .order('kickoff_time', { ascending: true })
-      .limit(10); // Top 10 matches
+      .limit(3); // Top 3 matches only - reduced from 10 to prevent spam
 
     if (error) {
       console.error('Error fetching today matches:', error);

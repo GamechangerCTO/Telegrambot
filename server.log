@@ -64175,3 +64175,1538 @@ Error logging OpenAI call: {}
 ⏭️ Skipped rule: Test Live Auto (conditions not met)
 🎯 Automation cycle completed: 8 rules processed, 14 content generated
  POST /api/automation/auto-scheduler 200 in 262870ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2.2s (1258 modules)
+ POST /api/automation/auto-scheduler 404 in 2430ms
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+⏱️ Rate Limiter initialized for 5 APIs
+⚠️ FOOTBALL_DATA_API_KEY not found - Football-Data.org API disabled
+🎯 Football API Manager initializing...
+⚽ API-Football v3 initialized
+✅ Football API Manager initialized with 1 APIs
+🚀 UnifiedFootballService initialized with FootballAPIManager
+✅ Full automation is enabled
+🔧 Automation Engine Version: 2.0 - Production Logic Fixed
+🚀 Starting automation cycle...
+📺 Found 2 active channels with bots
+📋 Found 9 active automation rules
+⚙️ Processing rule: Test Morning News (news)
+🎯 Found 2 matching channels for rule: Test Morning News
+🔍 DEBUG: processAutomationRule - Rule: Test Morning News, Type: scheduled
+🔍 DEBUG: processScheduledRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering news content for 2 channels
+📤 Triggering real content generation: news for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: news
+🌍 Languages detected: [ 'am' ]
+🎯 Generating news content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'news',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: news | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating news content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+📰 Using news content generator for am
+📰 Generating news content in am
+📡 Fetching fresh RSS feeds
+📡 RSS fetch attempt 1/2
+📡 Fetching 3 RSS feeds
+🔍 Fetching RSS feed directly: https://feeds.bbci.co.uk/sport/football/rss.xml
+🔍 Fetching RSS feed directly: https://www.theguardian.com/football/rss
+🔍 Fetching RSS feed directly: https://talksport.com/football/feed/
+✅ TalkSport: 100 items
+✅ TalkSport: 100 items
+✅ The Guardian Football: 50 items
+✅ The Guardian Football: 50 items
+✅ BBC Sport Football: 89 items
+✅ BBC Sport Football: 89 items
+📰 Total items: 239, Unique: 229
+✅ RSS fetch successful on attempt 1
+📰 Fetched and cached 229 news items
+✅ Fetched 229 news items in 350ms
+🏆 Scoring 229 news items for channel: testing
+🔍 Finding best unused news for channel unified-content
+❌ Error fetching used content: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.content_uniqueness" does not exist'
+}
+✅ Found unused news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory"
+✅ Selected news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory" (Score: 140)
+✅ CONTENT GENERATION ALLOWED: news for channel unified-content
+✅ CONTENT GENERATION APPROVED: Proceeding with OpenAI call
+🎨 Generating AI image
+✅ Using OpenAI key from environment variables
+🤖 AI editing news content for language: am
+✅ Using OpenAI key from environment variables
+✅ OpenAI client initialized
+✅ OpenAI client initialized
+🎨 Generating image with GPT-Image-1 model: Real football news photo: penalty kick, authentic stadium scene, professional sports journalism phot...
+Error logging OpenAI call: {}
+🤖 AI Result for am: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ አድርጋለች። 
+
+ኬሊ እንደ አስፈላጊ ዋነኛ በሆነ ውድድር ወቅት በስፔን በመዋኘት በገንዘብ ወንጀል ትወደዳለች። ከዚያ የመጨረሻ የስፖርት አደጋ እንደ ምላሽ ማቅ...
+✅ Using AI result for am
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753948873197.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1586060 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753948873197.png',
+  id: '276ea9b8-09fb-47e5-9fc4-ebc013fc841d',
+  fullPath: 'generated-images/football_image_1753948873197.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948873197.png
+🌐 URL accessibility test: 200 OK
+✅ News generation completed in 24557ms
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: news for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ አድርጋለች። 
+
+ኬሊ እንደ አስፈላጊ ዋነኛ በሆነ ውድድር ወቅት በስፔን በመዋኘት በገንዘብ ወንጀል ትወደዳለች። ከዚያ የመጨረሻ የስፖርት አደጋ እንደ ምላሽ ማቅ
+🧹 Cleaning HTML for Telegram: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ ...
+✅ HTML cleaned for Telegram: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ ...
+🧹 After HTML cleaning: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ አድርጋለች። ኬሊ እንደ አስፈላጊ ዋነኛ በሆነ ውድድር ወቅት በስፔን በመዋኘት በገንዘብ ወንጀል ትወደዳለች። ከዚያ የመጨረሻ የስፖርት አደጋ እንደ ምላሽ ማቅረብ
+🧹 Cleaning HTML for Telegram: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ ...
+✅ HTML cleaned for Telegram: ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948873197.png
+🎛️ Found enhanced Telegram metadata: {
+  protectContent: true,
+  enableShareButton: true,
+  enableWebApp: false,
+  priority: 'high',
+  spoilerImage: false,
+  disablePreview: false
+}
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: true,
+  hasSpoiler: false,
+  priority: 'high'
+}
+📤 Sending to channel: testing
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948873197.png
+🧹 HTML validation complete. Clean text length: 403
+📊 Image downloaded successfully: 1586060 bytes
+❌ Image send failed: Error: Photo send failed: 400 Bad Request
+    at TelegramSender.sendMessage (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:26:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async TelegramSender.sendToMultipleChannels (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:256:28)
+    at async TelegramDistributor.distributeToChannels (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:229:36)
+    at async TelegramDistributor.sendContentToTelegram (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:72:40)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/unified-content/route.ts:166:40)
+    at async triggerRealContentGeneration (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:385:34)
+    at async processScheduledRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:162:25)
+    at async processAutomationRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:139:22)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:85:37)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:55038
+    at async ek.execute (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:45808)
+    at async ek.handle (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:56292)
+    at async doRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1377:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1599:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1507:28)
+    at async DevServer.renderPageComponent (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1931:24)
+    at async DevServer.renderToResponseImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1969:32)
+    at async DevServer.pipeImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:920:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:816:17)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/start-server.js:141:13)
+🔄 Falling back to text-only message...
+🧹 HTML validation complete. Clean text length: 403
+📤 Sending text message to: testingfde
+📝 Message preview: 📰 ⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated news content in am: ✅ Generated 1 news content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T08:01:14.665Z',
+  content_type: 'news',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 1,
+    average_ai_score: 85,
+    processing_time_seconds: 17,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'News Generator',
+    ai_processing: true,
+    image_generation: true,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'Post 3418661 at talkSPORT',
+      type: 'news',
+      title: 'Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory',
+      content: '⚽ በተመለከተ ወቅታዊ ዜና፣ ክሎይ ኬሊ ለአዲሱ የውድድር የወንጀል መልክ ዝርዝር ማቅረብ አድርጋታል። እሷ እንግሊዝን ወደ ውድድር ኢየሩፕ ድምፅ እንደገና ዳኝ አድርጋለች። \n' +
+        '\n' +
+        'ኬሊ እንደ አስፈላጊ ዋነኛ በሆነ ውድድር ወቅት በስፔን በመዋኘት በገንዘብ ወንጀል ትወደዳለች። ከዚያ የመጨረሻ የስፖርት አደጋ እንደ ምላሽ ማቅረብ በማይወደድ ሂደት 3-1 ውስጥ ማድረግ አስተዋይ ነበር። ይህ ውድድር በተወሰነ የህዳር እና የተወሰነ ወቅት 1-1 ወደ እንግሊዝ ተመለሰ ነበር። \n' +
+        '\n' +
+        'ይህ የኬሊ የውድድር መለኪያ የታላቅ ድምፅ አድርጎ እንዲሆን አድርጋል። የእንግሊዝ የሴቶች የእግር ኳስ ቡድን ወደ ሌላ የምርጫ ወቅት ይገኛል። \n' +
+        '\n' +
+        '#እግርኳስዜና #ስፖርት #ዝማኔ',
+      language: 'am',
+      imageUrl: 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948873197.png',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 news content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Test Morning News
+⚙️ Processing rule: Pre-Match Betting Tips (betting)
+🎯 Found 2 matching channels for rule: Pre-Match Betting Tips
+🔍 DEBUG: processAutomationRule - Rule: Pre-Match Betting Tips, Type: event_driven
+🔍 DEBUG: processEventDrivenRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering betting for 2 channels
+📤 Triggering real content generation: betting for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: betting
+🌍 Languages detected: [ 'am' ]
+🎯 Generating betting content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'betting',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: betting | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating betting content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+🎯 Using betting tips generator for am
+🎯 Betting attempt 1/3
+🎯 Generating betting tips in am
+🎯 Getting match for betting tips for channel: testing
+🔍 Searching for matches based on channel preferences...
+✅ Found targeted match: Arsenal vs Tottenham (Score: 31)
+✅ Using targeted match for channel: Arsenal vs Tottenham
+✅ Selected match: Arsenal vs Tottenham
+📊 Performing betting analysis for Arsenal vs Tottenham
+✅ Using team IDs: Home 42, Away 47
+🔍 Getting team analysis using ID: Arsenal (42)
+📊 Getting 10 matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting last 10 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&last=10
+🔮 Getting 5 upcoming matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting upcoming 5 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&next=5
+🔍 Getting team analysis using ID: Tottenham (47)
+📊 Getting 10 matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting last 10 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&last=10
+🔮 Getting 5 upcoming matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting upcoming 5 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&next=5
+🔍 Getting detailed info using IDs: Arsenal (42) vs Tottenham (47)
+📊 Getting 5 matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting last 5 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&last=5
+📊 Getting 5 matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting last 5 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&last=5
+🔄 Getting H2H data: Arsenal vs Tottenham
+✅ Found 1 matches from API-Football v3
+✅ Got 1 matches from API-Football
+✅ Found 1 matches from API-Football v3
+✅ Got 1 matches from API-Football
+✅ Found 2 matches from API-Football v3
+✅ Got 2 matches from API-Football
+✅ Found 2 matches from API-Football v3
+✅ Got 2 matches from API-Football
+🔮 Getting 3 upcoming matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting upcoming 3 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&next=3
+🔮 Getting 3 upcoming matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting upcoming 3 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&next=3
+✅ Found 5 upcoming matches from API-Football v3
+✅ Got 5 upcoming matches from API-Football
+✅ Found 5 upcoming matches from API-Football v3
+✅ Got 5 upcoming matches from API-Football
+✅ Found 3 upcoming matches from API-Football v3
+✅ Got 3 upcoming matches from API-Football
+✅ Found 3 upcoming matches from API-Football v3
+✅ Got 3 upcoming matches from API-Football
+🔮 Generated 4 predictions for Arsenal vs Tottenham
+📊 Match assessment: 80% confidence, HIGH predictability
+🎨 Generating image with GPT-Image-1 model: Stadium atmosphere photo for Arsenal vs Tottenham football match: passionate fans in team colors, st...
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+ POST /api/automation/auto-scheduler 404 in 173ms
+ POST /api/automation/auto-scheduler 404 in 36ms
+ POST /api/automation/auto-scheduler 404 in 35ms
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753948945092.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1824297 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753948945092.png',
+  id: 'e37b0376-023a-488e-9668-191a0b8b6dd3',
+  fullPath: 'generated-images/football_image_1753948945092.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948945092.png
+🌐 URL accessibility test: 200 OK
+🎯 GenerateBaseContent Debug: am, Predictions count: 4
+🔍 Predictions data: [
+  {
+    type: 'match_result',
+    prediction: 'HOME WIN',
+    confidence: 108,
+    reasoning: 'Home advantage (12.0%) and better form',
+    odds_estimate: '1.20-1.50',
+    expectedOdds: '1.20-1.50',
+    valueRating: 'HIGH',
+    risk_level: 'LOW'
+  },
+  {
+    type: 'both_teams_score',
+    prediction: 'BOTH TEAMS TO SCORE: YES',
+    confidence: 65,
+    reasoning: 'Both teams average good scoring rates (Home: 3.0, Away: 2.0 goals/game)',
+    odds_estimate: '1.50-2.00',
+    expectedOdds: '1.50-2.00',
+    valueRating: 'MEDIUM',
+    risk_level: 'MEDIUM'
+  },
+  {
+    type: 'over_under',
+    prediction: 'OVER 2.5 GOALS',
+    confidence: 80,
+    reasoning: 'Expected 4.0 goals based on team averages and H2H',
+    odds_estimate: '1.20-1.50',
+    expectedOdds: '1.20-1.50',
+    valueRating: 'HIGH',
+    risk_level: 'LOW'
+  }
+]
+📝 Base content generated (am): "🎯 የውርርድ ምክሮች: Arsenal በተቃ Tottenham
+
+💰 ተመራጭ ውርርድ ምክሮች:
+
+🏆 ምክር 1: የቤት ቡድን ያሸንፋል
+💰 ዕድል: 1.20-1.50 | እምነት: 108%
+📝 የቤት ጥቅም (12.0%) and ተሻለ ሁኔታ
+
+⭐ ምክር..."
+📏 Base content length: 531 characters
+🤖 AI editing betting content for language: am (Channel: testing)
+✅ AI enhanced betting content in am: "🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ ..."
+📏 Enhanced content length: 276 characters
+🤖 AI edited content (am): "🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ እንደሚገኝ
+
+⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 65..."
+📏 AI edited content length: 276 characters
+❌ Error marking betting content as used: {}
+🎯 FINAL RESULT for am:
+   Title: Arsenal vs Tottenham
+   Final content length: 276 characters
+   Using AI edited: true
+   Content preview: "🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ እንደሚገኝ
+
+⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 65% | ሁለቱም ቡድኖች መጨረሻ ጊዜ ከፍተኛ ጎሎች ማስገባት ያላቸው | ⚠️ መካከ..."
+✅ Successfully generated betting content
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: betting for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ እንደሚገኝ
+
+⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 65% | ሁለቱም ቡድኖች መጨረሻ ጊዜ ከፍተኛ ጎሎች ማስገባት ያላቸው | ⚠️ መካከ
+🧹 Cleaning HTML for Telegram: 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ ...
+✅ HTML cleaned for Telegram: 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ ...
+🧹 After HTML cleaning: 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ እንደሚገኝ ⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 65% | ሁለቱም ቡድኖች መጨረሻ ጊዜ ከፍተኛ ጎሎች ማስገባት ያላቸው | ⚠️ መካከለ
+🧹 Cleaning HTML for Telegram: 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ ...
+✅ HTML cleaned for Telegram: 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948945092.png
+🎛️ Found enhanced Telegram metadata: {
+  protectContent: true,
+  enableShareButton: true,
+  enableWebApp: true,
+  priority: 'high',
+  spoilerImage: false
+}
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: true,
+  hasSpoiler: false,
+  priority: 'high'
+}
+📤 Sending to channel: testing
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948945092.png
+🧹 HTML validation complete. Clean text length: 277
+📊 Image downloaded successfully: 1824297 bytes
+❌ Image send failed: Error: Photo send failed: 400 Bad Request
+    at TelegramSender.sendMessage (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:26:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async TelegramSender.sendToMultipleChannels (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:256:28)
+    at async TelegramDistributor.distributeToChannels (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:229:36)
+    at async TelegramDistributor.sendContentToTelegram (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:72:40)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/unified-content/route.ts:166:40)
+    at async triggerRealContentGeneration (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:385:34)
+    at async processEventDrivenRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:221:25)
+    at async processAutomationRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:142:22)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:85:37)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:55038
+    at async ek.execute (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:45808)
+    at async ek.handle (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:56292)
+    at async doRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1377:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1599:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1507:28)
+    at async DevServer.renderPageComponent (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1931:24)
+    at async DevServer.renderToResponseImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1969:32)
+    at async DevServer.pipeImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:920:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:816:17)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/start-server.js:141:13)
+🔄 Falling back to text-only message...
+🧹 HTML validation complete. Clean text length: 277
+📤 Sending text message to: testingfde
+📝 Message preview: 🎯 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated betting content in am: ✅ Generated 1 betting content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T08:02:37.316Z',
+  content_type: 'betting',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 1,
+    average_ai_score: 85,
+    processing_time_seconds: 27,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'Betting Tips Generator (Attempt 1)',
+    ai_processing: true,
+    image_generation: true,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'betting_1753948957316_f6los2z7y',
+      type: 'betting',
+      title: '🎯 Arsenal vs Tottenham - Betting Tips',
+      content: '🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 108% | አርሴናል በቤት የከፋ ሁኔታና የተሻለ ፍርያት ያላቸው | ⚠️ ዝቅተኛ አደጋ | 💰 ከፍተኛ ዋጋ እንደሚገኝ\n' +
+        '\n' +
+        '⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 65% | ሁለቱም ቡድኖች መጨረሻ ጊዜ ከፍተኛ ጎሎች ማስገባት ያላቸው | ⚠️ መካከለኛ አደጋ | 💰 መካከለኛ ዋጋ እንደሚገኝ\n' +
+        '\n' +
+        '🥅 ከ2.5 ጎሎች በላይ: ዕድል 1.20-1.50 | እምነት 80% | በተመ',
+      language: 'am',
+      imageUrl: 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753948945092.png',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 betting content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Pre-Match Betting Tips
+⚙️ Processing rule: Pre-Match Analysis (analysis)
+🎯 Found 2 matching channels for rule: Pre-Match Analysis
+🔍 DEBUG: processAutomationRule - Rule: Pre-Match Analysis, Type: event_driven
+🔍 DEBUG: processEventDrivenRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering analysis for 2 channels
+📤 Triggering real content generation: analysis for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: analysis
+🌍 Languages detected: [ 'am' ]
+🎯 Generating analysis content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'analysis',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: analysis | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating analysis content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+📈 Using match analysis generator for am
+🔍 Generating comprehensive match analysis in am
+🎯 Getting daily important match for analysis
+⚠️ No daily matches found, falling back to unified service
+🎯 Getting matches optimized for analysis content
+🎯 MAIN WORKFLOW: Getting smart matches for analysis in am
+🎯 === DETAILED API DEBUG FOR SMART MATCHES ===
+🎯 Getting smart matches for analysis in am
+🔄 Refreshing available APIs...
+❌ No environment key for football-data-org
+✅ Added api-football from environment (key length: 32)
+❌ No environment key for apifootball
+❌ No environment key for soccersapi
+✅ Added free API: thesportsdb
+🔑 Final API keys available: [ 'api-football', 'thesportsdb' ]
+📊 Environment keys used: 2
+📊 Database keys used: 0
+✅ Added api-football: https://v3.football.api-sports.io
+✅ Added thesportsdb: https://www.thesportsdb.com/api/v1/json/123
+🔑 Total working APIs: 2
+🔍 WORKING APIS DEBUG:
+  - Total APIs found: 2
+  - Working APIs: 2
+  - API 1: api-football (https://v3.football.api-sports.io)
+  - API 2: thesportsdb (https://www.thesportsdb.com/api/v1/json/123)
+🔑 Available APIs: api-football, thesportsdb
+
+🔄 === TRYING API: api-football ===
+⚠️ api-football has reached its limit, trying next API
+
+🔄 === TRYING API: thesportsdb ===
+⚠️ thesportsdb has reached its limit, trying next API
+
+🆓 === LAST RESORT: TheSportsDB ===
+🆓 Fetching from TheSportsDB with user key 123...
+❌ No environment key for football-data-org
+✅ Added api-football from environment (key length: 32)
+❌ No environment key for apifootball
+❌ No environment key for soccersapi
+✅ Added free API: thesportsdb
+🔑 Final API keys available: [ 'api-football', 'thesportsdb' ]
+📊 Environment keys used: 2
+📊 Database keys used: 0
+🔑 Using TheSportsDB API key: 123
+🔮 Fetching upcoming matches for future content...
+🔮 Total matches found: 0
+📊 TheSportsDB returned 0 matches
+🚫 No real matches available - returning empty array (no fake matches!)
+❌ No suitable match found for analysis
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated analysis content in am: ⚠️ No analysis content could be generated at this time.
+🔍 DEBUG: API Response: {
+  success: false,
+  timestamp: '2025-07-31T08:02:41.728Z',
+  content_type: 'analysis',
+  language: 'am',
+  mode: 'ai_enhanced',
+  error: 'No content available',
+  message: '⚠️ No analysis content could be generated at this time.',
+  processing_info: {
+    data_source: 'Analysis Generator - No Result',
+    ai_processing: false,
+    image_generation: false,
+    fallback_used: true
+  },
+  statistics: {
+    channels_processed: 0,
+    total_content_sent: 0,
+    images_generated: 0,
+    fallback_used: true
+  }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Pre-Match Analysis
+⚙️ Processing rule: Live Updates (live)
+🎯 Found 2 matching channels for rule: Live Updates
+🔍 DEBUG: processAutomationRule - Rule: Live Updates, Type: event_driven
+🔍 DEBUG: processEventDrivenRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering live for 2 channels
+📤 Triggering real content generation: live for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: live
+🌍 Languages detected: [ 'am' ]
+🎯 Generating live content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'live',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: live | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating live content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+🔴 Using enhanced live content generator with fallback for am
+🔴 Generating live update for am
+🔴 Getting current live match from daily important matches
+⚠️ No daily live matches found, falling back to unified service
+🎯 Getting matches optimized for live_update content
+🎯 MAIN WORKFLOW: Getting smart matches for live_update in am
+🎯 === DETAILED API DEBUG FOR SMART MATCHES ===
+🎯 Getting smart matches for live_update in am
+🔄 Refreshing available APIs...
+❌ No environment key for football-data-org
+✅ Added api-football from environment (key length: 32)
+❌ No environment key for apifootball
+❌ No environment key for soccersapi
+✅ Added free API: thesportsdb
+🔑 Final API keys available: [ 'api-football', 'thesportsdb' ]
+📊 Environment keys used: 2
+📊 Database keys used: 0
+✅ Added api-football: https://v3.football.api-sports.io
+✅ Added thesportsdb: https://www.thesportsdb.com/api/v1/json/123
+🔑 Total working APIs: 2
+🔍 WORKING APIS DEBUG:
+  - Total APIs found: 2
+  - Working APIs: 2
+  - API 1: api-football (https://v3.football.api-sports.io)
+  - API 2: thesportsdb (https://www.thesportsdb.com/api/v1/json/123)
+🔑 Available APIs: api-football, thesportsdb
+
+🔄 === TRYING API: api-football ===
+⚠️ api-football has reached its limit, trying next API
+
+🔄 === TRYING API: thesportsdb ===
+⚠️ thesportsdb has reached its limit, trying next API
+
+🆓 === LAST RESORT: TheSportsDB ===
+🆓 Fetching from TheSportsDB with user key 123...
+❌ No environment key for football-data-org
+✅ Added api-football from environment (key length: 32)
+❌ No environment key for apifootball
+❌ No environment key for soccersapi
+✅ Added free API: thesportsdb
+🔑 Final API keys available: [ 'api-football', 'thesportsdb' ]
+📊 Environment keys used: 2
+📊 Database keys used: 0
+🔑 Using TheSportsDB API key: 123
+🔮 Fetching upcoming matches for future content...
+🔮 Total matches found: 0
+📊 TheSportsDB returned 0 matches
+🚫 No real matches available - returning empty array (no fake matches!)
+⚠️ No live match available, using fallback
+🔴 Generating live update for am
+🔴 Getting current live match from daily important matches
+⚠️ No daily live matches found, falling back to unified service
+🎯 Getting matches optimized for live_update content
+🎯 MAIN WORKFLOW: Getting smart matches for live_update in am
+🎯 === DETAILED API DEBUG FOR SMART MATCHES ===
+🎯 Getting smart matches for live_update in am
+🔄 Refreshing available APIs...
+❌ No environment key for football-data-org
+✅ Added api-football from environment (key length: 32)
+❌ No environment key for apifootball
+❌ No environment key for soccersapi
+✅ Added free API: thesportsdb
+🔑 Final API keys available: [ 'api-football', 'thesportsdb' ]
+📊 Environment keys used: 2
+📊 Database keys used: 0
+✅ Added api-football: https://v3.football.api-sports.io
+✅ Added thesportsdb: https://www.thesportsdb.com/api/v1/json/123
+🔑 Total working APIs: 2
+🔍 WORKING APIS DEBUG:
+  - Total APIs found: 2
+  - Working APIs: 2
+  - API 1: api-football (https://v3.football.api-sports.io)
+  - API 2: thesportsdb (https://www.thesportsdb.com/api/v1/json/123)
+🔑 Available APIs: api-football, thesportsdb
+
+🔄 === TRYING API: api-football ===
+⚠️ api-football has reached its limit, trying next API
+
+🔄 === TRYING API: thesportsdb ===
+⚠️ thesportsdb has reached its limit, trying next API
+
+🆓 === LAST RESORT: TheSportsDB ===
+🆓 Fetching from TheSportsDB with user key 123...
+❌ No environment key for football-data-org
+✅ Added api-football from environment (key length: 32)
+❌ No environment key for apifootball
+❌ No environment key for soccersapi
+✅ Added free API: thesportsdb
+🔑 Final API keys available: [ 'api-football', 'thesportsdb' ]
+📊 Environment keys used: 2
+📊 Database keys used: 0
+🔑 Using TheSportsDB API key: 123
+🔮 Fetching upcoming matches for future content...
+🔮 Total matches found: 0
+📊 TheSportsDB returned 0 matches
+🚫 No real matches available - returning empty array (no fake matches!)
+⚠️ No live match available, using fallback
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: live for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: 🔴 የቀጥታ የእግር ኳስ ዝማኔ
+
+⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች
+🏟️ በቀጥታ ከመጫወቻ ሜዳ
+⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት
+📊 ቀጥታ ስታቲስቲክስ እና ተጫዋቾች አፈጻጸም
+
+📱 ለተጨማሪ ቀጥታ ዝማኔዎች ይከተሉን
+🔔 ፈጣን ማሳወቂያ ለሁሉም ጨዋታዎች
+
+#እግርኳስ #ቀጥታዝማኔ #ውጤቶች #ስፖርት
+🧹 Cleaning HTML for Telegram: 🔴 የቀጥታ የእግር ኳስ ዝማኔ
+
+⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች
+🏟️ በቀጥታ ከመጫወቻ ሜዳ
+⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት
+📊 ቀጥታ ስ...
+✅ HTML cleaned for Telegram: 🔴 የቀጥታ የእግር ኳስ ዝማኔ ⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች
+🏟️ በቀጥታ ከመጫወቻ ሜዳ
+⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት
+📊 ቀጥታ ስታ...
+🧹 After HTML cleaning: 🔴 የቀጥታ የእግር ኳስ ዝማኔ ⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች
+🏟️ በቀጥታ ከመጫወቻ ሜዳ
+⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት
+📊 ቀጥታ ስታቲስቲክስ እና ተጫዋቾች አፈጻጸም 📱 ለተጨማሪ ቀጥታ ዝማኔዎች ይከተሉን
+🔔 ፈጣን ማሳወቂያ ለሁሉም ጨዋታዎች #እግርኳስ #ቀጥታዝማኔ #ውጤቶች #ስፖርት
+🧹 Cleaning HTML for Telegram: 🔴 የቀጥታ የእግር ኳስ ዝማኔ ⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች...
+✅ HTML cleaned for Telegram: 🔴 የቀጥታ የእግር ኳስ ዝማኔ ⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች...
+🚫 Image generation disabled for content type: live
+📋 Using default Telegram settings
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: false,
+  hasSpoiler: false,
+  priority: 'normal'
+}
+📤 Sending to channel: testing
+🧹 HTML validation complete. Clean text length: 48
+📤 Sending text message to: testingfde
+📝 Message preview: 🔴 የቀጥታ የእግር ኳስ ዝማኔ ⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated live content in am: ✅ Generated 1 live content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T08:02:43.734Z',
+  content_type: 'live',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 0,
+    average_ai_score: 85,
+    processing_time_seconds: 29,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'Live Updates Generator',
+    ai_processing: true,
+    image_generation: false,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'live_fallback_1753948962798',
+      type: 'live',
+      title: '⚽ የቀጥታ የእግር ኳስ ዝማኔ',
+      content: '🔴 የቀጥታ የእግር ኳስ ዝማኔ\n' +
+        '\n' +
+        '⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች\n' +
+        '🏟️ በቀጥታ ከመጫወቻ ሜዳ\n' +
+        '⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት\n' +
+        '📊 ቀጥታ ስታቲስቲክስ እና ተጫዋቾች አፈጻጸም\n' +
+        '\n' +
+        '📱 ለተጨማሪ ቀጥታ ዝማኔዎች ይከተሉን\n' +
+        '🔔 ፈጣን ማሳወቂያ ለሁሉም ጨዋታዎች\n' +
+        '\n' +
+        '#እግርኳስ #ቀጥታዝማኔ #ውጤቶች #ስፖርት',
+      language: 'am',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 live content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Live Updates
+⚙️ Processing rule: Daily Summary (daily_summary)
+🎯 Found 2 matching channels for rule: Daily Summary
+🔍 DEBUG: processAutomationRule - Rule: Daily Summary, Type: scheduled
+🔍 DEBUG: processScheduledRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering daily_summary content for 2 channels
+📤 Triggering real content generation: daily_summary for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: daily_summary
+🌍 Languages detected: [ 'am' ]
+🎯 Generating daily_summary content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'daily_summary',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: daily_summary | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating daily_summary content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+📋 Using daily summary generator for am
+📅 Generating daily summary in am
+📅 Generating daily summary for today
+📅 Getting matches for daily summary
+📅 Getting matches for date: 2025-07-30 (for daily summary)
+📅 Getting matches for date: 2025-07-30
+🎯 Getting fixtures for date: 2025-07-30
+📅 API-Football v3: Getting fixtures for date 2025-07-30
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?date=2025-07-30
+✅ Found 201 fixtures for 2025-07-30 from API-Football v3
+📅 Found 201 matches for 2025-07-30
+📅 Found 201 real matches for 2025-07-30
+🔍 Analyzing 201 matches for interest level (top 4)
+🔮 Getting tomorrow's fixtures for today
+📅 Getting matches for date: 2025-08-01
+🎯 Getting fixtures for date: 2025-08-01
+📅 API-Football v3: Getting fixtures for date 2025-08-01
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?date=2025-08-01
+✅ Found 228 fixtures for 2025-08-01 from API-Football v3
+📅 Found 228 matches for 2025-08-01
+🔮 Found 228 fixtures for tomorrow
+🎨 Generating daily summary image for 2025-07-31
+🎨 Generating image with GPT-Image-1 model: Simple and clean football-themed infographic showing only the title "Daily Summary" in elegant text....
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753949010395.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1206790 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753949010395.png',
+  id: 'f12d1c81-2b18-4c96-b96d-bccb782b12ae',
+  fullPath: 'generated-images/football_image_1753949010395.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949010395.png
+🌐 URL accessibility test: 200 OK
+✅ Daily summary image generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949010395.png
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: daily_summary for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025
+
+🏆 ዋና ዋና ውጤቶች
+
+1. Anenii Noi 0-5 Swieqi Utd W
+   🏟️ UEFA Champions League Women | 5 ጎሎች ያሉት አስደሳች 0-5 ውጤት
+
+2. Ferencvarosi TC 4-3 FC Noah
+   🏟️ UEFA Champions League
+🧹 Cleaning HTML for Telegram: 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025
+
+🏆 ዋና ዋና ውጤቶች
+
+1. Anenii Noi 0-5 Swieqi Utd W
+   🏟️ UEFA Champions...
+✅ HTML cleaned for Telegram: 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025 🏆 ዋና ዋና ውጤቶች 1. Anenii Noi 0-5 Swieqi Utd W 🏟️ UEFA Champions Leag...
+🧹 After HTML cleaning: 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025 🏆 ዋና ዋና ውጤቶች 1. Anenii Noi 0-5 Swieqi Utd W 🏟️ UEFA Champions League Women | 5 ጎሎች ያሉት አስደሳች 0-5 ውጤት 2. Ferencvarosi TC 4-3 FC Noah 🏟️ UEFA Champions League | 7 ጎሎች 
+🧹 Cleaning HTML for Telegram: 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025 🏆 ዋና ዋና ውጤቶች 1. Anenii Noi 0-5 Swieqi Utd W 🏟️ UEFA Champions Leag...
+✅ HTML cleaned for Telegram: 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025 🏆 ዋና ዋና ውጤቶች 1. Anenii Noi 0-5 Swieqi Utd W 🏟️ UEFA Champions Leag...
+🚫 Image generation disabled for content type: daily_summary
+📋 Using default Telegram settings
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: false,
+  hasSpoiler: false,
+  priority: 'normal'
+}
+📤 Sending to channel: testing
+🧹 HTML validation complete. Clean text length: 448
+📤 Sending text message to: testingfde
+📝 Message preview: 📋 📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025 🏆 ዋና ዋና ውጤቶች 1. Anenii Noi 0-5 Swieqi Utd W 🏟️ UEFA Champions L...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated daily_summary content in am: ✅ Generated 1 daily_summary content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T08:03:32.127Z',
+  content_type: 'daily_summary',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 1,
+    average_ai_score: 85,
+    processing_time_seconds: 23,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'Daily Summary Generator',
+    ai_processing: true,
+    image_generation: true,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'daily_summary_1753949012127_e2fwat6b1',
+      type: 'daily_summary',
+      title: '📅 Daily Football Roundup - 7/31/2025',
+      content: '📅 የዕለት እግርኳስ ማጠቃለያ - 7/31/2025\n' +
+        '\n' +
+        '🏆 ዋና ዋና ውጤቶች\n' +
+        '\n' +
+        '1. Anenii Noi 0-5 Swieqi Utd W\n' +
+        '   🏟️ UEFA Champions League Women | 5 ጎሎች ያሉት አስደሳች 0-5 ውጤት\n' +
+        '\n' +
+        '2. Ferencvarosi TC 4-3 FC Noah\n' +
+        '   🏟️ UEFA Champions League | 7 ጎሎች ያሉት አስደሳች 4-3 ውጤት\n' +
+        '\n' +
+        '3. Racing W 5-3 AEK Athens W\n' +
+        '   🏟️ UEFA Champions League Women | 8 ጎሎች ያሉት አስደሳች 5-3 ውጤት\n' +
+        '\n' +
+        '📊 ስታትስቲክስ\n' +
+        '• 201 ጨዋታዎች\n' +
+        '• 605 ጎሎች\n' +
+        '\n' +
+        '👀 የነገ ጨዋታዎች\n' +
+        '• Juan Pablo II College vs Alianza Lima\n' +
+        '• Aldosivi vs Argentinos JRS\n' +
+        '• Flamengo vs Atletico-MG\n',
+      language: 'am',
+      imageUrl: 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949010395.png',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 daily_summary content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Daily Summary
+⚙️ Processing rule: Smart Coupons (smart_push)
+🎯 Found 2 matching channels for rule: Smart Coupons
+🔍 DEBUG: processAutomationRule - Rule: Smart Coupons, Type: context_aware
+🔍 DEBUG: processContextAwareRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering smart_push for 2 channels
+📤 Triggering real content generation: smart_push for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: smart_push
+🌍 Languages detected: [ 'am' ]
+🎯 Generating smart_push content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'smart_push',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🔍 DEBUG: API Response status: 400
+❌ Failed to generate smart_push content in am: {"success":false,"error":"Unsupported content type: smart_push. Supported: live, betting, news, polls, analysis, coupons, memes, daily_summary, weekly_summary"}
+🔍 DEBUG: triggerRealContentGeneration - Final result: false
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Smart Coupons
+⚙️ Processing rule: Test News Auto (news)
+🎯 Found 2 matching channels for rule: Test News Auto
+🔍 DEBUG: processAutomationRule - Rule: Test News Auto, Type: scheduled
+🔍 DEBUG: processScheduledRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering news content for 2 channels
+📤 Triggering real content generation: news for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: news
+🌍 Languages detected: [ 'am' ]
+🎯 Generating news content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'news',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: news | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating news content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+📰 Using news content generator for am
+📰 Generating news content in am
+📰 Using cached RSS feeds
+✅ Fetched 229 news items in 0ms
+🏆 Scoring 229 news items for channel: testing
+🔍 Finding best unused news for channel unified-content
+❌ Error fetching used content: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.content_uniqueness" does not exist'
+}
+✅ Found unused news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory"
+✅ Selected news: "Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory" (Score: 140)
+✅ CONTENT GENERATION ALLOWED: news for channel unified-content
+✅ CONTENT GENERATION APPROVED: Proceeding with OpenAI call
+🎨 Generating AI image
+🤖 AI editing news content for language: am
+🎨 Generating image with GPT-Image-1 model: Real football news photo: penalty kick, authentic stadium scene, professional sports journalism phot...
+Error logging OpenAI call: {}
+🤖 AI Result for am: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወደ አውሮፓ ድምጽ እንደ መግባባት ወደ አንድ ዓለም ይገባል።
+
+ኩሎይ ክሌት የእንግሊዝ እግር ኳስ ቡድን ምርጥ አባል በሆነች የገንዘብ ወቅት የምርጥ ወደ ሳጥና ...
+✅ Using AI result for am
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753949038830.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1653204 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753949038830.png',
+  id: '37005a41-06a3-4bc4-89f6-e435ef09baf6',
+  fullPath: 'generated-images/football_image_1753949038830.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949038830.png
+🌐 URL accessibility test: 200 OK
+✅ News generation completed in 27394ms
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: news for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወደ አውሮፓ ድምጽ እንደ መግባባት ወደ አንድ ዓለም ይገባል።
+
+ኩሎይ ክሌት የእንግሊዝ እግር ኳስ ቡድን ምርጥ አባል በሆነች የገንዘብ ወቅት የምርጥ ወደ ሳጥና 
+🧹 Cleaning HTML for Telegram: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወ...
+✅ HTML cleaned for Telegram: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወ...
+🧹 After HTML cleaning: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወደ አውሮፓ ድምጽ እንደ መግባባት ወደ አንድ ዓለም ይገባል። ኩሎይ ክሌት የእንግሊዝ እግር ኳስ ቡድን ምርጥ አባል በሆነች የገንዘብ ወቅት የምርጥ ወደ ሳጥና አ
+🧹 Cleaning HTML for Telegram: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወ...
+✅ HTML cleaned for Telegram: ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949038830.png
+🎛️ Found enhanced Telegram metadata: {
+  protectContent: true,
+  enableShareButton: true,
+  enableWebApp: false,
+  priority: 'high',
+  spoilerImage: false,
+  disablePreview: false
+}
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: true,
+  hasSpoiler: false,
+  priority: 'high'
+}
+📤 Sending to channel: testing
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949038830.png
+🧹 HTML validation complete. Clean text length: 455
+📊 Image downloaded successfully: 1653204 bytes
+❌ Image send failed: Error: Photo send failed: 400 Bad Request
+    at TelegramSender.sendMessage (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:26:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async TelegramSender.sendToMultipleChannels (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:256:28)
+    at async TelegramDistributor.distributeToChannels (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:229:36)
+    at async TelegramDistributor.sendContentToTelegram (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:72:40)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/unified-content/route.ts:166:40)
+    at async triggerRealContentGeneration (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:385:34)
+    at async processScheduledRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:162:25)
+    at async processAutomationRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:139:22)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:85:37)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:55038
+    at async ek.execute (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:45808)
+    at async ek.handle (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:56292)
+    at async doRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1377:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1599:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1507:28)
+    at async DevServer.renderPageComponent (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1931:24)
+    at async DevServer.renderToResponseImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1969:32)
+    at async DevServer.pipeImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:920:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:816:17)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/start-server.js:141:13)
+🔄 Falling back to text-only message...
+🧹 HTML validation complete. Clean text length: 455
+📤 Sending text message to: testingfde
+📝 Message preview: 📰 ⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊ...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated news content in am: ✅ Generated 1 news content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T08:04:00.533Z',
+  content_type: 'news',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 1,
+    average_ai_score: 85,
+    processing_time_seconds: 17,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'News Generator',
+    ai_processing: true,
+    image_generation: true,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'Post 3418661 at talkSPORT',
+      type: 'news',
+      title: 'Chloe Kelly gives explanation for unusual penalty style that sealed Euro 2025 glory',
+      content: '⚽ በአውሮፓ ውድድር 2025 ውስጥ የተወዳዳሪ የፈርስ ንብረት የሚሆን የተወሰነ የፈርስ ዘዴ ላይ ትምህርት አድርጋለች በእንግሊዝ እግር ኳስ ቡድን አንድ ጊዜ ወደ አውሮፓ ድምጽ እንደ መግባባት ወደ አንድ ዓለም ይገባል።\n' +
+        '\n' +
+        'ኩሎይ ክሌት የእንግሊዝ እግር ኳስ ቡድን ምርጥ አባል በሆነች የገንዘብ ወቅት የምርጥ ወደ ሳጥና አንድ ነገር በሚያደርጉት የድምጽ ወቅት የሚሰጣቸው የፈርስ ዘዴ ባለው ዝክረ ስለሚያደርገው የእግር ኳስ ቡድን መሠረታዊ ይህ እንደ እንግሊዝ ተከታይ መድረክ ውስጥ ይወጣል።\n' +
+        '\n' +
+        'እንግሊዝ እግር ኳስ ቡድን በስፔን ላይ በደረጃ ወደ ስፖርት የተወዳዳሪ ወደ ውድድር ቁጥር 3-1 በቀረው የፈርስ ወይም የጋምበር ወይም ወደ ማለት ቢሆን ይሆናል።\n' +
+        '\n' +
+        'በዚህ ወቅት የምንዛሬ ወቅት አርባዕት ወደ እንግሊዝ ይወስዳል። የዚህ',
+      language: 'am',
+      imageUrl: 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949038830.png',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 news content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Test News Auto
+⚙️ Processing rule: Test Betting Auto (betting)
+🎯 Found 2 matching channels for rule: Test Betting Auto
+🔍 DEBUG: processAutomationRule - Rule: Test Betting Auto, Type: event_driven
+🔍 DEBUG: processEventDrivenRule - NODE_ENV: development, VERCEL: false, isLocal: true, isProd: undefined
+🎯 Local Development: triggering betting for 2 channels
+📤 Triggering real content generation: betting for 2 channels
+🔍 DEBUG: triggerRealContentGeneration - Starting for contentType: betting
+🌍 Languages detected: [ 'am' ]
+🎯 Generating betting content in am for 2 channels
+🔍 DEBUG: Calling unified-content API directly (no HTTP)
+🔍 DEBUG: Request body: {
+  contentType: 'betting',
+  language: 'am',
+  target_channels: 'testingfde,@africansportdata',
+  isAutomated: true
+}
+🚀 Unified Content API: send_now | Type: betting | Mode: ai_enhanced | Language: am
+🔍 Request body structure: {
+  target_channels: 'testingfde,@africansportdata',
+  target_channels_type: 'string',
+  target_channels_isArray: false,
+  body_keys: [ 'contentType', 'language', 'target_channels', 'isAutomated' ]
+}
+✅ FINAL LANGUAGE DECISION: am (will be used for AI content generation)
+🎯 NO TARGET CHANNELS: Finding active channels with bots
+🔍 Finding channels for specified language: am
+📍 Found 2 channels for language 'am':
+  - testing (am)
+  - AfircaSportCenter (am)
+🎯 Using primary channel: testing
+🎯 Content Router: Generating betting content for am (Channel: testing)
+📋 Channel settings: Leagues: 0, Teams: 0, Affiliate: none
+🎯 Using betting tips generator for am
+🎯 Betting attempt 1/3
+🎯 Generating betting tips in am
+🎯 Getting match for betting tips for channel: testing
+🔍 Searching for matches based on channel preferences...
+✅ Found targeted match: Arsenal vs Tottenham (Score: 31)
+✅ Using targeted match for channel: Arsenal vs Tottenham
+✅ Selected match: Arsenal vs Tottenham
+📊 Performing betting analysis for Arsenal vs Tottenham
+✅ Using team IDs: Home 42, Away 47
+🔍 Getting team analysis using ID: Arsenal (42)
+📊 Getting 10 matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting last 10 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&last=10
+🔮 Getting 5 upcoming matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting upcoming 5 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&next=5
+🔍 Getting team analysis using ID: Tottenham (47)
+📊 Getting 10 matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting last 10 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&last=10
+🔮 Getting 5 upcoming matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting upcoming 5 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&next=5
+🔍 Getting detailed info using IDs: Arsenal (42) vs Tottenham (47)
+📊 Getting 5 matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting last 5 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&last=5
+📊 Getting 5 matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting last 5 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&last=5
+🔄 Getting H2H data: Arsenal vs Tottenham
+✅ Found 5 upcoming matches from API-Football v3
+✅ Got 5 upcoming matches from API-Football
+✅ Found 1 matches from API-Football v3
+✅ Got 1 matches from API-Football
+✅ Found 2 matches from API-Football v3
+✅ Got 2 matches from API-Football
+✅ Found 1 matches from API-Football v3
+✅ Got 1 matches from API-Football
+✅ Found 2 matches from API-Football v3
+✅ Got 2 matches from API-Football
+🔮 Getting 3 upcoming matches for team Arsenal (ID: 42)
+📊 API-Football v3: Getting upcoming 3 matches for team 42
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=42&season=2025&next=3
+🔮 Getting 3 upcoming matches for team Tottenham (ID: 47)
+📊 API-Football v3: Getting upcoming 3 matches for team 47
+🔍 API-Football v3: https://v3.football.api-sports.io/fixtures?team=47&season=2025&next=3
+✅ Found 5 upcoming matches from API-Football v3
+✅ Got 5 upcoming matches from API-Football
+✅ Found 3 upcoming matches from API-Football v3
+✅ Got 3 upcoming matches from API-Football
+✅ Found 3 upcoming matches from API-Football v3
+✅ Got 3 upcoming matches from API-Football
+🔮 Generated 4 predictions for Arsenal vs Tottenham
+📊 Match assessment: 77% confidence, HIGH predictability
+🎨 Generating image with GPT-Image-1 model: Stadium atmosphere photo for Arsenal vs Tottenham football match: passionate fans in team colors, st...
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753949104142.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1846972 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753949104142.png',
+  id: 'cb82a0e9-6626-4db8-a602-85f6af2f0b22',
+  fullPath: 'generated-images/football_image_1753949104142.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949104142.png
+🌐 URL accessibility test: 200 OK
+🎯 GenerateBaseContent Debug: am, Predictions count: 4
+🔍 Predictions data: [
+  {
+    type: 'match_result',
+    prediction: 'HOME WIN',
+    confidence: 102,
+    reasoning: 'Home advantage (12.0%) and better form',
+    odds_estimate: '1.20-1.50',
+    expectedOdds: '1.20-1.50',
+    valueRating: 'HIGH',
+    risk_level: 'LOW'
+  },
+  {
+    type: 'both_teams_score',
+    prediction: 'BOTH TEAMS TO SCORE: YES',
+    confidence: 66,
+    reasoning: 'Both teams average good scoring rates (Home: 3.0, Away: 2.0 goals/game)',
+    odds_estimate: '1.50-2.00',
+    expectedOdds: '1.50-2.00',
+    valueRating: 'MEDIUM',
+    risk_level: 'MEDIUM'
+  },
+  {
+    type: 'over_under',
+    prediction: 'OVER 2.5 GOALS',
+    confidence: 80,
+    reasoning: 'Expected 4.0 goals based on team averages and H2H',
+    odds_estimate: '1.20-1.50',
+    expectedOdds: '1.20-1.50',
+    valueRating: 'HIGH',
+    risk_level: 'LOW'
+  }
+]
+📝 Base content generated (am): "🎯 የውርርድ ምክሮች: Arsenal በተቃ Tottenham
+
+💰 ተመራጭ ውርርድ ምክሮች:
+
+🏆 ምክር 1: የቤት ቡድን ያሸንፋል
+💰 ዕድል: 1.20-1.50 | እምነት: 102%
+📝 የቤት ጥቅም (12.0%) and ተሻለ ሁኔታ
+
+⭐ ምክር..."
+📏 Base content length: 531 characters
+🤖 AI editing betting content for language: am (Channel: testing)
+✅ AI enhanced betting content in am: "1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝ..."
+📏 Enhanced content length: 355 characters
+🤖 AI edited content (am): "1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝቅተኛ አደጋ ደረጃ | HIGH የእምነት ግምት
+
+2. ⚽ ሁለቱም ቡድኖች ያስገባሉ..."
+📏 AI edited content length: 355 characters
+❌ Error marking betting content as used: {}
+🎯 FINAL RESULT for am:
+   Title: Arsenal vs Tottenham
+   Final content length: 355 characters
+   Using AI edited: true
+   Content preview: "1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝቅተኛ አደጋ ደረጃ | HIGH የእምነት ግምት
+
+2. ⚽ ሁለቱም ቡድኖች ያስገባሉ (BOTH TEAMS TO SCORE: YES): ዕድል 1.50-2.00 | እምነት ..."
+✅ Successfully generated betting content
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: betting for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: 1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝቅተኛ አደጋ ደረጃ | HIGH የእምነት ግምት
+
+2. ⚽ ሁለቱም ቡድኖች ያስገባሉ (BOTH TEAMS TO SCORE: YES): ዕድል 1.50-2.00 | እምነት 
+🧹 Cleaning HTML for Telegram: 1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝ...
+✅ HTML cleaned for Telegram: 1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝ...
+🧹 After HTML cleaning: 1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝቅተኛ አደጋ ደረጃ | HIGH የእምነት ግምት 2. ⚽ ሁለቱም ቡድኖች ያስገባሉ (BOTH TEAMS TO SCORE: YES): ዕድል 1.50-2.00 | እምነት 6
+🧹 Cleaning HTML for Telegram: 🎯 ከ2.5 ጎሎች በላይ (OVER 2.5 GOALS):
+
+⚠️ 18+ በኃላፊነት ይዋረዱ...
+✅ HTML cleaned for Telegram: 🎯 ከ2.5 ጎሎች በላይ (OVER 2.5 GOALS): ⚠️ 18+ በኃላፊነት ይዋረዱ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949104142.png
+🎛️ Found enhanced Telegram metadata: {
+  protectContent: false,
+  enableShareButton: true,
+  enableWebApp: true,
+  priority: 'high',
+  spoilerImage: false
+}
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: false,
+  hasSpoiler: false,
+  priority: 'high'
+}
+📤 Sending to channel: testing
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949104142.png
+🧹 HTML validation complete. Clean text length: 52
+📊 Image downloaded successfully: 1846972 bytes
+❌ Image send failed: Error: Photo send failed: 400 Bad Request
+    at TelegramSender.sendMessage (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:26:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async TelegramSender.sendToMultipleChannels (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:256:28)
+    at async TelegramDistributor.distributeToChannels (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:229:36)
+    at async TelegramDistributor.sendContentToTelegram (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:72:40)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/unified-content/route.ts:166:40)
+    at async triggerRealContentGeneration (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:385:34)
+    at async processEventDrivenRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:221:25)
+    at async processAutomationRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:142:22)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:85:37)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:55038
+    at async ek.execute (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:45808)
+    at async ek.handle (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:56292)
+    at async doRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1377:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1599:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1507:28)
+    at async DevServer.renderPageComponent (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1931:24)
+    at async DevServer.renderToResponseImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1969:32)
+    at async DevServer.pipeImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:920:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:816:17)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/start-server.js:141:13)
+🔄 Falling back to text-only message...
+🧹 HTML validation complete. Clean text length: 52
+📤 Sending text message to: testingfde
+📝 Message preview: 🎯 ከ2.5 ጎሎች በላይ (OVER 2.5 GOALS): ⚠️ 18+ በኃላፊነት ይዋረዱ...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated betting content in am: ✅ Generated 1 betting content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T08:05:14.062Z',
+  content_type: 'betting',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 1,
+    average_ai_score: 85,
+    processing_time_seconds: 15,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'Betting Tips Generator (Attempt 1)',
+    ai_processing: true,
+    image_generation: true,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'betting_1753949114062_e0w4rhlnh',
+      type: 'betting',
+      title: '🎯 Arsenal vs Tottenham - Betting Tips',
+      content: '1. 🏆 የቤት ድል (Arsenal vs Tottenham): ዕድል 1.20-1.50 | እምነት 102% | በቤት ውስጥ ያላቸው ማበረረያ እና ጥሩ አቅም | ⚠️ ዝቅተኛ አደጋ ደረጃ | HIGH የእምነት ግምት\n' +
+        '\n' +
+        '2. ⚽ ሁለቱም ቡድኖች ያስገባሉ (BOTH TEAMS TO SCORE: YES): ዕድል 1.50-2.00 | እምነት 66% | የሁለቱም ቡድኖች የመስቀል ቅድመ ሁኔታ በጣም ጥሩ ነው (Arsenal: 3.0, Tottenham: 2.0 ጎሎች/ጨዋታ) | ⚠️ መካከለኛ አደጋ ደረጃ | MEDIUM የእምነት ግምት\n' +
+        '\n' +
+        '3. 🎯 ከ2.5 ጎሎች በላይ (OVER 2.5 GOALS):',
+      language: 'am',
+      imageUrl: 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753949104142.png',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 betting content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Test Betting Auto
+⚙️ Processing rule: Test Live Auto (live)
+🎯 Found 2 matching channels for rule: Test Live Auto
+🔍 DEBUG: processAutomationRule - Rule: Test Live Auto, Type: continuous
+🔍 DEBUG: Unknown automation_type: continuous
+🔍 DEBUG: processAutomationRule result: NULL
+⏭️ Skipped rule: Test Live Auto (conditions not met)
+🎯 Automation cycle completed: 8 rules processed, 14 content generated
+ POST /api/automation/auto-scheduler 200 in 267163ms
+ ○ Compiling / ...
+ ✓ Compiled / in 518ms (420 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+ GET / 200 in 814ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1036ms (981 modules)
+🔍 Supabase client initializing with URL: https://ythsmnqclosoxiccchhh.supabase.co
+✅ Supabase client created successfully
+ GET / 404 in 1202ms
+[?25h
