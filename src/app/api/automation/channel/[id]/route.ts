@@ -415,10 +415,27 @@ async function toggleChannelAutomation(channelId: string, enabled: boolean) {
 async function generateDailyTimeline(rules: any[], executions: any[], manualPosts: any[]) {
   const timeline: any[] = [];
   
-  // Use local timezone (Israel/Jerusalem)
-  const today = new Date();
-  const israelOffset = 3 * 60 * 60 * 1000; // Israel is UTC+3 during summer
-  const localToday = new Date(today.getTime() + israelOffset);
+  // Get current time in different timezones
+  const now = new Date();
+  
+  // Helper function to get time in specific timezone
+  function getTimeInTimezone(timezone: string): Date {
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    
+    switch(timezone) {
+      case 'Africa/Addis_Ababa': // Ethiopia (UTC+3)
+        return new Date(utcTime + (3 * 3600000));
+      case 'Asia/Jerusalem': // Israel (UTC+2/+3)
+        return new Date(utcTime + (3 * 3600000)); // Summer time
+      case 'Europe/London': // UK (UTC+0/+1)
+        return new Date(utcTime + (1 * 3600000)); // Summer time
+      default:
+        return new Date(utcTime + (3 * 3600000)); // Default to Ethiopia time
+    }
+  }
+  
+  // For now, use Ethiopia timezone since that's what the user is asking about
+  const today = getTimeInTimezone('Africa/Addis_Ababa');
   
   // Get today's important matches for dynamic scheduling
   const todayMatches = await getTodayMatches();
@@ -443,7 +460,7 @@ async function generateDailyTimeline(rules: any[], executions: any[], manualPost
     if (rule.config?.times) {
       rule.config.times.forEach((time: string) => {
         const [hour, minute] = time.split(':').map(Number);
-        const baseTime = new Date(localToday);
+        const baseTime = new Date(today);
         baseTime.setHours(hour, minute, 0, 0);
         
         // Add spread for fixed times too (but smaller spread for news)
@@ -478,7 +495,7 @@ async function generateDailyTimeline(rules: any[], executions: any[], manualPost
         const timeIndex = index % defaultNewsTimes.length;
         const time = defaultNewsTimes[timeIndex];
         const [hour, minute] = time.split(':').map(Number);
-        const baseTime = new Date(localToday);
+        const baseTime = new Date(today);
         baseTime.setHours(hour, minute, 0, 0);
         
         // Add small spread for news (±10 minutes)
@@ -524,7 +541,7 @@ async function generateDailyTimeline(rules: any[], executions: any[], manualPost
           note += ` (±${spreadMinutes}min spread)`;
 
           // Only schedule if time is within reasonable range (today or close to it)
-          const timeDiff = Math.abs(scheduledTime.getTime() - localToday.getTime());
+          const timeDiff = Math.abs(scheduledTime.getTime() - today.getTime());
           const isWithinRange = timeDiff < 24 * 60 * 60 * 1000; // Within 24 hours
           
           if (isWithinRange) {
