@@ -33,6 +33,9 @@ export class BackgroundScheduler {
     this.isRunning = true;
     console.log('🚀 Background Scheduler starting - checking every minute');
 
+    // 🗑️ Clean old logs on startup
+    this.cleanOldLogs();
+
     // 🆕 Start live updates monitoring
     this.startLiveUpdatesMonitoring();
 
@@ -43,6 +46,11 @@ export class BackgroundScheduler {
     this.intervalId = setInterval(() => {
       this.checkAndExecute();
     }, this.CHECK_INTERVAL);
+
+    // Clean old logs every hour
+    setInterval(() => {
+      this.cleanOldLogs();
+    }, 60 * 60 * 1000); // 1 hour
   }
 
   /**
@@ -272,10 +280,16 @@ export class BackgroundScheduler {
    */
   private async checkRule(rule: any, now: Date, currentTime: number): Promise<void> {
     const ruleId = rule.id;
+    
+    // 🔒 Database-based duplicate prevention (more reliable than memory)
+    const isDuplicate = await this.checkForRecentExecution(ruleId, 30); // 30 minutes
+    if (isDuplicate) {
+      return;
+    }
+    
+    // Memory fallback for performance
     const lastExecution = this.lastExecutionTimes.get(ruleId) || 0;
     const timeSinceLastExecution = Date.now() - lastExecution;
-
-    // Prevent duplicate execution - at least 30 minutes between executions
     if (timeSinceLastExecution < 30 * 60 * 1000) {
       return;
     }
@@ -582,6 +596,72 @@ export class BackgroundScheduler {
    */
   isActive(): boolean {
     return this.isRunning;
+  }
+
+  /**
+   * 🔒 Check for recent executions in database to prevent duplicates
+   */
+  private async checkForRecentExecution(ruleId: string, minutesBack: number = 30): Promise<boolean> {
+    try {
+      const cutoffTime = new Date(Date.now() - minutesBack * 60 * 1000);
+      
+      const { data: recentExecutions } = await supabase
+        .from('automation_logs')
+        .select('id, created_at')
+        .eq('rule_id', ruleId)
+        .gte('created_at', cutoffTime.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (recentExecutions && recentExecutions.length > 0) {
+        console.log(`🔒 DUPLICATE PREVENTION: Rule ${ruleId} executed recently at ${recentExecutions[0].created_at}`);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking recent executions:', error);
+      return false; // Allow execution on error
+    }
+  }
+
+  /**
+   * 🗑️ Clean old automation logs to prevent database bloat
+   */
+  private async cleanOldLogs(): Promise<void> {
+    try {
+      // Delete logs older than 7 days
+      const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      
+      const { data: deletedLogs, error } = await supabase
+        .from('automation_logs')
+        .delete()
+        .lt('created_at', cutoffDate.toISOString());
+
+      if (error) {
+        console.error('Error cleaning old logs:', error);
+      } else {
+        console.log(`🗑️ Cleaned automation logs older than 7 days`);
+      }
+
+      // Also clean very old pending/failed logs (older than 24 hours)
+      const pendingCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const { error: pendingError } = await supabase
+        .from('automation_logs')
+        .delete()
+        .in('status', ['pending', 'failed'])
+        .lt('created_at', pendingCutoff.toISOString());
+
+      if (pendingError) {
+        console.error('Error cleaning old pending logs:', pendingError);
+      } else {
+        console.log(`🗑️ Cleaned old pending/failed logs older than 24 hours`);
+      }
+
+    } catch (error) {
+      console.error('❌ Error during log cleanup:', error);
+    }
   }
 
   /**

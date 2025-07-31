@@ -63974,3 +63974,204 @@ Error logging OpenAI call: {}
 🔮 Generated 4 predictions for Arsenal vs Tottenham
 📊 Match assessment: 77% confidence, HIGH predictability
 🎨 Generating image with GPT-Image-1 model: Stadium atmosphere photo for Arsenal vs Tottenham football match: passionate fans in team colors, st...
+✅ GPT-Image-1 generated successfully
+📤 Uploading football_image_1753947297193.png to Supabase Storage...
+🔑 Supabase URL: https://ythsmnqclosoxiccchhh.supabase.co
+🔐 Service role key available: true
+📊 Image buffer size: 1888265 bytes
+🔍 Checking bucket access...
+🔌 Database connection test: FAILED
+🔌 DB Error: relation "public.user_roles" does not exist
+📂 Available buckets: [ 'generated-images (public: true)', 'content-images (public: true)' ]
+✅ Target bucket found: generated-images (public: true)
+🚀 Starting upload...
+✅ Upload successful! Data: {
+  path: 'football_image_1753947297193.png',
+  id: '9586496e-9411-4f01-97a3-725c311fa9e4',
+  fullPath: 'generated-images/football_image_1753947297193.png'
+}
+✅ Public URL generated: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753947297193.png
+🌐 URL accessibility test: 200 OK
+🎯 GenerateBaseContent Debug: am, Predictions count: 4
+🔍 Predictions data: [
+  {
+    type: 'match_result',
+    prediction: 'HOME WIN',
+    confidence: 110,
+    reasoning: 'Home advantage (12.0%) and better form',
+    odds_estimate: '1.20-1.50',
+    expectedOdds: '1.20-1.50',
+    valueRating: 'HIGH',
+    risk_level: 'LOW'
+  },
+  {
+    type: 'both_teams_score',
+    prediction: 'BOTH TEAMS TO SCORE: YES',
+    confidence: 53,
+    reasoning: 'Both teams average good scoring rates (Home: 3.0, Away: 2.0 goals/game)',
+    odds_estimate: '1.50-2.00',
+    expectedOdds: '1.50-2.00',
+    valueRating: 'LOW',
+    risk_level: 'HIGH'
+  },
+  {
+    type: 'over_under',
+    prediction: 'OVER 2.5 GOALS',
+    confidence: 80,
+    reasoning: 'Expected 3.9 goals based on team averages and H2H',
+    odds_estimate: '1.20-1.50',
+    expectedOdds: '1.20-1.50',
+    valueRating: 'HIGH',
+    risk_level: 'LOW'
+  }
+]
+📝 Base content generated (am): "🎯 የውርርድ ምክሮች: Arsenal በተቃ Tottenham
+
+💰 ተመራጭ ውርርድ ምክሮች:
+
+🏆 ምክር 1: የቤት ቡድን ያሸንፋል
+💰 ዕድል: 1.20-1.50 | እምነት: 110%
+📝 የቤት ጥቅም (12.0%) and ተሻለ ሁኔታ
+
+⭐ ምክር..."
+📏 Base content length: 531 characters
+🤖 AI editing betting content for language: am (Channel: testing)
+✅ AI enhanced betting content in am: "1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋ..."
+📏 Enhanced content length: 275 characters
+🤖 AI edited content (am): "1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋጋ እንደሚሞላ: ከፍተኛ
+
+2. ⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.0..."
+📏 AI edited content length: 275 characters
+❌ Error marking betting content as used: {}
+🎯 FINAL RESULT for am:
+   Title: Arsenal vs Tottenham
+   Final content length: 275 characters
+   Using AI edited: true
+   Content preview: "1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋጋ እንደሚሞላ: ከፍተኛ
+
+2. ⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 53% | ሁለቱም ቡድኖች መነሻ ጎሎች የተደጋገሙ ነው (አርሰናል:..."
+✅ Successfully generated betting content
+📤 Starting Telegram distribution...
+🎯 Using target channels: 4118ad01-22b8-4583-a161-d15c20bb3d04
+🔓 Decoded base64 token for channel: testing
+📊 Found 1 active channels for language am:
+  - testing (am)
+✅ Content sending allowed: betting for channel 4118ad01-22b8-4583-a161-d15c20bb3d04
+✅ Spam check passed: 1/1 channels allowed
+🔍 Before HTML cleaning: 1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋጋ እንደሚሞላ: ከፍተኛ
+
+2. ⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 53% | ሁለቱም ቡድኖች መነሻ ጎሎች የተደጋገሙ ነው (አርሰናል:
+🧹 Cleaning HTML for Telegram: 1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋ...
+✅ HTML cleaned for Telegram: 1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋ...
+🧹 After HTML cleaning: 1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋጋ እንደሚሞላ: ከፍተኛ 2. ⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 53% | ሁለቱም ቡድኖች መነሻ ጎሎች የተደጋገሙ ነው (አርሰናል: 
+🧹 Cleaning HTML for Telegram: 🎯 ከ2.5
+
+⚠️ 18+ በኃላፊነት ይዋረዱ...
+✅ HTML cleaned for Telegram: 🎯 ከ2.5 ⚠️ 18+ በኃላፊነት ይዋረዱ...
+📷 Found existing image in content item: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753947297193.png
+🎛️ Found enhanced Telegram metadata: {
+  protectContent: false,
+  enableShareButton: true,
+  enableWebApp: true,
+  priority: 'high',
+  spoilerImage: false
+}
+⏰ Distribution - Enhanced settings: {
+  disableNotification: false,
+  protectContent: false,
+  hasSpoiler: false,
+  priority: 'high'
+}
+📤 Sending to channel: testing
+📷 Attempting to send message with image
+📷 Attempting to send photo via Telegram: https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753947297193.png
+🧹 HTML validation complete. Clean text length: 26
+📊 Image downloaded successfully: 1888265 bytes
+❌ Image send failed: Error: Photo send failed: 400 Bad Request
+    at TelegramSender.sendMessage (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:26:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async TelegramSender.sendToMultipleChannels (webpack-internal:///(rsc)/./src/lib/content/telegram-sender.ts:256:28)
+    at async TelegramDistributor.distributeToChannels (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:229:36)
+    at async TelegramDistributor.sendContentToTelegram (webpack-internal:///(rsc)/./src/lib/content/api-modules/telegram-distributor.ts:72:40)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/unified-content/route.ts:166:40)
+    at async triggerRealContentGeneration (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:385:34)
+    at async processEventDrivenRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:221:25)
+    at async processAutomationRule (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:142:22)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/automation/auto-scheduler/route.ts:85:37)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:55038
+    at async ek.execute (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:45808)
+    at async ek.handle (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:56292)
+    at async doRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1377:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1599:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1507:28)
+    at async DevServer.renderPageComponent (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1931:24)
+    at async DevServer.renderToResponseImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:1969:32)
+    at async DevServer.pipeImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:920:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/base-server.js:816:17)
+    at async /Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/idosegev/Downloads/TriRoars/telegrambotsport/node_modules/next/dist/server/lib/start-server.js:141:13)
+🔄 Falling back to text-only message...
+🧹 HTML validation complete. Clean text length: 26
+📤 Sending text message to: testingfde
+📝 Message preview: 🎯 ከ2.5 ⚠️ 18+ በኃላፊነት ይዋረዱ...
+❌ Failed to send message to testingfde: Body is unusable
+❌ Failed to send to testing: Body is unusable
+✅ Distribution completed: 0/1 channels
+📝 Skipping content save to database (RLS policy needs update)
+🔍 DEBUG: API Response status: 200
+✅ Successfully generated betting content in am: ✅ Generated 1 betting content items in am!
+🔍 DEBUG: API Response: {
+  success: true,
+  timestamp: '2025-07-31T07:35:07.827Z',
+  content_type: 'betting',
+  language: 'am',
+  mode: 'ai_enhanced',
+  statistics: {
+    channels_processed: 1,
+    total_content_sent: 1,
+    images_generated: 1,
+    average_ai_score: 85,
+    processing_time_seconds: 31,
+    fallback_used: false
+  },
+  processing_info: {
+    data_source: 'Betting Tips Generator (Attempt 1)',
+    ai_processing: true,
+    image_generation: true,
+    fallback_used: false
+  },
+  content_items: [
+    {
+      id: 'betting_1753947307826_bv0wesq1l',
+      type: 'betting',
+      title: '🎯 Arsenal vs Tottenham - Betting Tips',
+      content: '1. 🏆 የቤት ድል: ዕድል 1.20-1.50 | እምነት 110% | በቤት ጥሩ ውጤት እና የቀድሞ ውጊያ አሸናፊነት ዋስትና | ⚠️ የአደጋ ደረጃ: ዝቅተኛ | ዋጋ እንደሚሞላ: ከፍተኛ\n' +
+        '\n' +
+        '2. ⚽ ሁለቱም ቡድኖች ያስገባሉ: ዕድል 1.50-2.00 | እምነት 53% | ሁለቱም ቡድኖች መነሻ ጎሎች የተደጋገሙ ነው (አርሰናል: 3.0, ቶተንሃም: 2.0 ጎሎች/ጨዋታ) | ⚠️ የአደጋ ደረጃ: ከፍተኛ | ዋጋ እንደሚሞላ: ዝቅተኛ\n' +
+        '\n' +
+        '3. 🎯 ከ2.5',
+      language: 'am',
+      imageUrl: 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/football_image_1753947297193.png',
+      metadata: [Object]
+    }
+  ],
+  message: '✅ Generated 1 betting content items in am!',
+  telegram: { success: false, channels: 1, results: [ [Object] ] }
+}
+🔍 DEBUG: triggerRealContentGeneration - Final result: true
+🔍 DEBUG: processAutomationRule result: SUCCESS
+✅ Successfully processed: Test Betting Auto
+⚙️ Processing rule: Test Live Auto (live)
+🎯 Found 2 matching channels for rule: Test Live Auto
+🔍 DEBUG: processAutomationRule - Rule: Test Live Auto, Type: continuous
+🔍 DEBUG: Unknown automation_type: continuous
+🔍 DEBUG: processAutomationRule result: NULL
+⏭️ Skipped rule: Test Live Auto (conditions not met)
+🎯 Automation cycle completed: 8 rules processed, 14 content generated
+ POST /api/automation/auto-scheduler 200 in 262870ms
