@@ -18,7 +18,10 @@
       "Bash(npx supabase db dump:*)",
       "Bash(git add:*)",
       "WebFetch(domain:telegrambot-nine-umber.vercel.app)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables"
     ],
     "deny": []
   }

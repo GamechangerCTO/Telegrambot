@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
     const summaryGenerator = new DailyWeeklySummaryGenerator();
     const pollsGenerator = new PollsGenerator();
 
-    // Morning summaries (9 AM UTC)
-    if (currentHour === 9) {
+    // Morning summaries (7 AM UTC = 10 AM Israel/Ethiopia)
+    if (currentHour === 7) {
       console.log('📅 Generating daily summaries...');
       
       // Generate daily summary for active channels
@@ -120,8 +120,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Weekly summaries (Sunday 11 PM UTC)
-    if (currentDay === 0 && currentHour === 23) {
+    // Weekly summaries (Sunday 8 AM UTC = 11 AM Israel/Ethiopia)
+    if (currentDay === 0 && currentHour === 8) {
       console.log('📊 Generating weekly summaries...');
       
       const { data: channels } = await supabase

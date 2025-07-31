@@ -379,20 +379,43 @@ export class BackgroundScheduler {
         if ('beforeMatch' in scheduling && scheduling.beforeMatch) {
           targetTime = new Date(matchTime.getTime() - (scheduling.beforeMatch * 60 * 1000));
         } else if ('duringMatch' in scheduling && scheduling.duringMatch) {
-          targetTime = new Date(matchTime.getTime() + (15 * 60 * 1000)); // 15 min into match
+          // Check if match is currently live (started but not finished)
+          const currentTime = new Date();
+          const matchStart = matchTime;
+          const matchEnd = new Date(matchTime.getTime() + (120 * 60 * 1000)); // 2 hours after start
+          
+          if (currentTime >= matchStart && currentTime <= matchEnd) {
+            targetTime = currentTime; // Execute now if match is live
+          }
         } else if ('afterMatch' in scheduling && scheduling.afterMatch) {
           targetTime = new Date(matchTime.getTime() + (90 * 60 * 1000) + (scheduling.afterMatch * 60 * 1000));
         }
 
         if (targetTime) {
-          const targetTimeMinutes = targetTime.getHours() * 60 + targetTime.getMinutes();
-          
-          // Check if we're in the time window (5 minutes)
-          if (Math.abs(currentTime - targetTimeMinutes) <= 5) {
-            return {
-              shouldExecute: true,
-              reason: `${scheduling.description} - ${match.home_team} vs ${match.away_team}`
-            };
+          // For live matches, always execute if match is ongoing
+          if ('duringMatch' in scheduling && scheduling.duringMatch) {
+            const currentTime = new Date();
+            const matchStart = matchTime;
+            const matchEnd = new Date(matchTime.getTime() + (120 * 60 * 1000));
+            
+            if (currentTime >= matchStart && currentTime <= matchEnd) {
+              return {
+                shouldExecute: true,
+                reason: `LIVE MATCH - ${match.home_team} vs ${match.away_team}`
+              };
+            }
+          } else {
+            // For other content types, use time window check
+            const targetTimeMinutes = targetTime.getHours() * 60 + targetTime.getMinutes();
+            const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            // Check if we're in the time window (5 minutes)
+            if (Math.abs(currentTimeMinutes - targetTimeMinutes) <= 5) {
+              return {
+                shouldExecute: true,
+                reason: `${scheduling.description} - ${match.home_team} vs ${match.away_team}`
+              };
+            }
           }
         }
       }
