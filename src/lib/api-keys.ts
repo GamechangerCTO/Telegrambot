@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import CryptoJS from 'crypto-js';
 import OpenAI from 'openai';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface SportsAPI {
   id: string;
@@ -220,29 +222,47 @@ export async function getSetting(key: string): Promise<string> {
  */
 export async function getOpenAiApiKey(): Promise<string> {
   try {
+    // 🔑 Priority 1: Environment variables (faster and more reliable)
+    const envKey = process.env.OPENAI_API_KEY;
+    if (envKey && envKey.length > 10) { // Basic validation
+      console.log('✅ Using OpenAI key from environment variables');
+      return envKey;
+    }
+    
+    // 🔑 Priority 2: Read directly from .env.local file
+    const fileKey = readEnvFromFile('OPENAI_API_KEY');
+    if (fileKey && fileKey.length > 10) {
+      console.log('✅ Using OpenAI key from .env.local file');
+      return fileKey;
+    }
+    
+    // 🔑 Priority 3: Database fallback
     const dbKey = await getSetting('openai_api_key');
-    if (dbKey) {
-      console.log('✅ Using OpenAI key from database');
+    if (dbKey && dbKey.length > 10) {
+      console.log('✅ Using OpenAI key from database (fallback)');
       return dbKey;
     }
     
-    // Fallback to environment
-    const envKey = process.env.OPENAI_API_KEY;
-    if (envKey) {
-      console.log('✅ Using OpenAI key from environment (fallback)');
-      return envKey;
-    }
-    
-    console.log('❌ No OpenAI key found in database or environment');
+    console.log('❌ No valid OpenAI key found in any source');
+    console.log(`🔍 Debug: env key length: ${envKey?.length || 0}, file key length: ${fileKey?.length || 0}, db key length: ${dbKey?.length || 0}`);
     return '';
   } catch (error) {
     console.error('Error fetching OpenAI API key:', error);
-    // Fallback to environment on error
+    
+    // Final fallback to file and then environment on database error
+    const fileKey = readEnvFromFile('OPENAI_API_KEY');
+    if (fileKey && fileKey.length > 10) {
+      console.log('✅ Using OpenAI key from .env.local file (error fallback)');
+      return fileKey;
+    }
+    
     const envKey = process.env.OPENAI_API_KEY;
-    if (envKey) {
+    if (envKey && envKey.length > 10) {
       console.log('✅ Using OpenAI key from environment (error fallback)');
       return envKey;
     }
+    
+    console.log('❌ Complete failure - no OpenAI key available from any source');
     return '';
   }
 }
@@ -252,29 +272,47 @@ export async function getOpenAiApiKey(): Promise<string> {
  */
 export async function getClaudeApiKey(): Promise<string> {
   try {
+    // 🔑 Priority 1: Environment variables (faster and more reliable)
+    const envKey = process.env.CLAUDE_API_KEY;
+    if (envKey && envKey.length > 10) {
+      console.log('✅ Using Claude key from environment variables');
+      return envKey;
+    }
+    
+    // 🔑 Priority 2: Read directly from .env.local file
+    const fileKey = readEnvFromFile('CLAUDE_API_KEY');
+    if (fileKey && fileKey.length > 10) {
+      console.log('✅ Using Claude key from .env.local file');
+      return fileKey;
+    }
+    
+    // 🔑 Priority 3: Database fallback
     const dbKey = await getSetting('claude_api_key');
-    if (dbKey) {
-      console.log('✅ Using Claude key from database');
+    if (dbKey && dbKey.length > 10) {
+      console.log('✅ Using Claude key from database (fallback)');
       return dbKey;
     }
     
-    // Fallback to environment
-    const envKey = process.env.CLAUDE_API_KEY;
-    if (envKey) {
-      console.log('✅ Using Claude key from environment (fallback)');
-      return envKey;
-    }
-    
-    console.log('❌ No Claude key found in database or environment');
+    console.log('❌ No valid Claude key found in any source');
+    console.log(`🔍 Debug: env key length: ${envKey?.length || 0}, file key length: ${fileKey?.length || 0}, db key length: ${dbKey?.length || 0}`);
     return '';
   } catch (error) {
     console.error('Error fetching Claude API key:', error);
-    // Fallback to environment on error
+    
+    // Final fallback to file and then environment on database error
+    const fileKey = readEnvFromFile('CLAUDE_API_KEY');
+    if (fileKey && fileKey.length > 10) {
+      console.log('✅ Using Claude key from .env.local file (error fallback)');
+      return fileKey;
+    }
+    
     const envKey = process.env.CLAUDE_API_KEY;
-    if (envKey) {
+    if (envKey && envKey.length > 10) {
       console.log('✅ Using Claude key from environment (error fallback)');
       return envKey;
     }
+    
+    console.log('❌ Complete failure - no Claude key available from any source');
     return '';
   }
 }
@@ -421,6 +459,36 @@ export async function getAPIKey(serviceName: string): Promise<string> {
   } catch (error) {
     console.error(`Failed to get API key for ${serviceName}:`, error);
     return '';
+  }
+}
+
+/**
+ * 📂 Read environment variable directly from .env.local file (fallback)
+ */
+function readEnvFromFile(variableName: string): string | null {
+  try {
+    const envPath = path.join(process.cwd(), '.env.local');
+    if (!fs.existsSync(envPath)) {
+      console.log('📂 .env.local file not found');
+      return null;
+    }
+    
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const lines = envContent.split('\n');
+    
+    for (const line of lines) {
+      if (line.startsWith(`${variableName}=`)) {
+        const value = line.substring(variableName.length + 1).trim();
+        console.log(`📂 Found ${variableName} in .env.local file (length: ${value.length})`);
+        return value;
+      }
+    }
+    
+    console.log(`📂 ${variableName} not found in .env.local file`);
+    return null;
+  } catch (error) {
+    console.error('📂 Error reading .env.local file:', error);
+    return null;
   }
 }
 

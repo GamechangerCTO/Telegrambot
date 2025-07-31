@@ -33,6 +33,7 @@ const CONTENT_LIMITS: ContentLimits = {
 
 export class ContentSpamPreventer {
   private static instance: ContentSpamPreventer;
+  private recentContentCache = new Map<string, Set<string>>(); // Cache for recent content
   
   static getInstance(): ContentSpamPreventer {
     if (!ContentSpamPreventer.instance) {
@@ -42,22 +43,112 @@ export class ContentSpamPreventer {
   }
 
   /**
+   * 🔄 Check if similar content was recently generated (before calling OpenAI)
+   */
+  async canGenerateContent(
+    contentType: string,
+    channelId: string,
+    newsTitle?: string,
+    organizationId: string = 'default'
+  ): Promise<{ allowed: boolean; reason?: string; duplicateContent?: any }> {
+    
+    const today = new Date().toISOString().split('T')[0];
+    const last6Hours = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    
+    try {
+      // Check if similar content was generated in the last 6 hours
+      const { data: recentLogs } = await supabase
+        .from('automation_logs')
+        .select('*')
+        .eq('channel_id', channelId)
+        .eq('content_type', contentType)
+        .gte('created_at', last6Hours)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (recentLogs && recentLogs.length > 0) {
+        // For news, check if the same title was already processed
+        if (contentType === 'news' && newsTitle) {
+          const duplicateNews = recentLogs.find((log: any) => {
+            const logDetails = log.details || {};
+            const logTitle = logDetails.title || logDetails.content_title || '';
+            return logTitle.toLowerCase().includes(newsTitle.toLowerCase().substring(0, 50)) ||
+                   newsTitle.toLowerCase().includes(logTitle.toLowerCase().substring(0, 50));
+          });
+          
+          if (duplicateNews) {
+            console.log(`🔄 DUPLICATE CONTENT: Similar news already generated in last 6h for ${channelId}`);
+            return { 
+              allowed: false, 
+              reason: `Similar news already generated: "${duplicateNews.details?.title || 'Unknown'}"`,
+              duplicateContent: duplicateNews
+            };
+          }
+        }
+
+        // For other content types, check frequency
+        const recentCount = recentLogs.length;
+        const hourlyLimit = this.getHourlyLimitForType(contentType);
+        
+        if (recentCount >= hourlyLimit) {
+          console.log(`🔄 FREQUENCY LIMIT: ${recentCount} ${contentType} items in last 6h >= ${hourlyLimit} limit`);
+          return { 
+            allowed: false, 
+            reason: `Too many ${contentType} items generated recently: ${recentCount}/${hourlyLimit}` 
+          };
+        }
+      }
+
+      console.log(`✅ CONTENT GENERATION ALLOWED: ${contentType} for channel ${channelId}`);
+      return { allowed: true, reason: 'Content generation allowed' };
+      
+    } catch (error) {
+      console.error('Error checking content generation limits:', error);
+      // On error, allow generation but log the issue
+      return { allowed: true, reason: 'Error checking limits - allowing generation' };
+    }
+  }
+
+  /**
+   * Get hourly generation limits for content types
+   */
+  private getHourlyLimitForType(contentType: string): number {
+    const hourlyLimits = {
+      'news': 2,        // Max 2 news per 6 hours
+      'betting': 1,     // Max 1 betting tip per 6 hours  
+      'analysis': 1,    // Max 1 analysis per 6 hours
+      'live': 3,        // Max 3 live updates per 6 hours
+      'polls': 1,       // Max 1 poll per 6 hours
+      'coupons': 2,     // Max 2 coupons per 6 hours
+      'summary': 1,     // Max 1 summary per 6 hours
+    };
+    
+    return hourlyLimits[contentType] || 1; // Default to 1 if unknown type
+  }
+
+  /**
    * Check if content sending is allowed
    */
   async canSendContent(
     contentType: string, 
     channelId: string,
     organizationId: string = 'default',
-    manualExecution: boolean = false
+    manualExecution: boolean = false,
+    isAutomationExecution: boolean = false
   ): Promise<{ allowed: boolean; reason?: string; waitTime?: number }> {
     
     const today = new Date().toISOString().split('T')[0];
     const currentHour = new Date().getHours();
     
-    // Manual execution bypasses most restrictions
-    if (manualExecution) {
+    // Only manual execution bypasses restrictions, NOT automation
+    if (manualExecution && !isAutomationExecution) {
       console.log(`🔓 MANUAL EXECUTION: Bypassing spam prevention for ${contentType} on channel ${channelId}`);
       return { allowed: true, reason: 'Manual execution - restrictions bypassed' };
+    }
+    
+    // Automation executions must follow all spam prevention rules
+    if (isAutomationExecution) {
+      console.log(`🤖 AUTOMATION EXECUTION: Following spam prevention rules for ${contentType} on channel ${channelId}`);
     }
     
     try {

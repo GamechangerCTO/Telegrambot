@@ -14,6 +14,7 @@ import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
 import { rssNewsFetcher, RSSItem } from './rss-news-fetcher';
 import { getOpenAIClient } from '../api-keys';
+import { contentSpamPreventer } from '../utils/content-spam-preventer';
 
 // Cache for RSS feeds
 const RSS_CACHE = new Map<string, { data: NewsItem[], timestamp: number }>();
@@ -100,6 +101,47 @@ export class OptimizedNewsContentGenerator {
       }
 
       console.log(`✅ Selected news: "${bestNews.title}" (Score: ${bestNews.relevanceScore})`);
+
+      // 🔄 STEP 3.5: Check if similar content was recently generated (SAVE OPENAI CALLS!)
+      const canGenerate = await contentSpamPreventer.canGenerateContent(
+        'news',
+        request.channelId,
+        bestNews.title
+      );
+      
+      if (!canGenerate.allowed) {
+        console.log(`🔄 DUPLICATE PREVENTION: ${canGenerate.reason}`);
+        // Return the existing content instead of generating new
+        if (canGenerate.duplicateContent?.details?.content) {
+          return {
+            title: canGenerate.duplicateContent.details.title || bestNews.title,
+            content: canGenerate.duplicateContent.details.content,
+            imageUrl: canGenerate.duplicateContent.details.imageUrl,
+            metadata: {
+              language: request.language,
+              generatedAt: new Date().toISOString(),
+              contentId: bestNews.id,
+              source: bestNews.source,
+              relevanceScore: bestNews.relevanceScore,
+              detailsUrl: bestNews.url,
+              duplicateFlag: true, // Mark as duplicate to avoid OpenAI call
+              telegramEnhancements: {
+                protectContent: request.language !== 'en',
+                enableShareButton: true,
+                enableWebApp: false,
+                priority: 'high',
+                spoilerImage: false,
+                disablePreview: false
+              }
+            }
+          };
+        } else {
+          console.log(`❌ Duplicate content found but no content details - skipping generation`);
+          return null;
+        }
+      }
+
+      console.log(`✅ CONTENT GENERATION APPROVED: Proceeding with OpenAI call`);
 
       // Step 4 & 5: Handle image and AI edit in parallel
       const [imageUrl, aiEditedContent] = await Promise.all([
@@ -454,8 +496,12 @@ export class OptimizedNewsContentGenerator {
     try {
       const openai = await getOpenAIClient();
       if (!openai) {
+        console.log(`❌ OpenAI client not available - using template for ${language}`);
         return this.createTemplateNewsContent(news, language);
       }
+
+      // 📊 Log OpenAI call attempt
+      await this.logOpenAICall('news-generation', language, news.title);
 
       const systemPrompts = {
         'en': `You are a football journalist. Create a complete 4-5 line summary with emojis. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with hashtags.`,
@@ -832,6 +878,53 @@ export class OptimizedNewsContentGenerator {
     this.scoreCache.clear();
     this.usedContentCache.clear();
     console.log('✅ All caches cleared');
+  }
+
+  /**
+   * 📊 Log OpenAI API call for tracking usage
+   */
+  private async logOpenAICall(
+    callType: string, 
+    language: string, 
+    contentTitle: string
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('openai_usage_logs')
+        .insert({
+          call_type: callType,
+          language: language,
+          content_title: contentTitle.substring(0, 200), // Limit title length
+          timestamp: new Date().toISOString(),
+          estimated_tokens: this.estimateTokens(contentTitle),
+          status: 'initiated'
+        });
+
+      if (error) {
+        console.error('Error logging OpenAI call:', error);
+      } else {
+        console.log(`📊 OpenAI call logged: ${callType} for ${language}`);
+      }
+    } catch (error) {
+      console.error('Failed to log OpenAI call:', error);
+    }
+  }
+
+  /**
+   * 🔢 Estimate token usage for cost tracking
+   */
+  private estimateTokens(text: string): number {
+    // Rough estimation: 1 token ≈ 0.75 words for English, adjust for other languages
+    const wordCount = text.split(' ').length;
+    const tokenMultiplier = {
+      'en': 0.75,
+      'am': 1.2,  // Amharic typically uses more tokens
+      'sw': 0.8,  // Swahili
+      'fr': 0.8,  // French
+      'ar': 1.0   // Arabic
+    };
+    
+    return Math.ceil(wordCount * (tokenMultiplier['en'] || 0.75));
   }
 }
 

@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
     const requestedLanguage = (body.language || searchParams.get('language')) as Language;
     const maxItems = body.max_posts_per_channel || 2;
     const includeImages = body.include_images !== false;
-    const manualExecution = body.manual_execution || body.automation_execution || false;
+    const manualExecution = body.manual_execution || false;
+    const isAutomationExecution = body.automation_execution || false;
 
     // Validate content type
     if (!ContentConfigUtils.isValidContentType(type)) {
@@ -183,7 +184,8 @@ export async function POST(request: NextRequest) {
           mode,
           targetChannels: targetChannels.length > 0 ? targetChannels : undefined,
           includeImages,
-          manualExecution
+          manualExecution,
+          isAutomationExecution
         });
         
         content.telegram = telegramResult;
