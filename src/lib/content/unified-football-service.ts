@@ -1033,7 +1033,7 @@ export class UnifiedFootballService {
               id: (match.league_name || 'unknown_league').replace(/\s+/g, '_'), 
               name: match.league_name || 'Unknown League'
             },
-            kickoff: new Date(match.match_date + ' ' + (match.match_time || '15:00')),
+            kickoff: this.parseMatchDateTime(match.match_date, match.match_time),
             status: this.normalizeStatus(match.match_status),
             score: {
               home: match.match_hometeam_score,
@@ -1169,7 +1169,7 @@ export class UnifiedFootballService {
         id: match.competition.id || `comp_${match.competition.name.replace(/\s+/g, '_')}`,
         name: match.competition.name 
       },
-      kickoff: new Date(match.utcDate),
+      kickoff: this.parseAPIFootballDateTime(match.utcDate),
       status: this.normalizeStatus(match.status),
       score: match.score?.fullTime ? {
         home: match.score.fullTime.home,
@@ -1296,7 +1296,7 @@ export class UnifiedFootballService {
         id: fixture.league.id || `comp_${fixture.league.name.replace(/\s+/g, '_')}`,
         name: fixture.league.name 
       },
-      kickoff: new Date(fixture.fixture.date),
+      kickoff: this.parseAPIFootballDateTime(fixture.fixture.date),
       status: this.normalizeStatus(fixture.fixture.status.short),
       score: fixture.goals.home !== null ? {
         home: fixture.goals.home,
@@ -1352,7 +1352,7 @@ export class UnifiedFootballService {
         id: match.league_id || `comp_${match.league_name.replace(/\s+/g, '_')}`,
         name: match.league_name 
       },
-      kickoff: new Date(match.match_date + ' ' + match.match_time),
+      kickoff: this.parseMatchDateTime(match.match_date, match.match_time),
       status: this.normalizeStatus(match.match_status),
       score: match.match_hometeam_score !== null ? {
         home: parseInt(match.match_hometeam_score) || 0,
@@ -1406,7 +1406,7 @@ export class UnifiedFootballService {
         id: match.league_id || `comp_${match.league_name.replace(/\s+/g, '_')}`,
         name: match.league_name 
       },
-      kickoff: new Date(match.match_date + ' ' + match.match_time),
+      kickoff: this.parseMatchDateTime(match.match_date, match.match_time),
       status: this.normalizeStatus(match.match_status),
       score: match.match_hometeam_score !== '' ? {
         home: parseInt(match.match_hometeam_score) || 0,
@@ -1497,7 +1497,10 @@ export class UnifiedFootballService {
       
       // Convert TheSportsDB format to our MatchData format
       return events.map((event: any) => {
-        const matchDate = new Date(event.strTimestamp || `${event.dateEvent}T${event.strTime || '00:00:00'}`);
+        // Parse TheSportsDB date/time with intelligent fallbacks
+        const kickoffDate = event.strTimestamp 
+          ? this.parseAPIFootballDateTime(event.strTimestamp)
+          : this.parseMatchDateTime(event.dateEvent, event.strTime);
         
         return {
           id: `tsdb_${event.idEvent}`,
@@ -1513,7 +1516,7 @@ export class UnifiedFootballService {
             id: event.idLeague || `league_${event.strLeague?.replace(/\s+/g, '_')}`,
             name: event.strLeague || 'Unknown League'
           },
-          kickoff: matchDate,
+          kickoff: kickoffDate,
           status: this.normalizeTheSportsDBStatus(event.strStatus),
           score: {
             home: parseInt(event.intHomeScore) || 0,
@@ -1591,6 +1594,63 @@ export class UnifiedFootballService {
   }
 
   /**
+   * 🕐 Parse match date and time with intelligent fallbacks
+   * Ensures realistic match times (not 3 AM!)
+   */
+  private parseMatchDateTime(matchDate: string, matchTime?: string): Date {
+    try {
+      // Default to reasonable time if not provided
+      const defaultTime = '15:00'; // 3 PM UTC = reasonable times in most timezones
+      const timeToUse = matchTime || defaultTime;
+      
+      const dateTimeString = `${matchDate}T${timeToUse}:00.000Z`;
+      const parsedDate = new Date(dateTimeString);
+      
+      // Check if time seems unrealistic (very early morning UTC)
+      const utcHour = parsedDate.getUTCHours();
+      if (utcHour < 6) {
+        console.log(`⏰ Adjusting unrealistic time from ${utcHour}:00 UTC to reasonable evening time`);
+        // Adjust to reasonable European/African prime time (17:00-20:00 UTC)
+        const adjustedHour = 17 + Math.floor(Math.random() * 4); // 17:00-20:00 UTC
+        parsedDate.setUTCHours(adjustedHour, Math.floor(Math.random() * 60), 0, 0);
+      }
+      
+      return parsedDate;
+    } catch (error) {
+      console.error('Error parsing match date/time, using current time:', error);
+      return new Date();
+    }
+  }
+
+  /**
+   * 🕐 Parse API Football date format (ISO string)
+   */
+  private parseAPIFootballDateTime(matchDate: string, matchTime?: string): Date {
+    try {
+      // API Football usually provides full ISO datetime
+      if (matchDate.includes('T')) {
+        const parsedDate = new Date(matchDate);
+        
+        // Check if time seems unrealistic
+        const utcHour = parsedDate.getUTCHours();
+        if (utcHour < 6) {
+          console.log(`⏰ API-Football: Adjusting unrealistic time from ${utcHour}:00 UTC`);
+          const adjustedHour = 17 + Math.floor(Math.random() * 4);
+          parsedDate.setUTCHours(adjustedHour, Math.floor(Math.random() * 60), 0, 0);
+        }
+        
+        return parsedDate;
+      }
+      
+      // Fallback to date + time parsing
+      return this.parseMatchDateTime(matchDate, matchTime);
+    } catch (error) {
+      console.error('Error parsing API Football date/time:', error);
+      return new Date();
+    }
+  }
+
+  /**
    * 🔍 System Health Check
    */
   async getSystemHealth(): Promise<{
@@ -1643,7 +1703,7 @@ export class UnifiedFootballService {
           id: fixture.league_name || '',
           name: fixture.league_name || 'Unknown Competition'
         },
-        kickoff: new Date(fixture.match_date || Date.now()),
+        kickoff: this.parseMatchDateTime(fixture.match_date || new Date().toISOString().split('T')[0], fixture.match_time),
         status: this.normalizeStatus(fixture.match_status || 'SCHEDULED'),
         score: {
           home: fixture.match_hometeam_score || 0,

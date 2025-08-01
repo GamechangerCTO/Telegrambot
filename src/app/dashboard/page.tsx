@@ -19,6 +19,7 @@ interface Channel {
   telegram_channel_id: string;
   telegram_channel_username?: string;
   language: string;
+  timezone?: string; // Channel's timezone
   description?: string;
   is_active: boolean;
   auto_post: boolean;
@@ -266,7 +267,39 @@ export default function Dashboard() {
     return icons[type as keyof typeof icons] || Send;
   };
 
-  // Timezone mapping for different languages/regions
+  // Enhanced timezone conversion using channel-specific timezones
+  const formatMatchTimeForChannel = (utcTime: string, channel: Channel) => {
+    try {
+      // Use channel's specific timezone or fallback to language-based timezone
+      const timezone = channel.timezone || getTimezoneForLanguage(channel.language);
+      const date = new Date(utcTime);
+      
+      // Check if the time seems unrealistic (like 3 AM)
+      const localHour = new Date(date.toLocaleString('en-US', { timeZone: timezone })).getHours();
+      
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        day: 'numeric',
+        month: 'short'
+      }).format(date);
+    } catch (error) {
+      console.error('Timezone conversion error:', error);
+      // Fallback to a more reasonable local time assumption
+      const date = new Date(utcTime);
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false,
+        day: 'numeric',
+        month: 'short'
+      });
+    }
+  };
+
+  // Timezone mapping for different languages/regions (fallback)
   const getTimezoneForLanguage = (language: string) => {
     const timezones = {
       'he': 'Asia/Jerusalem',     // Israel
@@ -276,30 +309,15 @@ export default function Dashboard() {
       'fr': 'Europe/Paris',       // France
       'ar': 'Asia/Dubai'          // UAE
     };
-    return timezones[language as keyof typeof timezones] || 'UTC';
+    return timezones[language as keyof typeof timezones] || 'Africa/Addis_Ababa';
   };
 
-  const formatLocalTime = (utcTime: string, language: string) => {
-    try {
-      const timezone = getTimezoneForLanguage(language);
-      const date = new Date(utcTime);
-      
-      return new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        day: '2-digit',
-        month: 'short'
-      }).format(date);
-    } catch (error) {
-      // Fallback to UTC if timezone conversion fails
-      return new Date(utcTime).toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false
-      });
-    }
+  // Format time for display with timezone name
+  const formatTimeWithTimezone = (utcTime: string, channel: Channel) => {
+    const timezone = channel.timezone || getTimezoneForLanguage(channel.language);
+    const formattedTime = formatMatchTimeForChannel(utcTime, channel);
+    const timezoneShort = timezone.split('/')[1]?.replace('_', ' ') || timezone;
+    return `${formattedTime} (${timezoneShort})`;
   };
 
   if (loading) {
@@ -448,9 +466,9 @@ export default function Dashboard() {
                         
                         <p className="text-xs text-gray-600 mb-2 truncate">{match.competition}</p>
 
-                        {/* Local Times */}
+                        {/* Local Times - Channel Specific */}
                         <div className="space-y-1">
-                          {activeLanguages.slice(0, 2).map((language) => {
+                          {safeChannels.filter(c => c.is_active).slice(0, 2).map((channel) => {
                             const languageNames = {
                               'he': '🇮🇱',
                               'en': '🇬🇧', 
@@ -460,20 +478,25 @@ export default function Dashboard() {
                               'ar': '🇦🇪'
                             };
                             
-                            const channelsInLanguage = safeChannels.filter(c => c.language === language && c.is_active);
-                            
                             return (
-                              <div key={language} className="flex items-center justify-between text-xs">
+                              <div key={channel.id} className="flex items-center justify-between text-xs">
                                 <span className="flex items-center gap-1">
-                                  {languageNames[language as keyof typeof languageNames] || language}
-                                  <span className="text-gray-500">({channelsInLanguage.length})</span>
+                                  {languageNames[channel.language as keyof typeof languageNames] || channel.language}
+                                  <span className="text-gray-500 truncate max-w-[60px]" title={channel.name}>
+                                    {channel.name.substring(0, 8)}...
+                                  </span>
                                 </span>
-                                <span className="font-mono font-bold text-blue-600">
-                                  {formatLocalTime(match.kickoff_time, language)}
+                                <span className="font-mono font-bold text-blue-600 text-right">
+                                  {formatTimeWithTimezone(match.kickoff_time, channel)}
                                 </span>
                               </div>
                             );
                           })}
+                          {safeChannels.filter(c => c.is_active).length > 2 && (
+                            <div className="text-xs text-gray-400 text-center pt-1">
+                              +{safeChannels.filter(c => c.is_active).length - 2} more channels
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -561,8 +584,18 @@ export default function Dashboard() {
 
                       {/* Channel Info */}
                       <div className="text-xs text-gray-600 mb-2 space-y-1">
-                        <div>Posts: {channel.total_posts_sent || 0}</div>
-                        <div className="truncate">Types: {getContentTypesDisplay(channel.content_types || []).substring(0, 20)}...</div>
+                        <div className="flex justify-between">
+                          <span>Posts: {channel.total_posts_sent || 0}</span>
+                          <span className="text-blue-600 font-mono text-[10px]">
+                            {channel.timezone ? channel.timezone.split('/')[1]?.replace('_', ' ') : getTimezoneForLanguage(channel.language).split('/')[1]?.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <div className="truncate">Types: {getContentTypesDisplay(channel.content_types || []).substring(0, 18)}...</div>
+                        {channel.last_post_at && (
+                          <div className="text-[10px] text-gray-500">
+                            Last: {formatMatchTimeForChannel(channel.last_post_at, channel)}
+                          </div>
+                        )}
                       </div>
 
                       {/* Manual Content Buttons */}

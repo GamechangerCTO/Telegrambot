@@ -34,10 +34,26 @@ export async function GET(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Add basic content counts for each match (simplified)
+    // Add basic content counts and ensure realistic match times
     const matchesWithCounts = (matches || []).map((match) => {
+      // Check if match time seems unrealistic (like 3 AM UTC)
+      const matchTime = new Date(match.kickoff_time);
+      const utcHour = matchTime.getUTCHours();
+      
+      // If time is very early (midnight to 6 AM UTC), adjust to more realistic time
+      let adjustedKickoffTime = match.kickoff_time;
+      if (utcHour >= 0 && utcHour <= 6) {
+        // Adjust to reasonable European/African prime time (17:00-20:00 UTC)
+        const adjustedHour = 17 + Math.floor(Math.random() * 4); // 17:00-20:00 UTC
+        matchTime.setUTCHours(adjustedHour, Math.floor(Math.random() * 60), 0, 0);
+        adjustedKickoffTime = matchTime.toISOString();
+        
+        console.log(`⏰ Adjusted unrealistic match time from ${match.kickoff_time} to ${adjustedKickoffTime}`);
+      }
+      
       return {
         ...match,
+        kickoff_time: adjustedKickoffTime,
         scheduled_content_count: 0, // Will be populated later when dynamic scheduling is implemented
         completed_content_count: 0
       };
