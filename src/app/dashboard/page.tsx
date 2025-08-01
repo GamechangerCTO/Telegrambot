@@ -674,6 +674,129 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Per-Channel Daily Timeline */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                Daily Timeline - {new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })} (Per Channel)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {safeChannels.filter(c => c.is_active).length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No active channels to show timeline
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {safeChannels.filter(c => c.is_active).map((channel) => {
+                    const channelTimezone = channel.timezone || getTimezoneForLanguage(channel.language);
+                    const languageNames = {
+                      'he': '🇮🇱 Hebrew',
+                      'en': '🇬🇧 English', 
+                      'am': '🇪🇹 Amharic',
+                      'sw': '🇰🇪 Swahili',
+                      'fr': '🇫🇷 French',
+                      'ar': '🇦🇪 Arabic'
+                    };
+
+                    // Calculate current local time for this channel
+                    const now = new Date();
+                    const currentLocalHour = parseInt(formatMatchTimeForChannel(now.toISOString(), channel).split(':')[0]);
+                    
+                    // Define the daily schedule with channel-specific content
+                    const dailySchedule = [
+                      { time: '07:00', content: 'Daily Summary', desc: `Morning recap in ${channel.language}`, icon: '📅', status: currentLocalHour >= 7 ? 'completed' : 'pending' },
+                      { time: '09:00', content: 'Morning News', desc: `News bulletin with ${channel.name} buttons`, icon: '📰', status: currentLocalHour >= 9 ? 'completed' : 'pending' },
+                      { time: '13:00', content: 'Afternoon News', desc: `Midday update with affiliate links`, icon: '📰', status: currentLocalHour >= 13 ? 'completed' : 'pending' },
+                      { time: '15:00', content: 'Polls', desc: `Interactive polls in ${channel.language}`, icon: '📊', status: currentLocalHour >= 15 ? 'completed' : 'pending' },
+                      { time: '17:00', content: 'Evening News', desc: `Evening coverage with channel buttons`, icon: '📰', status: currentLocalHour >= 17 ? 'completed' : 'pending' },
+                      { time: '18:00', content: 'Evening Preview', desc: `Tomorrow's matches preview`, icon: '🌆', status: currentLocalHour >= 18 ? 'completed' : 'pending' },
+                      { time: '21:00', content: 'Night News', desc: `Late summary with smart coupons`, icon: '📰', status: currentLocalHour >= 21 ? 'completed' : 'pending' }
+                    ];
+
+                    return (
+                      <div key={channel.id} className="border rounded-lg p-4 bg-gradient-to-r from-gray-50 to-white">
+                        {/* Channel Header */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <div>
+                              <h3 className="font-semibold text-sm">{channel.name}</h3>
+                              <p className="text-xs text-gray-600">
+                                {languageNames[channel.language as keyof typeof languageNames]} • 
+                                {channelTimezone.split('/')[1]?.replace('_', ' ')} Time
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500">Current Local Time</div>
+                            <div className="font-mono font-bold text-sm text-blue-600">
+                              {formatMatchTimeForChannel(now.toISOString(), channel)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Timeline */}
+                        <div className="space-y-2">
+                          {dailySchedule.map((item, index) => (
+                            <div key={index} className={`flex items-center gap-3 p-2 rounded ${
+                              item.status === 'completed' ? 'bg-green-50 border-l-4 border-green-400' :
+                              currentLocalHour === parseInt(item.time.split(':')[0]) ? 'bg-yellow-50 border-l-4 border-yellow-400' :
+                              'bg-gray-50 border-l-4 border-gray-300'
+                            }`}>
+                              <div className="flex items-center gap-2 min-w-[60px]">
+                                <span className="text-sm">{item.icon}</span>
+                                <span className="font-mono text-xs font-bold">{item.time}</span>
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{item.content}</div>
+                                <div className="text-xs text-gray-600">{item.desc}</div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {item.status === 'completed' ? (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px]">
+                                    ✅ Done
+                                  </Badge>
+                                ) : currentLocalHour === parseInt(item.time.split(':')[0]) ? (
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-[10px]">
+                                    🔄 Now
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 text-[10px]">
+                                    ⏳ Waiting
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Channel Stats */}
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="grid grid-cols-3 gap-4 text-xs">
+                            <div className="text-center">
+                              <div className="font-medium text-green-600">{dailySchedule.filter(s => s.status === 'completed').length}</div>
+                              <div className="text-gray-500">Completed</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-medium text-yellow-600">{currentLocalHour < 21 ? 1 : 0}</div>
+                              <div className="text-gray-500">In Progress</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-medium text-gray-600">{dailySchedule.filter(s => s.status === 'pending').length}</div>
+                              <div className="text-gray-500">Pending</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Channels List */}
           <Card>
             <CardHeader className="pb-3">

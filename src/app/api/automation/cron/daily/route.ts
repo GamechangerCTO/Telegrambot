@@ -13,40 +13,73 @@ function getNewsTimeSlot(hour: number): 'morning' | 'afternoon' | 'evening' | 'n
   return 'night';
 }
 
-// News content generation function
-async function generateNewsContent(options: {
+// Enhanced content generation with proper generators and channel-specific buttons
+async function generateChannelSpecificContent(options: {
+  type: 'news' | 'summary' | 'polls' | 'preview';
   language: 'en' | 'am' | 'sw';
   channelId: string;
-  timeSlot: 'morning' | 'afternoon' | 'evening' | 'night';
+  timeSlot?: 'morning' | 'afternoon' | 'evening' | 'night';
+  summaryType?: 'daily' | 'weekly';
 }) {
   try {
-    // Import the unified content API dynamically to avoid circular dependencies
-    const response = await fetch(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/unified-content` : 'http://localhost:3000/api/unified-content', {
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    
+    let apiEndpoint = '/api/unified-content';
+    let requestBody: any = {
+      type: options.type,
+      language: options.language,
+      target_channels: [options.channelId],
+      automation_execution: true,
+      use_channel_buttons: true, // Important: Use channel-specific buttons
+      customContent: {
+        timeSlot: options.timeSlot,
+        channelId: options.channelId,
+        trigger_reason: `scheduled_${options.type}_${options.timeSlot || 'auto'}`,
+        timezone_aware: true
+      }
+    };
+
+    // Use specific generators for different content types
+    switch (options.type) {
+      case 'summary':
+        requestBody.summaryType = options.summaryType || 'daily';
+        requestBody.customContent.summary_type = options.summaryType;
+        break;
+      case 'polls':
+        requestBody.customContent.poll_type = 'match_prediction';
+        requestBody.customContent.include_analysis = true;
+        break;
+      case 'preview':
+        requestBody.type = 'news'; // Use news generator but with preview context
+        requestBody.customContent.content_focus = 'upcoming_matches';
+        break;
+    }
+
+    console.log(`🎯 Generating ${options.type} for channel ${options.channelId} with channel-specific buttons`);
+
+    const response = await fetch(`${baseUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-cron-job': 'true'
+        'x-cron-job': 'true',
+        'x-channel-specific': 'true'
       },
-      body: JSON.stringify({
-        type: 'news',
-        language: options.language,
-        target_channels: [options.channelId],
-        automation_execution: true,
-        customContent: {
-          timeSlot: options.timeSlot,
-          trigger_reason: `scheduled_news_${options.timeSlot}`
-        }
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
-      throw new Error(`News API returned ${response.status}: ${response.statusText}`);
+      throw new Error(`Content API returned ${response.status}: ${response.statusText}`);
     }
 
     const result = await response.json();
+    
+    if (result.success) {
+      console.log(`✅ Generated ${options.type} for channel ${options.channelId} with ${result.buttons_included ? 'channel buttons' : 'no buttons'}`);
+    }
+    
     return result.success ? result : null;
   } catch (error) {
-    console.error('Error generating news content:', error);
+    console.error(`Error generating ${options.type} content:`, error);
     return null;
   }
 }
@@ -105,7 +138,8 @@ export async function GET(request: NextRequest) {
         console.log(`📰 Generating news for ${channel.name} at ${currentLocalHour}:00 local time`);
         
         try {
-          const newsContent = await generateNewsContent({
+          const newsContent = await generateChannelSpecificContent({
+            type: 'news',
             language: channel.language as 'en' | 'am' | 'sw',
             channelId: channel.id,
             timeSlot: getNewsTimeSlot(currentLocalHour)
@@ -147,10 +181,12 @@ export async function GET(request: NextRequest) {
         console.log(`📅 Generating morning summary for ${channel.name} at 7 AM local time`);
         
         try {
-          const summary = await summaryGenerator.generateSummary({
-            type: 'daily',
+          const summary = await generateChannelSpecificContent({
+            type: 'summary',
             language: channel.language as 'en' | 'am' | 'sw',
-            channelId: channel.id
+            channelId: channel.id,
+            summaryType: 'daily',
+            timeSlot: 'morning'
           });
           
           results.tasks.push({
@@ -183,15 +219,32 @@ export async function GET(request: NextRequest) {
       if (currentLocalHour === 18) {
         console.log(`🌆 Generating evening preview for ${channel.name} at 6 PM local time`);
         
-        results.tasks.push({
-          task: 'evening_preview',
-          channel: channel.id,
-          channelName: channel.name,
-          channelTimezone: channelTimezone,
-          localTime: `${currentLocalHour}:00`,
-          status: 'completed',
-          data: { trigger: 'evening_schedule_timezone_aware', localHour: currentLocalHour }
-        });
+        try {
+          const preview = await generateChannelSpecificContent({
+            type: 'preview',
+            language: channel.language as 'en' | 'am' | 'sw',
+            channelId: channel.id,
+            timeSlot: 'evening'
+          });
+          
+          results.tasks.push({
+            task: 'evening_preview',
+            channel: channel.id,
+            channelName: channel.name,
+            channelTimezone: channelTimezone,
+            localTime: `${currentLocalHour}:00`,
+            status: preview ? 'completed' : 'failed',
+            data: preview
+          });
+        } catch (error) {
+          results.tasks.push({
+            task: 'evening_preview',
+            channel: channel.id,
+            channelName: channel.name,
+            status: 'error',
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       }
     }
 
@@ -205,13 +258,11 @@ export async function GET(request: NextRequest) {
         console.log(`📊 Generating polls for ${channel.name} at 3 PM local time`);
         
         try {
-          const poll = await pollsGenerator.generatePoll({
+          const poll = await generateChannelSpecificContent({
+            type: 'polls',
             language: channel.language as 'en' | 'am' | 'sw',
             channelId: channel.id,
-            pollType: 'match_prediction',
-            includeAnalysis: true,
-            targetAudience: 'mixed',
-            creativityLevel: 'high'
+            timeSlot: 'afternoon'
           });
           
           results.tasks.push({
@@ -249,10 +300,12 @@ export async function GET(request: NextRequest) {
         console.log(`📊 Generating weekly summary for ${channel.name} on Sunday at 8 AM local time`);
         
         try {
-          const summary = await summaryGenerator.generateSummary({
-            type: 'weekly',
+          const summary = await generateChannelSpecificContent({
+            type: 'summary',
             language: channel.language as 'en' | 'am' | 'sw',
-            channelId: channel.id
+            channelId: channel.id,
+            summaryType: 'weekly',
+            timeSlot: 'morning'
           });
           
           results.tasks.push({

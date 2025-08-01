@@ -31,6 +31,7 @@ interface ContentRequest {
   max_posts_per_channel?: number;
   force_send?: boolean;
   include_images?: boolean;
+  use_channel_buttons?: boolean;
   custom_content?: any;
 }
 
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
     const requestedLanguage = (body.language || searchParams.get('language')) as Language;
     const maxItems = body.max_posts_per_channel || 2;
     const includeImages = body.include_images !== false;
+    const useChannelButtons = body.use_channel_buttons || false;
     const manualExecution = body.manual_execution || false;
     const isAutomationExecution = body.automation_execution || false;
 
@@ -129,7 +131,9 @@ export async function POST(request: NextRequest) {
       maxItems,
       channelId: 'unified-content',
       customContent: body.custom_content,
-      channelSettings  // 🎯 Pass channel settings for targeted content
+      channelSettings,  // 🎯 Pass channel settings for targeted content
+      useChannelButtons,  // 🔗 Enable channel-specific buttons
+      targetChannels: resolvedChannels  // 📡 Channel info for button customization
     });
 
     // Check if content generation failed
