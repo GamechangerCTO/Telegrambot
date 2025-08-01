@@ -442,12 +442,12 @@ export default function Dashboard() {
             <CardContent className="p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">News/Day</p>
-                  <p className="text-sm sm:text-lg font-bold text-blue-600">
-                    4
+                  <p className="text-xs font-medium text-gray-600">Content/Day</p>
+                  <p className="text-sm sm:text-lg font-bold text-purple-600">
+                    8+
                   </p>
                 </div>
-                <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
               </div>
             </CardContent>
           </Card>
@@ -520,91 +520,156 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* News Scheduling Timetable */}
+          {/* Complete Content Scheduling Timetable */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                Daily News Schedule (Timezone-Aware)
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                Complete Content Schedule (All Types - Timezone-Aware)
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { time: '09:00', name: 'Morning News', desc: 'Daily news bulletin', icon: '🌅' },
-                  { time: '13:00', name: 'Afternoon News', desc: 'Midday update', icon: '☀️' },
-                  { time: '17:00', name: 'Evening News', desc: 'Evening coverage', icon: '🌆' },
-                  { time: '21:00', name: 'Night News', desc: 'Late summary', icon: '🌙' }
-                ].map((newsSlot) => (
-                  <div key={newsSlot.time} className="border rounded-lg p-3 bg-gradient-to-br from-blue-50 to-white hover:from-blue-100 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">{newsSlot.icon}</span>
-                      <div>
-                        <h4 className="font-semibold text-sm text-blue-900">{newsSlot.name}</h4>
-                        <p className="text-xs text-blue-600">{newsSlot.desc}</p>
-                      </div>
-                    </div>
+              {/* Scheduled Content (Fixed Times) */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-sm text-gray-800 mb-3 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Scheduled Content (Fixed Times)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { time: '07:00', name: 'Daily Summary', desc: 'Morning recap', icon: '📅', type: 'summary', color: 'green' },
+                    { time: '09:00', name: 'Morning News', desc: 'News bulletin', icon: '📰', type: 'news', color: 'blue' },
+                    { time: '13:00', name: 'Afternoon News', desc: 'Midday update', icon: '📰', type: 'news', color: 'blue' },
+                    { time: '15:00', name: 'Polls', desc: 'Match predictions', icon: '📊', type: 'polls', color: 'purple' },
+                    { time: '17:00', name: 'Evening News', desc: 'Evening coverage', icon: '📰', type: 'news', color: 'blue' },
+                    { time: '18:00', name: 'Evening Preview', desc: 'Tomorrow preview', icon: '🌆', type: 'preview', color: 'orange' },
+                    { time: '21:00', name: 'Night News', desc: 'Late summary', icon: '📰', type: 'news', color: 'blue' },
+                    { time: 'Sun 08:00', name: 'Weekly Summary', desc: 'Week recap', icon: '📈', type: 'summary', color: 'green' }
+                  ].map((slot, index) => {
+                    const colorClasses = {
+                      blue: 'from-blue-50 to-blue-100 border-blue-200 text-blue-900',
+                      green: 'from-green-50 to-green-100 border-green-200 text-green-900',
+                      purple: 'from-purple-50 to-purple-100 border-purple-200 text-purple-900',
+                      orange: 'from-orange-50 to-orange-100 border-orange-200 text-orange-900'
+                    };
                     
-                    {/* Show local times for each active channel */}
-                    <div className="space-y-1">
-                      {safeChannels.filter(c => c.is_active).slice(0, 2).map((channel) => {
-                        const channelTimezone = channel.timezone || getTimezoneForLanguage(channel.language);
-                        
-                        // Calculate what time this news slot will be in the channel's timezone
-                        const utcTime = new Date();
-                        utcTime.setUTCHours(parseInt(newsSlot.time.split(':')[0]), parseInt(newsSlot.time.split(':')[1]), 0, 0);
-                        const localTime = formatMatchTimeForChannel(utcTime.toISOString(), channel);
-                        
-                        const languageNames = {
-                          'he': '🇮🇱',
-                          'en': '🇬🇧', 
-                          'am': '🇪🇹',
-                          'sw': '🇰🇪',
-                          'fr': '🇫🇷',
-                          'ar': '🇦🇪'
-                        };
-                        
-                        return (
-                          <div key={channel.id} className="flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-1">
-                              {languageNames[channel.language as keyof typeof languageNames]}
-                              <span className="text-gray-600 truncate max-w-[50px]" title={channel.name}>
-                                {channel.name.substring(0, 6)}...
-                              </span>
-                            </span>
-                            <span className="font-mono font-bold text-blue-700">
-                              {newsSlot.time}
-                            </span>
+                    return (
+                      <div key={index} className={`border rounded-lg p-3 bg-gradient-to-br ${colorClasses[slot.color as keyof typeof colorClasses]} hover:scale-105 transition-all`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">{slot.icon}</span>
+                          <div>
+                            <h4 className="font-semibold text-sm">{slot.name}</h4>
+                            <p className="text-xs opacity-80">{slot.desc}</p>
                           </div>
-                        );
-                      })}
-                      {safeChannels.filter(c => c.is_active).length > 2 && (
-                        <div className="text-xs text-blue-400 text-center pt-1">
-                          +{safeChannels.filter(c => c.is_active).length - 2} more
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="mt-2 pt-2 border-t border-blue-100">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-blue-600">Status</span>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-1 py-0">
-                          ✅ Active
-                        </Badge>
+                        
+                        <div className="font-mono font-bold text-sm mb-2">{slot.time}</div>
+                        
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="opacity-75">Status</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-1 py-0">
+                            ✅ Active
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              {/* Event-Driven Content */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-sm text-gray-800 mb-3 flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Event-Driven Content (Match-Based)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {[
+                    { name: 'Pre-Match Betting Tips', desc: '2-3 hours before matches', icon: '🎯', trigger: 'Before important matches', color: 'yellow' },
+                    { name: 'Pre-Match Analysis', desc: '2-3 hours before matches', icon: '📈', trigger: 'Before high-importance matches', color: 'indigo' },
+                    { name: 'Live Updates', desc: 'During live matches', icon: '🔴', trigger: 'Every 15 min during matches', color: 'red' }
+                  ].map((item, index) => {
+                    const colorClasses = {
+                      yellow: 'from-yellow-50 to-yellow-100 border-yellow-200 text-yellow-900',
+                      indigo: 'from-indigo-50 to-indigo-100 border-indigo-200 text-indigo-900',
+                      red: 'from-red-50 to-red-100 border-red-200 text-red-900'
+                    };
+                    
+                    return (
+                      <div key={index} className={`border rounded-lg p-3 bg-gradient-to-br ${colorClasses[item.color as keyof typeof colorClasses]} hover:scale-105 transition-all`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">{item.icon}</span>
+                          <div>
+                            <h4 className="font-semibold text-sm">{item.name}</h4>
+                            <p className="text-xs opacity-80">{item.desc}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs mb-2 opacity-75">
+                          Trigger: {item.trigger}
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="opacity-75">Status</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-1 py-0">
+                            ✅ Active
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Context-Aware Content */}
+              <div className="mb-4">
+                <h3 className="font-semibold text-sm text-gray-800 mb-3 flex items-center gap-2">
+                  <Bot className="w-4 h-4" />
+                  Context-Aware Content (Smart Triggers)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="border rounded-lg p-3 bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200 text-pink-900 hover:scale-105 transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">🎫</span>
+                      <div>
+                        <h4 className="font-semibold text-sm">Smart Coupons</h4>
+                        <p className="text-xs opacity-80">After content delivery</p>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs mb-2 opacity-75">
+                      Probability: News 30%, Betting 80%, Analysis 60%
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="opacity-75">Status</span>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-1 py-0">
+                        ✅ Active
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timezone Information */}
+              <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="w-4 h-4 text-blue-600" />
                   <span className="font-medium text-sm text-blue-900">Timezone-Aware Scheduling</span>
                 </div>
-                <p className="text-xs text-blue-700">
-                  News is delivered at the same local time for each channel. For example, 9:00 AM news shows at 9:00 AM Ethiopian time for Ethiopian channels and 9:00 AM Israeli time for Israeli channels.
+                <p className="text-xs text-blue-700 mb-2">
+                  All scheduled content is delivered at local times for each channel. For example:
                 </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>🇪🇹 Ethiopian channels:</span>
+                    <span className="font-mono bg-white px-2 py-1 rounded">9:00 AM Addis Ababa time</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇱 Israeli channels:</span>
+                    <span className="font-mono bg-white px-2 py-1 rounded">9:00 AM Jerusalem time</span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
