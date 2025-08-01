@@ -369,7 +369,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
           <Card>
             <CardContent className="p-2 sm:p-3">
               <div className="flex items-center justify-between">
@@ -434,6 +434,20 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-600">News/Day</p>
+                  <p className="text-sm sm:text-lg font-bold text-blue-600">
+                    4
+                  </p>
+                </div>
+                <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
               </div>
             </CardContent>
           </Card>
@@ -505,6 +519,95 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           )}
+
+          {/* News Scheduling Timetable */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                Daily News Schedule (Timezone-Aware)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  { time: '09:00', name: 'Morning News', desc: 'Daily news bulletin', icon: '🌅' },
+                  { time: '13:00', name: 'Afternoon News', desc: 'Midday update', icon: '☀️' },
+                  { time: '17:00', name: 'Evening News', desc: 'Evening coverage', icon: '🌆' },
+                  { time: '21:00', name: 'Night News', desc: 'Late summary', icon: '🌙' }
+                ].map((newsSlot) => (
+                  <div key={newsSlot.time} className="border rounded-lg p-3 bg-gradient-to-br from-blue-50 to-white hover:from-blue-100 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{newsSlot.icon}</span>
+                      <div>
+                        <h4 className="font-semibold text-sm text-blue-900">{newsSlot.name}</h4>
+                        <p className="text-xs text-blue-600">{newsSlot.desc}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Show local times for each active channel */}
+                    <div className="space-y-1">
+                      {safeChannels.filter(c => c.is_active).slice(0, 2).map((channel) => {
+                        const channelTimezone = channel.timezone || getTimezoneForLanguage(channel.language);
+                        
+                        // Calculate what time this news slot will be in the channel's timezone
+                        const utcTime = new Date();
+                        utcTime.setUTCHours(parseInt(newsSlot.time.split(':')[0]), parseInt(newsSlot.time.split(':')[1]), 0, 0);
+                        const localTime = formatMatchTimeForChannel(utcTime.toISOString(), channel);
+                        
+                        const languageNames = {
+                          'he': '🇮🇱',
+                          'en': '🇬🇧', 
+                          'am': '🇪🇹',
+                          'sw': '🇰🇪',
+                          'fr': '🇫🇷',
+                          'ar': '🇦🇪'
+                        };
+                        
+                        return (
+                          <div key={channel.id} className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-1">
+                              {languageNames[channel.language as keyof typeof languageNames]}
+                              <span className="text-gray-600 truncate max-w-[50px]" title={channel.name}>
+                                {channel.name.substring(0, 6)}...
+                              </span>
+                            </span>
+                            <span className="font-mono font-bold text-blue-700">
+                              {newsSlot.time}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {safeChannels.filter(c => c.is_active).length > 2 && (
+                        <div className="text-xs text-blue-400 text-center pt-1">
+                          +{safeChannels.filter(c => c.is_active).length - 2} more
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-2 pt-2 border-t border-blue-100">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-blue-600">Status</span>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] px-1 py-0">
+                          ✅ Active
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-sm text-blue-900">Timezone-Aware Scheduling</span>
+                </div>
+                <p className="text-xs text-blue-700">
+                  News is delivered at the same local time for each channel. For example, 9:00 AM news shows at 9:00 AM Ethiopian time for Ethiopian channels and 9:00 AM Israeli time for Israeli channels.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Channels List */}
           <Card>

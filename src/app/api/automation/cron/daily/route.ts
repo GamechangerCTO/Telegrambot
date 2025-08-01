@@ -5,6 +5,52 @@ import { PollsGenerator } from '@/lib/content/polls-generator';
 import { supabase } from '@/lib/supabase';
 import { TimezoneUtils } from '@/lib/utils/timezone-utils';
 
+// Helper function to determine news time slot
+function getNewsTimeSlot(hour: number): 'morning' | 'afternoon' | 'evening' | 'night' {
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 22) return 'evening';
+  return 'night';
+}
+
+// News content generation function
+async function generateNewsContent(options: {
+  language: 'en' | 'am' | 'sw';
+  channelId: string;
+  timeSlot: 'morning' | 'afternoon' | 'evening' | 'night';
+}) {
+  try {
+    // Import the unified content API dynamically to avoid circular dependencies
+    const response = await fetch(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/unified-content` : 'http://localhost:3000/api/unified-content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cron-job': 'true'
+      },
+      body: JSON.stringify({
+        type: 'news',
+        language: options.language,
+        target_channels: [options.channelId],
+        automation_execution: true,
+        customContent: {
+          timeSlot: options.timeSlot,
+          trigger_reason: `scheduled_news_${options.timeSlot}`
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`News API returned ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.success ? result : null;
+  } catch (error) {
+    console.error('Error generating news content:', error);
+    return null;
+  }
+}
+
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
@@ -47,6 +93,47 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`🌍 Processing ${channels.length} channels with timezone-aware scheduling`);
+
+    // 📰 TIMEZONE-AWARE NEWS GENERATION (Multiple times per day for each channel)
+    for (const channel of channels) {
+      const channelTimezone = channel.timezone || 'Africa/Addis_Ababa';
+      const currentLocalHour = TimezoneUtils.getCurrentHourInChannelTimezone(channelTimezone);
+      
+      // Generate news at key times: 9 AM, 1 PM, 5 PM, 9 PM local time
+      const newsHours = [9, 13, 17, 21];
+      if (newsHours.includes(currentLocalHour)) {
+        console.log(`📰 Generating news for ${channel.name} at ${currentLocalHour}:00 local time`);
+        
+        try {
+          const newsContent = await generateNewsContent({
+            language: channel.language as 'en' | 'am' | 'sw',
+            channelId: channel.id,
+            timeSlot: getNewsTimeSlot(currentLocalHour)
+          });
+          
+          results.tasks.push({
+            task: 'news_generation',
+            channel: channel.id,
+            channelName: channel.name,
+            channelTimezone: channelTimezone,
+            localTime: `${currentLocalHour}:00`,
+            timeSlot: getNewsTimeSlot(currentLocalHour),
+            status: newsContent ? 'completed' : 'failed',
+            data: newsContent
+          });
+        } catch (error) {
+          results.tasks.push({
+            task: 'news_generation',
+            channel: channel.id,
+            channelName: channel.name,
+            channelTimezone: channelTimezone,
+            localTime: `${currentLocalHour}:00`,
+            status: 'error',
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+    }
 
     // 🌅 TIMEZONE-AWARE MORNING SUMMARIES (7 AM local time for each channel)
     for (const channel of channels) {
