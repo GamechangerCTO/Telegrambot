@@ -7,9 +7,11 @@
  * - Rule monitoring and execution tracking
  * - Duplicate prevention logic
  * - 🆕 Live updates monitoring integration
+ * - 🌍 Timezone-aware scheduling for multiple channels
  */
 
 import { supabase } from '@/lib/supabase';
+import { TimezoneUtils } from '../utils/timezone-utils';
 
 export class BackgroundScheduler {
   private isRunning = false;
@@ -172,7 +174,7 @@ export class BackgroundScheduler {
   }
 
   /**
-   * Check for upcoming matches and plan content opportunities
+   * 🌍 Check for upcoming matches and plan content opportunities - TIMEZONE AWARE
    */
   private async checkUpcomingMatches(now: Date): Promise<void> {
     try {
@@ -180,6 +182,19 @@ export class BackgroundScheduler {
       const todayStr = now.toISOString().split('T')[0];
       
       console.log(`🔍 Checking matches for today: ${todayStr}`);
+      
+      // 🌍 Get all active channels with their timezone configurations
+      const { data: channels } = await supabase
+        .from('channels')
+        .select('id, name, language, timezone')
+        .eq('is_active', true);
+
+      if (!channels || channels.length === 0) {
+        console.log('⚠️ No active channels found for timezone-aware scheduling');
+        return;
+      }
+
+      console.log(`🌍 Found ${channels.length} channels for timezone-aware scheduling`);
       
       // Get today's matches directly without HTTP calls (better for serverless)
       try {
@@ -196,28 +211,37 @@ export class BackgroundScheduler {
         
         console.log(`⚽ Found ${matches.length} potential matches for content`);
         
-        // For each available match, schedule content if timing is right
-        for (const match of matches) {
-          if (!match) continue;
+        // 🌍 For each channel, check timezone-aware scheduling
+        for (const channel of channels) {
+          const channelTimezone = channel.timezone || 'Africa/Addis_Ababa';
+          const currentLocalHour = TimezoneUtils.getCurrentHourInChannelTimezone(channelTimezone);
           
-          const homeTeamName = match.homeTeam?.name || 'Home Team';
-          const awayTeamName = match.awayTeam?.name || 'Away Team';
+          console.log(`⏰ Channel ${channel.name} (${channelTimezone}): Local time is ${currentLocalHour}:00`);
           
-          console.log(`🎯 Checking match: ${homeTeamName} vs ${awayTeamName}`);
-          
-          // Schedule content based on current time (simplified for serverless)
-          const currentHour = now.getHours();
-          
-          // Schedule betting content during peak hours
-          if (currentHour >= 14 && currentHour <= 18) {
-            console.log(`🎯 SCHEDULED Betting: ${homeTeamName} vs ${awayTeamName} during peak hours`);
-            this.scheduleContentForMatch(match, 'betting', 'peak_hours_betting');
-          }
-          
-          // Schedule analysis content during evening hours  
-          if (currentHour >= 19 && currentHour <= 22) {
-            console.log(`📊 SCHEDULED Analysis: ${homeTeamName} vs ${awayTeamName} during evening hours`);
-            this.scheduleContentForMatch(match, 'analysis', 'evening_hours_analysis');
+          // For each available match, schedule content if timing is right in this channel's timezone
+          for (const match of matches) {
+            if (!match) continue;
+            
+            const homeTeamName = match.homeTeam?.name || 'Home Team';
+            const awayTeamName = match.awayTeam?.name || 'Away Team';
+            
+            // 🎯 Schedule betting content during peak local hours (2-6 PM local time)
+            if (currentLocalHour >= 14 && currentLocalHour <= 18) {
+              console.log(`🎯 SCHEDULED Betting for ${channel.name}: ${homeTeamName} vs ${awayTeamName} at ${currentLocalHour}:00 local time`);
+              await this.scheduleContentForMatchAndChannel(match, 'betting', channel, 'peak_hours_betting_timezone_aware');
+            }
+            
+            // 📊 Schedule analysis content during evening local hours (7-10 PM local time)
+            if (currentLocalHour >= 19 && currentLocalHour <= 22) {
+              console.log(`📊 SCHEDULED Analysis for ${channel.name}: ${homeTeamName} vs ${awayTeamName} at ${currentLocalHour}:00 local time`);
+              await this.scheduleContentForMatchAndChannel(match, 'analysis', channel, 'evening_hours_analysis_timezone_aware');
+            }
+
+            // 🔴 Schedule live updates if within active hours (6 AM - 11 PM local time)
+            if (TimezoneUtils.isWithinActiveHours(channelTimezone, 6, 23)) {
+              console.log(`🔴 SCHEDULED Live Updates for ${channel.name}: ${homeTeamName} vs ${awayTeamName} during active hours`);
+              await this.scheduleContentForMatchAndChannel(match, 'live_update', channel, 'active_hours_live_timezone_aware');
+            }
           }
         }
       } catch (error) {
@@ -272,6 +296,106 @@ export class BackgroundScheduler {
       }
     } catch (error) {
       console.error(`❌ Error scheduling content for match:`, error);
+    }
+  }
+
+  /**
+   * 🌍 Schedule content for specific match and channel - TIMEZONE AWARE
+   */
+  private async scheduleContentForMatchAndChannel(
+    match: any, 
+    contentType: string, 
+    channel: any, 
+    reason: string
+  ): Promise<void> {
+    const homeTeamName = match.homeTeam?.name || match.home_team;
+    const awayTeamName = match.awayTeam?.name || match.away_team;
+    const channelTimezone = channel.timezone || 'Africa/Addis_Ababa';
+    const matchKey = `${channel.id}_${homeTeamName}_${awayTeamName}_${contentType}`;
+    const lastExecution = this.lastExecutionTimes.get(matchKey) || 0;
+    const timeSinceLastExecution = Date.now() - lastExecution;
+    
+    // Prevent duplicate scheduling for same match and channel (timezone-aware cooldown)
+    if (timeSinceLastExecution < 60 * 60 * 1000) { // 1 hour cooldown
+      return;
+    }
+
+    const currentLocalTime = TimezoneUtils.formatTimeForChannel(new Date(), channelTimezone);
+    console.log(`📅 Scheduling ${contentType} content for ${channel.name} (${channelTimezone}): ${homeTeamName} vs ${awayTeamName} at ${currentLocalTime}`);
+    
+    try {
+      // Use direct content generation with channel-specific settings
+      const { ContentRouter } = await import('../content/api-modules/content-router');
+      const router = new ContentRouter();
+      
+      const result = await router.generateContent({
+        type: contentType as any,
+        language: channel.language || 'en',
+        maxItems: 1,
+        channelId: channel.id,
+        customContent: {
+          match_context: {
+            home_team: homeTeamName,
+            away_team: awayTeamName,
+            kickoff_time: match.kickoff || match.kickoff_time,
+            competition: match.competition?.name || match.competition
+          },
+          timezone_context: {
+            channel_timezone: channelTimezone,
+            local_time: currentLocalTime,
+            scheduling_reason: reason
+          },
+          trigger_reason: `${reason}_channel_${channel.name}`
+        }
+      });
+
+      if (result?.contentItems && result.contentItems.length > 0) {
+        console.log(`✅ Generated ${contentType} content for ${channel.name} successfully at ${currentLocalTime}`);
+        this.lastExecutionTimes.set(matchKey, Date.now());
+        
+        // 📊 Log timezone-aware scheduling success
+        await this.logTimezoneAwareScheduling(channel, match, contentType, currentLocalTime, reason);
+      }
+    } catch (error) {
+      console.error(`❌ Error scheduling timezone-aware content for ${channel.name}:`, error);
+    }
+  }
+
+  /**
+   * 📊 Log timezone-aware scheduling for analytics
+   */
+  private async logTimezoneAwareScheduling(
+    channel: any,
+    match: any,
+    contentType: string,
+    localTime: string,
+    reason: string
+  ): Promise<void> {
+    try {
+      await supabase
+        .from('automation_logs')
+        .insert({
+          automation_rule_id: null,
+          channels_updated: 1,
+          content_generated: 1,
+          status: 'success',
+          details: {
+            scheduling_type: 'timezone_aware_background',
+            channel_id: channel.id,
+            channel_name: channel.name,
+            channel_timezone: channel.timezone,
+            local_time: localTime,
+            content_type: contentType,
+            match: {
+              home_team: match.homeTeam?.name || match.home_team,
+              away_team: match.awayTeam?.name || match.away_team,
+              competition: match.competition?.name || match.competition
+            },
+            reason
+          }
+        });
+    } catch (error) {
+      console.error('❌ Error logging timezone-aware scheduling:', error);
     }
   }
 

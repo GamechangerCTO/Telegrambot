@@ -441,6 +441,7 @@ export type Database = {
           smart_scheduling: boolean | null
           telegram_channel_id: string | null
           telegram_channel_username: string | null
+          timezone: string | null
           total_posts_sent: number | null
           updated_at: string | null
         }
@@ -469,6 +470,7 @@ export type Database = {
           smart_scheduling?: boolean | null
           telegram_channel_id?: string | null
           telegram_channel_username?: string | null
+          timezone?: string | null
           total_posts_sent?: number | null
           updated_at?: string | null
         }
@@ -497,6 +499,7 @@ export type Database = {
           smart_scheduling?: boolean | null
           telegram_channel_id?: string | null
           telegram_channel_username?: string | null
+          timezone?: string | null
           total_posts_sent?: number | null
           updated_at?: string | null
         }

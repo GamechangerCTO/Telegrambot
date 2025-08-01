@@ -1,4 +1,5 @@
 import { MatchData } from './unified-football-service';
+import { TimezoneUtils } from '../utils/timezone-utils';
 
 /**
  * 🧠 SMART FOOTBALL MATCH SCORER - Intelligent Football Match Scoring System
@@ -33,6 +34,9 @@ export interface MatchScoringOptions {
   min_score_threshold?: number;
   max_future_days?: number; // כמה ימים קדימה מקסימום
   language?: 'en' | 'am' | 'sw';
+  // 🌍 NEW: Timezone-aware scoring options
+  channel_timezone?: string; // Channel's timezone for local time calculations
+  reference_time?: Date; // Reference time for scoring (defaults to now)
   user_preferences?: {
     favorite_leagues?: string[];
     favorite_teams?: string[];
@@ -294,12 +298,17 @@ export class FootballMatchScorer {
   }
 
   /**
-   * 📊 ניקוד משחק בודד
+   * 📊 ניקוד משחק בודד - עם תמיכה בזמני אזור
    */
   private async scoreIndividualMatch(match: MatchData, now: Date, options: MatchScoringOptions): Promise<ScoredMatch> {
     const competitionScore = this.calculateCompetitionScore(match);
     const teamsScore = this.calculateTeamsScore(match, options.user_preferences);
-    const timingScore = this.calculateTimingScore(match, now, options.content_type);
+    
+    // 🌍 NEW: Use timezone-aware timing score calculation
+    const referenceTime = options.reference_time || now;
+    const channelTimezone = options.channel_timezone;
+    const timingScore = this.calculateTimingScoreWithTimezone(match, referenceTime, options.content_type, channelTimezone);
+    
     const stageScore = this.calculateStageScore(match);
     const rivalryScore = this.calculateRivalryScore(match);
     
@@ -568,6 +577,145 @@ export class FootballMatchScorer {
   }
 
   /**
+   * 🌍 ⏰ חישוב ניקוד תזמון מותאם לזמן אזור - TIMEZONE AWARE
+   */
+  private calculateTimingScoreWithTimezone(
+    match: MatchData, 
+    referenceTime: Date, 
+    contentType?: string,
+    channelTimezone?: string
+  ): number {
+    // If no timezone provided, use original method
+    if (!channelTimezone) {
+      return this.calculateTimingScore(match, referenceTime, contentType);
+    }
+
+    try {
+      // 🌍 Convert match kickoff time to channel's local timezone
+      const matchLocalTime = TimezoneUtils.utcToChannelTime(match.kickoff, channelTimezone);
+      const referenceLocalTime = TimezoneUtils.utcToChannelTime(referenceTime, channelTimezone);
+      
+      // Calculate time difference in channel's timezone
+      const timeDiff = matchLocalTime.getTime() - referenceLocalTime.getTime();
+      const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+      
+      console.log(`🌍 Timezone-aware scoring for ${channelTimezone}: Match at ${TimezoneUtils.formatTimeForChannel(match.kickoff, channelTimezone)}, Reference at ${TimezoneUtils.formatTimeForChannel(referenceTime, channelTimezone)} (${daysDiff.toFixed(2)} days diff)`);
+      
+      // 🔴 Enhanced scoring for live updates in local timezone
+      if (contentType === 'live_update') {
+        if (match.status === 'LIVE' || match.status === 'IN_PLAY') {
+          return 10; // Maximum score for live matches
+        }
+        
+        // Check if match is happening today in channel's timezone
+        const matchLocalDate = matchLocalTime.toDateString();
+        const referenceLocalDate = referenceLocalTime.toDateString();
+        
+        if (matchLocalDate === referenceLocalDate) {
+          // Same day in local timezone - boost relevance
+          if (Math.abs(hoursDiff) <= 3) return 9; // Within 3 hours
+          if (Math.abs(hoursDiff) <= 6) return 8; // Within 6 hours
+          if (Math.abs(hoursDiff) <= 12) return 7; // Within 12 hours
+          return 6; // Same day but distant
+        }
+        
+        if (Math.abs(daysDiff) < 0.5) return 5; // Within 12 hours across days
+        return 2; // Distant matches less relevant for live updates
+      }
+      
+      // 🎯 Enhanced betting tips scoring in local timezone
+      if (contentType === 'betting_tip') {
+        if (daysDiff < 0) return 0; // No betting on past matches
+        
+        // Score based on local time until match
+        if (daysDiff <= 0.2) return 9; // Within ~5 hours - premium betting time
+        if (daysDiff <= 1) return 8; // Today or tomorrow in local time
+        if (daysDiff <= 2) return 7; // Day after tomorrow
+        if (daysDiff <= 7) return 6; // This week in local timezone
+        if (daysDiff <= 14) return 4; // Next two weeks
+        return 2; // Future but distant
+      }
+      
+      // 📰 Enhanced news scoring in local timezone
+      if (contentType === 'news') {
+        if (daysDiff < 0) {
+          // Past matches - check how recent in local timezone
+          const daysAgo = Math.abs(daysDiff);
+          if (daysAgo <= 0.2) return 6; // Within ~5 hours - breaking news potential
+          if (daysAgo <= 0.5) return 5; // Within 12 hours in local time
+          if (daysAgo <= 1) return 4; // Yesterday in local timezone
+          if (daysAgo <= 3) return 3; // Last few days
+          return 1; // Older news, less relevant
+        } else {
+          // Future matches - preview value
+          if (daysDiff <= 1) return 8; // Today/tomorrow in local time
+          if (daysDiff <= 7) return 6; // This week
+          if (daysDiff <= 30) return 4; // This month
+          return 2; // Distant future
+        }
+      }
+      
+      // 📊 Enhanced analysis scoring in local timezone
+      if (contentType === 'analysis') {
+        if (daysDiff < 0) {
+          const daysAgo = Math.abs(daysDiff);
+          if (daysAgo <= 0.5) return 8; // Recent match analysis - very relevant
+          if (daysAgo <= 2) return 7; // 1-2 days ago in local time
+          if (daysAgo <= 5) return 5; // Recent enough for analysis
+          return 2; // Older matches
+        } else {
+          // Pre-match analysis
+          if (daysDiff <= 2) return 7; // Next 2 days - preview analysis
+          if (daysDiff <= 7) return 5; // This week
+          if (daysDiff <= 14) return 3; // Next two weeks
+          return 1; // Distant future
+        }
+      }
+      
+      // 📊 Enhanced poll scoring in local timezone
+      if (contentType === 'poll') {
+        if (daysDiff < 0) {
+          const daysAgo = Math.abs(daysDiff);
+          if (daysAgo <= 0.2) return 7; // Just finished - great for reaction polls
+          if (daysAgo <= 1) return 6; // Recent match - good poll material
+          if (daysAgo <= 2) return 5; // 1-2 days ago
+          if (daysAgo <= 7) return 3; // Last week
+          return 1; // Too old for polls
+        } else {
+          // Future matches - prediction polls
+          if (daysDiff <= 1) return 8; // Today/tomorrow - prediction time
+          if (daysDiff <= 7) return 6; // This week
+          if (daysDiff <= 14) return 4; // Next two weeks
+          return 2; // Distant predictions
+        }
+      }
+      
+      // Default timezone-aware scoring
+      if (daysDiff < 0) {
+        const daysAgo = Math.abs(daysDiff);
+        if (daysAgo <= 0.5) return 5; // Recent in local time
+        if (daysAgo <= 1) return 4; // Yesterday
+        if (daysAgo <= 3) return 2; // Few days ago
+        return 0; // Too old
+      }
+      
+      if (daysDiff <= 1) return 6;      // Today/tomorrow in local time
+      if (daysDiff <= 3) return 5;      // Next few days
+      if (daysDiff <= 7) return 4;      // This week
+      if (daysDiff <= 14) return 3;     // Next two weeks
+      if (daysDiff <= 30) return 2;     // This month
+      
+      return 1; // Distant but still somewhat relevant
+      
+    } catch (error) {
+      console.error(`❌ Error in timezone-aware timing calculation for ${channelTimezone}:`, error);
+      // Fallback to original method
+      return this.calculateTimingScore(match, referenceTime, contentType);
+    }
+  }
+
+  /**
    * 🏟️ חישוב ניקוד שלב בטורניר
    */
   private calculateStageScore(match: MatchData): number {
@@ -652,6 +800,39 @@ export class FootballMatchScorer {
     };
     
     return suitability;
+  }
+
+  /**
+   * 🌍 🎯 קבלת המשחקים הטובים ביותר לסוג תוכן ספציפי עם תמיכה בזמן אזור
+   */
+  async getBestMatchesForContentTypeWithTimezone(
+    matches: MatchData[], 
+    contentType: 'news' | 'betting_tip' | 'poll' | 'analysis' | 'daily_summary' | 'weekly_summary' | 'live_update',
+    channelTimezone: string,
+    limit: number = 5,
+    referenceTime?: Date
+  ): Promise<ScoredMatch[]> {
+    const options: MatchScoringOptions = {
+      content_type: contentType,
+      channel_timezone: channelTimezone,
+      reference_time: referenceTime || new Date(),
+      min_score_threshold: contentType === 'live_update' ? 8 : 12,
+      max_future_days: contentType === 'news' ? 60 : 14
+    };
+    
+    console.log(`🌍 Scoring matches for ${contentType} in timezone ${channelTimezone}`);
+    
+    const scoredMatches = await this.scoreMatches(matches, options);
+    
+    // Filter by suitability for the content type
+    const filtered = scoredMatches.filter(match => {
+      const suitability = match.content_suitability[contentType];
+      return suitability >= 30;
+    });
+    
+    console.log(`🎯 Found ${filtered.length} suitable matches for ${contentType} in ${channelTimezone}`);
+    
+    return filtered.slice(0, limit);
   }
 
   /**

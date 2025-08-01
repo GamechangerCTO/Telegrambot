@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database'
 import { aiImageGenerator } from './ai-image-generator'
+import { buttonLinkManager } from '../telegram/button-link-manager'
 
 /**
  * Telegram Sender for distributing content to channels
@@ -255,7 +256,7 @@ export class TelegramSender {
 
       if (keyboard && keyboard.length > 0) {
         formData.append('reply_markup', JSON.stringify({
-          inline_keyboard: this.enhanceKeyboard(keyboard)
+          inline_keyboard: this.enhanceKeyboard(keyboard, chatId)
         }));
       }
 
@@ -304,7 +305,7 @@ export class TelegramSender {
 
       if (keyboard && keyboard.length > 0) {
         payload.reply_markup = {
-          inline_keyboard: this.enhanceKeyboard(keyboard)
+          inline_keyboard: this.enhanceKeyboard(keyboard, chatId)
         }
       }
 
@@ -355,7 +356,7 @@ export class TelegramSender {
 
     if (keyboard && keyboard.length > 0) {
       payload.reply_markup = {
-        inline_keyboard: this.enhanceKeyboard(keyboard)
+        inline_keyboard: this.enhanceKeyboard(keyboard, chatId)
       }
     }
 
@@ -673,17 +674,20 @@ export class TelegramSender {
 
   /**
    * 🔧 Enhanced keyboard processing with all Telegram button options
+   * Now includes proper URL tracking and link management
    */
-  private enhanceKeyboard(keyboard: Array<Array<TelegramKeyboardButton>>): Array<Array<any>> {
+  private enhanceKeyboard(keyboard: Array<Array<TelegramKeyboardButton>>, channelId?: string): Array<Array<any>> {
     return keyboard.map(row => 
       row.map(button => {
         const telegramButton: any = {
           text: button.text
         };
 
-        // Regular URL button
+        // Regular URL button - now with tracking
         if (button.url) {
-          telegramButton.url = button.url;
+          // Add tracking parameters to URLs for analytics
+          const trackedUrl = this.addUrlTracking(button.url, 'telegram_button', channelId);
+          telegramButton.url = trackedUrl;
         }
         
         // Callback data button
@@ -714,6 +718,34 @@ export class TelegramSender {
         return telegramButton;
       })
     );
+  }
+
+  /**
+   * 📊 Add tracking parameters to URLs for analytics
+   */
+  private addUrlTracking(url: string, source: string, channelId?: string): string {
+    if (!url || !url.startsWith('http')) return url;
+    
+    try {
+      const urlObj = new URL(url);
+      
+      // Add UTM tracking parameters
+      urlObj.searchParams.set('utm_source', 'telegram');
+      urlObj.searchParams.set('utm_medium', 'bot');
+      urlObj.searchParams.set('utm_campaign', source);
+      
+      if (channelId) {
+        urlObj.searchParams.set('utm_content', channelId);
+      }
+      
+      // Add timestamp for unique tracking
+      urlObj.searchParams.set('t', Date.now().toString());
+      
+      return urlObj.toString();
+    } catch (error) {
+      console.error('❌ Error adding URL tracking:', error);
+      return url; // Return original URL if tracking fails
+    }
   }
 }
 

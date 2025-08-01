@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { buttonLinkManager } from './button-link-manager';
 
 // ====== TYPES & INTERFACES ======
 
@@ -258,7 +259,7 @@ export class EnhancedTelegramAPI {
     const content = this.formatBettingContent(match, tips, language, affiliate_code, website_url);
 
     // Create interactive buttons
-    const keyboard = this.createBettingKeyboard(match, tips, language, affiliate_code, website_url);
+    const keyboard = this.createBettingKeyboard(match, tips, language, affiliate_code, website_url, options.chat_id);
 
     if (options.image_url) {
       return this.sendPhoto({
@@ -299,7 +300,7 @@ export class EnhancedTelegramAPI {
     const formattedContent = this.formatNewsContent(title, content, language, source_url, category);
 
     // Create news interaction buttons
-    const keyboard = this.createNewsKeyboard(language, source_url, category, website_url);
+    const keyboard = this.createNewsKeyboard(language, source_url, category, website_url, options.chat_id, title);
 
     if (images && images.length > 1) {
       // Send as media group for multiple images
@@ -357,7 +358,7 @@ export class EnhancedTelegramAPI {
     const { match, score, events, language, website_url } = options;
 
     const content = this.formatLiveContent(match, score, events, language);
-    const keyboard = this.createLiveKeyboard(match, language, website_url);
+    const keyboard = this.createLiveKeyboard(match, language, website_url, options.chat_id);
 
     return this.sendMessage({
       chat_id: options.chat_id,
@@ -385,7 +386,7 @@ export class EnhancedTelegramAPI {
 
     // Send introductory message with context
     const introContent = this.formatPollIntro(type, question, language, match_info);
-    const introKeyboard = this.createPollIntroKeyboard(language, website_url);
+    const introKeyboard = this.createPollIntroKeyboard(language, website_url, options.chat_id, type);
 
     await this.sendMessage({
       chat_id: options.chat_id,
@@ -559,48 +560,24 @@ export class EnhancedTelegramAPI {
     tips: Array<{ type: string; prediction: string; odds: string; confidence: number; risk: string }>,
     language: 'en' | 'am' | 'sw' | 'fr' | 'ar',
     affiliateCode?: string,
-    websiteUrl?: string
+    websiteUrl?: string,
+    channelId?: string
   ): InlineKeyboardMarkup {
-    const keyboard: InlineKeyboardButton[][] = [];
+    // Use the enhanced button link manager for proper button creation
+    const enhancedButtons = buttonLinkManager.createBettingButtons({
+      match: { home: match.home, away: match.away, competition: match.competition },
+      tips: tips.map(tip => ({ 
+        type: tip.type, 
+        prediction: tip.prediction, 
+        odds: tip.odds, 
+        confidence: tip.confidence 
+      })),
+      language,
+      channelId
+    });
 
-    // Row 1: Tip reactions - channel-optimized
-    keyboard.push([
-      { text: `👍 Like Tip (0)`, callback_data: `like_betting_${Date.now()}` },
-      { text: `💰 Follow`, callback_data: `follow_tip_${Date.now()}` },
-      { text: `📊 Stats`, callback_data: `tip_stats_${Date.now()}` }
-    ]);
-
-    // Row 2: Copy and bookmark actions
-    if (tips.length > 0) {
-      keyboard.push([
-        { text: `📋 Copy: ${tips[0].prediction.substring(0, 20)}...`, copy_text: { text: `${tips[0].prediction} - Odds: ${tips[0].odds}` } },
-        { text: `⭐ Save Tip`, callback_data: `save_tip_${Date.now()}` }
-      ]);
-    }
-
-    // Row 3: Website and affiliate links
-    if (websiteUrl || affiliateCode) {
-      const row: InlineKeyboardButton[] = [];
-      if (websiteUrl) {
-        row.push({ text: `🌐 More Tips`, url: websiteUrl });
-      }
-      if (affiliateCode) {
-        row.push({ text: `🎁 Code: ${affiliateCode}`, copy_text: { text: affiliateCode } });
-      }
-      keyboard.push(row);
-    }
-
-    // Row 4: Additional features - channel appropriate
-    keyboard.push([
-      { text: `🔔 Get Alerts`, callback_data: `notify_tips_${Date.now()}` },
-      { text: `📈 Live Odds`, url: websiteUrl || 'https://1xbet.com' }
-    ]);
-
-    // Row 5: Share via external methods (channel-compatible)
-    keyboard.push([
-      { text: `📤 Share Match`, url: `https://t.me/share/url?url=⚽ ${match.home} vs ${match.away} betting tips!` },
-      { text: `💬 Discuss`, callback_data: `discuss_match_${Date.now()}` }
-    ]);
+    // Convert to Telegram format
+    const keyboard = buttonLinkManager.convertToTelegramFormat(enhancedButtons);
 
     return { inline_keyboard: keyboard };
   }
@@ -609,32 +586,21 @@ export class EnhancedTelegramAPI {
     language: 'en' | 'am' | 'sw' | 'fr' | 'ar',
     sourceUrl?: string,
     category?: string,
-    websiteUrl?: string
+    websiteUrl?: string,
+    channelId?: string,
+    title?: string
   ): InlineKeyboardMarkup {
-    const keyboard: InlineKeyboardButton[][] = [];
+    // Use the enhanced button link manager for proper button creation
+    const enhancedButtons = buttonLinkManager.createNewsButtons({
+      title: title || 'News Article',
+      category: category || 'general',
+      sourceUrl,
+      language,
+      channelId
+    });
 
-    // Row 1: Reactions
-    keyboard.push([
-      { text: `👍 Interesting (0)`, callback_data: `news_like_${Date.now()}` },
-      { text: `❤️ Love (0)`, callback_data: `news_love_${Date.now()}` },
-      { text: `💬 Discuss`, callback_data: `news_discuss_${Date.now()}` }
-    ]);
-
-    // Row 2: Source and sharing - channel compatible
-    const row2: InlineKeyboardButton[] = [];
-    if (sourceUrl) {
-      row2.push({ text: `📖 Full Article`, url: sourceUrl });
-    }
-    row2.push({ text: `📤 Share`, url: `https://t.me/share/url?url=Breaking news: ` });
-    keyboard.push(row2);
-
-    // Row 3: More content
-    if (websiteUrl) {
-      keyboard.push([
-        { text: `📰 More ${category || 'News'}`, url: websiteUrl },
-        { text: `🔔 News Alerts`, callback_data: `news_alerts_${Date.now()}` }
-      ]);
-    }
+    // Convert to Telegram format
+    const keyboard = buttonLinkManager.convertToTelegramFormat(enhancedButtons);
 
     return { inline_keyboard: keyboard };
   }
@@ -642,49 +608,37 @@ export class EnhancedTelegramAPI {
   private createLiveKeyboard(
     match: { home: string; away: string; competition: string; status: string },
     language: 'en' | 'am' | 'sw' | 'fr' | 'ar',
-    websiteUrl?: string
+    websiteUrl?: string,
+    channelId?: string
   ): InlineKeyboardMarkup {
-    const keyboard: InlineKeyboardButton[][] = [];
+    // Use the enhanced button link manager for proper button creation
+    const enhancedButtons = buttonLinkManager.createLiveButtons({
+      match: { home: match.home, away: match.away, competition: match.competition, status: match.status },
+      language,
+      channelId
+    });
 
-    // Row 1: Live reactions
-    keyboard.push([
-      { text: `⚽ Goal Alert`, callback_data: `goal_alert_${Date.now()}` },
-      { text: `📊 Live Stats`, callback_data: `live_stats_${Date.now()}` },
-      { text: `🔄 Refresh`, callback_data: `refresh_live_${Date.now()}` }
-    ]);
-
-    // Row 2: Prediction and betting
-    keyboard.push([
-      { text: `🎯 Next Goal?`, callback_data: `predict_goal_${Date.now()}` },
-      { text: `💰 Live Betting`, url: websiteUrl || 'https://1xbet.com/live' }
-    ]);
-
-    // Row 3: Social features - channel compatible
-    keyboard.push([
-      { text: `📱 Watch Live`, web_app: { url: `https://live-stream.com/match/${Date.now()}` } },
-      { text: `📤 Share Score`, url: `https://t.me/share/url?url=🔴 LIVE: ${match.home} vs ${match.away}` }
-    ]);
+    // Convert to Telegram format
+    const keyboard = buttonLinkManager.convertToTelegramFormat(enhancedButtons);
 
     return { inline_keyboard: keyboard };
   }
 
   private createPollIntroKeyboard(
     language: 'en' | 'am' | 'sw' | 'fr' | 'ar',
-    websiteUrl?: string
+    websiteUrl?: string,
+    channelId?: string,
+    pollType: 'prediction' | 'opinion' | 'trivia' = 'prediction'
   ): InlineKeyboardMarkup {
-    const keyboard: InlineKeyboardButton[][] = [];
+    // Use the enhanced button link manager for proper button creation
+    const enhancedButtons = buttonLinkManager.createPollButtons({
+      pollType,
+      language,
+      channelId
+    });
 
-    keyboard.push([
-      { text: `🎯 Vote Now ⬇️`, callback_data: `poll_prompt_${Date.now()}` },
-      { text: `📊 Previous Polls`, callback_data: `poll_history_${Date.now()}` }
-    ]);
-
-    if (websiteUrl) {
-      keyboard.push([
-        { text: `🌐 More Polls`, url: websiteUrl },
-        { text: `📤 Share Poll`, switch_inline_query: `Vote in our sports poll: ` }
-      ]);
-    }
+    // Convert to Telegram format
+    const keyboard = buttonLinkManager.convertToTelegramFormat(enhancedButtons);
 
     return { inline_keyboard: keyboard };
   }
