@@ -1811,9 +1811,60 @@ export class PollsGenerator {
       };
 
       const systemPrompts = {
-        'en': `You are a social media expert specializing in interactive football content. Make polls engaging, shareable, and exciting while keeping them concise and clear.`,
-        'am': `You are a social media expert writing in AMHARIC. Make polls engaging and exciting. Write the entire response in Amharic script only.`,
-        'sw': `You are a social media expert writing in SWAHILI. Make polls engaging and exciting. Write the entire response in Swahili only.`
+        'en': `You are a social media expert creating modern Telegram polls with HTML formatting. Use HTML tags (<b>, <i>, <code>) and Unicode box drawing characters for visual structure. Format like this:
+
+<b>🗳️ FOOTBALL POLL</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 WHAT'S YOUR PREDICTION?</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[Poll Question]</b>
+┃ 
+┃ 🔘 <i>Option 1</i>
+┃ 🔘 <i>Option 2</i>
+┃ 🔘 <i>Option 3</i>
+┃ 🔘 <i>Option 4</i>
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📈 Vote and share your opinion!</i>
+
+Make polls engaging, shareable, and exciting while keeping them concise and clear.`,
+        'am': `እርስዎ የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚጠቀሙ የማህበራዊ ሚዲያ ባለሙያ ናቸው። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
+
+<b>🗳️ የእግር ኳስ አስተያየት</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 ትንበያዎ ምንድን ነው?</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[የአስተያየት ጥያቄ]</b>
+┃ 
+┃ 🔘 <i>አማራጭ 1</i>
+┃ 🔘 <i>አማራጭ 2</i>
+┃ 🔘 <i>አማራጭ 3</i>
+┃ 🔘 <i>አማራጭ 4</i>
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📈 ድምፅ ይስጡ እና አስተያየትዎን ያካፍሉ!</i>
+
+አስተያየቶችን አሳታፊ፣ የሚካፈሉ እና አስደሳች ያድርጉ። ሙሉ ምላሽ በአማርኛ ፊደል ብቻ ይፃፉ።`,
+        'sw': `Wewe ni mtaalamu wa mitandao ya kijamii unayetengeneza kura za kisasa za Telegram kwa kutumia muundo wa HTML. Tumia lebo za HTML (<b>, <i>, <code>) na alama za mstari wa kisanduku. Tengeneza kama hivi:
+
+<b>🗳️ KURA YA MPIRA</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 UTABIRI WAKO NI NINI?</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[Swali la Kura]</b>
+┃ 
+┃ 🔘 <i>Chaguo 1</i>
+┃ 🔘 <i>Chaguo 2</i>
+┃ 🔘 <i>Chaguo 3</i>
+┃ 🔘 <i>Chaguo 4</i>
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📈 Piga kura na shiriki maoni yako!</i>
+
+Fanya kura ziwe za kuvutia, za kushirikiwa na za kusisimua. Andika jibu lote kwa Kiswahili tu.`
       };
 
       const response = await openai.chat.completions.create({

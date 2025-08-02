@@ -504,18 +504,96 @@ export class OptimizedNewsContentGenerator {
       await this.logOpenAICall('news-generation', language, news.title);
 
       const systemPrompts = {
-        'en': `You are a football journalist. Create a complete 4-5 line summary with emojis. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with hashtags.`,
-        'am': `You are an Ethiopian football journalist. TRANSLATE and REWRITE this English football news into proper, fluent Amharic language. Requirements:
-1. Write ONLY in natural Amharic - no English words
-2. Create a complete news story (4-5 sentences minimum)
-3. CRITICAL: Always finish your sentences completely - never cut off mid-sentence
-4. Include all key details from the original news
-5. Use ⚽ emoji at the start
-6. End with source and hashtags: #እግርኳስዜና #ስፖርት #ዝማኔ
-7. Make it sound like native Amharic journalism`,
-        'sw': `You are a football journalist writing ONLY in Swahili. Create 4-5 complete lines. IMPORTANT: Always finish your sentences completely - never cut off in the middle. End with Swahili & English hashtags.`,
-        'fr': `Vous êtes un journaliste de football écrivant UNIQUEMENT en français. Créez un résumé complet de 4-5 lignes. IMPORTANT: Terminez toujours vos phrases complètement - ne coupez jamais au milieu. Utilisez des emojis ⚽. Terminez par des hashtags français.`,
-        'ar': `أنت صحفي كرة قدم تكتب باللغة العربية فقط. أنشئ ملخصاً كاملاً من 4-5 أسطر. مهم: اكمل جملك دائماً - لا تقطع أبداً في المنتصف. استخدم رموز ⚽. انته بهاشتاغات عربية.`
+        'en': `You are a football journalist who creates modern Telegram content with HTML formatting. Write news using HTML tags (<b>, <i>, <code>) and Unicode box drawing characters for visual structure. Format like this:
+
+<b>📰 FOOTBALL NEWS</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 BREAKING UPDATE</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[News Title]</b>
+┃ 📅 <i>[Date/Time]</i>
+┃ 
+┃ 📝 [News content with details]
+┃ 🏟️ [Match/team information]
+┃ 💰 [Transfer/financial details if applicable]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📰 Source: [News Source]</i>
+
+Always finish sentences completely. End with hashtags.`,
+        'am': `እርስዎ የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚፈጥሩ የእግር ኳስ ዜና ጸሐፊ ናቸው። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
+
+<b>📰 የእግር ኳስ ዜና</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 ወቅታዊ ዝማኔ</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[የዜናው ርዕስ]</b>
+┃ 📅 <i>[ቀን/ጊዜ]</i>
+┃ 
+┃ 📝 [የዜና ይዘት ከዝርዝሮች ጋር]
+┃ 🏟️ [የጨዋታ/ቡድን መረጃ]
+┃ 💰 [የዝውውር/የገንዘብ ዝርዝሮች ካሉ]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📰 ምንጭ: [የዜና ምንጭ]</i>
+
+ሁልጊዜ ዓረፍተ ነገሮችን ሙሉ በሙሉ ይጨርሱ። በ hashtags ይጨርሱ።`,
+        'sw': `Wewe ni mwandishi wa habari za mpira unayetengeneza maudhui ya kisasa ya Telegram kwa kutumia muundo wa HTML. Andika habari ukitumia lebo za HTML (<b>, <i>, <code>) na alama za mstari wa kisanduku. Tengeneza kama hivi:
+
+<b>📰 HABARI ZA MPIRA</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 MSIMAMO WA HARAKA</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[Kichwa cha Habari]</b>
+┃ 📅 <i>[Tarehe/Muda]</i>
+┃ 
+┃ 📝 [Maudhui ya habari na maelezo]
+┃ 🏟️ [Maelezo ya mechi/timu]
+┃ 💰 [Maelezo ya uhamisho/fedha ikiwa ipo]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📰 Chanzo: [Chanzo cha Habari]</i>
+
+Maliziza sentensi kila wakati. Malizia na hashtags.`,
+        'fr': `Vous êtes un journaliste de football qui crée du contenu Telegram moderne avec formatage HTML. Rédigez des nouvelles en utilisant les balises HTML (<b>, <i>, <code>) et les caractères de dessin de boîte Unicode. Formatez comme ceci:
+
+<b>📰 ACTUALITÉS FOOTBALL</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 MISE À JOUR URGENT</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[Titre de l'actualité]</b>
+┃ 📅 <i>[Date/Heure]</i>
+┃ 
+┃ 📝 [Contenu des nouvelles avec détails]
+┃ 🏟️ [Informations match/équipe]
+┃ 💰 [Détails transfert/financiers si applicable]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📰 Source: [Source des Nouvelles]</i>
+
+Terminez toujours les phrases complètement. Terminez par des hashtags.`,
+        'ar': `أنت صحفي كرة قدم تقوم بإنشاء محتوى تيليجرام حديث بتنسيق HTML. اكتب الأخبار باستخدام علامات HTML (<b>, <i>, <code>) وأحرف رسم الصندوق Unicode. قم بالتنسيق كما يلي:
+
+<b>📰 أخبار كرة القدم</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 تحديث عاجل</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[عنوان الخبر]</b>
+┃ 📅 <i>[التاريخ/الوقت]</i>
+┃ 
+┃ 📝 [محتوى الخبر مع التفاصيل]
+┃ 🏟️ [معلومات المباراة/الفريق]
+┃ 💰 [تفاصيل الانتقال/المالية إن وجدت]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📰 المصدر: [مصدر الأخبار]</i>
+
+اكمل الجمل دائماً. انته بالهاشتاغات.`
       };
 
       const languageNames = {
@@ -948,9 +1026,48 @@ export class OptimizedNewsContentGenerator {
       };
 
       const systemPrompts = {
-        'en': `You are a football journalist creating daily news content. Write 4-5 complete sentences about current football topics. Include emojis naturally. End with hashtags #Football #Sports #News`,
-        'am': `እርስዎ የእግር ኳስ ዜና ጸሐፊ ናቸው። ስለ ወቅታዊ እግር ኳስ ርዕሶች 4-5 ሙሉ ዓረፍተ ነገሮች ይፃፉ። ተፈጥሮአዊ ኢሞጂዎችን ያካትቱ። በ #እግርኳስ #ስፖርት #ዜና ይጨርሱ`,
-        'sw': `Wewe ni mwandishi wa habari za mpira wa miguu. Andika sentensi 4-5 kamili kuhusu mada za mpira za sasa. Jumuisha emoji kwa kawaida. Malizia na hashtags #MpiraMiguu #Michezo #Habari`
+        'en': `You are a football journalist creating modern Telegram daily news with HTML formatting. Write using HTML tags (<b>, <i>, <code>) and Unicode box drawing characters. Format like this:
+
+<b>📰 DAILY FOOTBALL UPDATE</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 TODAY'S HIGHLIGHTS</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[Topic/Event]</b>
+┃ 📝 [Details about the topic]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📅 ${new Date().toLocaleDateString()}</i>
+
+#Football #Sports #News`,
+        'am': `እርስዎ የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚጠቀሙ የእግር ኳስ ዜና ጸሐፊ ናቸው። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
+
+<b>📰 የዕለት እግር ኳስ ዝማኔ</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 የዛሬ ዋና ዋና ነጥቦች</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[ርዕስ/ክስተት]</b>
+┃ 📝 [ስለ ርዕሱ ዝርዝሮች]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📅 ${new Date().toLocaleDateString('am-ET')}</i>
+
+#እግርኳስ #ስፖርት #ዜና`,
+        'sw': `Wewe ni mwandishi wa habari za mpira unayetengeneza maudhui ya kisasa ya Telegram ya kila siku kwa kutumia muundo wa HTML. Andika ukitumia lebo za HTML (<b>, <i>, <code>) na alama za mstari wa kisanduku. Tengeneza kama hivi:
+
+<b>📰 HABARI ZA KILA SIKU ZA MPIRA</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🔥 MAMBO MUHIMU YA LEO</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ⚽ <b>[Mada/Tukio]</b>
+┃ 📝 [Maelezo kuhusu mada]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>📅 ${new Date().toLocaleDateString('sw-KE')}</i>
+
+#MpiraMiguu #Michezo #Habari`
       };
 
       const response = await openai.chat.completions.create({

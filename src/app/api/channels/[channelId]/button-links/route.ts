@@ -34,7 +34,9 @@ export async function GET(
         telegram: websites.telegram || 'https://t.me/africansportdata',
         twitter: websites.twitter || 'https://twitter.com/africasports',
         facebook: websites.facebook || 'https://facebook.com/africasportscenter',
-        instagram: websites.instagram || 'https://instagram.com/africasportscenter'
+        instagram: websites.instagram || 'https://instagram.com/africasportscenter',
+        youtube: websites.youtube || '',
+        tiktok: websites.tiktok || ''
       },
       affiliate_codes: {
         betting: channel.affiliate_code || 'AFRICA2024',
@@ -45,8 +47,16 @@ export async function GET(
         enable_betting_links: websites.enable_betting_links !== false,
         enable_affiliate_links: websites.enable_affiliate_links !== false,
         enable_social_sharing: websites.enable_social_sharing !== false,
+        enable_custom_buttons: websites.enable_custom_buttons !== false,
         custom_website: websites.custom_website || null
-      }
+      },
+      custom_buttons: websites.custom_buttons || [
+        { text: '📊 Full Stats', type: 'callback', data: `stats_${channelId}`, enabled: true },
+        { text: '⚽ Top Goals', type: 'callback', data: `goals_${channelId}`, enabled: true },
+        { text: '🔥 Match Highlights', type: 'url', data: websites.main_website || 'https://africasportscenter.com', enabled: true },
+        { text: '🏆 League Tables', type: 'url', data: websites.live_scores || 'https://livescore.com', enabled: true },
+        { text: '📱 Share Summary', type: 'switch_inline', data: `summary_${channelId}`, enabled: true }
+      ]
     };
 
     return NextResponse.json({
@@ -91,12 +101,16 @@ export async function PUT(
       twitter: buttonConfig.social_media?.twitter,
       facebook: buttonConfig.social_media?.facebook,
       instagram: buttonConfig.social_media?.instagram,
+      youtube: buttonConfig.social_media?.youtube,
+      tiktok: buttonConfig.social_media?.tiktok,
       bookmaker_code: buttonConfig.affiliate_codes?.bookmaker,
       casino_code: buttonConfig.affiliate_codes?.casino,
       enable_betting_links: buttonConfig.channel_settings?.enable_betting_links,
       enable_affiliate_links: buttonConfig.channel_settings?.enable_affiliate_links,
       enable_social_sharing: buttonConfig.channel_settings?.enable_social_sharing,
+      enable_custom_buttons: buttonConfig.channel_settings?.enable_custom_buttons,
       custom_website: buttonConfig.channel_settings?.custom_website,
+      custom_buttons: buttonConfig.custom_buttons || [],
       updated_at: new Date().toISOString()
     };
 

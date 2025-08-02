@@ -141,6 +141,39 @@ export interface SummaryGenerationRequest {
   timezone?: string; // For proper scheduling
 }
 
+export interface ChannelButtonConfig {
+  main_website: string;
+  betting_platform: string;
+  live_scores: string;
+  news_source: string;
+  social_media: {
+    telegram: string;
+    twitter: string;
+    facebook: string;
+    instagram: string;
+    youtube: string;
+    tiktok: string;
+  };
+  affiliate_codes: {
+    betting: string;
+    bookmaker: string;
+    casino: string;
+  };
+  channel_settings: {
+    enable_betting_links: boolean;
+    enable_affiliate_links: boolean;
+    enable_social_sharing: boolean;
+    enable_custom_buttons: boolean;
+    custom_website: string;
+  };
+  custom_buttons: Array<{
+    text: string;
+    type: 'url' | 'callback' | 'switch_inline';
+    data: string;
+    enabled: boolean;
+  }>;
+}
+
 export interface GeneratedSummary {
   title: string;
   content: string;
@@ -179,6 +212,159 @@ export interface GeneratedSummary {
 }
 
 export class DailyWeeklySummaryGenerator {
+
+  /**
+   * 🔗 Fetch channel button configuration
+   */
+  private async fetchChannelButtonConfig(channelId: string): Promise<ChannelButtonConfig | null> {
+    try {
+      // First try to get real channel ID from database
+      const { data: channelData } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('id', channelId)
+        .single();
+
+      if (!channelData) {
+        console.log(`⚠️ Channel ${channelId} not found, using default button config`);
+        return null;
+      }
+
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+      const response = await fetch(`${baseUrl}/api/channels/${channelId}/button-links`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.log(`⚠️ Failed to fetch button config for channel ${channelId}`);
+        return null;
+      }
+
+      const result = await response.json();
+      if (result.success && result.buttonConfig) {
+        console.log(`✅ Fetched button config for channel ${channelId}`);
+        return result.buttonConfig;
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`❌ Error fetching button config for channel ${channelId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 🎯 Generate dynamic inline keyboard from channel config
+   */
+  private generateChannelInlineKeyboard(buttonConfig: ChannelButtonConfig | null, summaryData: DailySummaryData | WeeklySummaryData, type: 'daily' | 'weekly'): Array<Array<any>> {
+    const keyboard: Array<Array<any>> = [];
+
+    if (!buttonConfig || !buttonConfig.channel_settings.enable_custom_buttons) {
+      // Default fallback buttons
+      if (type === 'daily') {
+        const dailyData = summaryData as DailySummaryData;
+        return [
+          [
+            { text: '📊 Full Stats', callback_data: `stats_${dailyData.date}` },
+            { text: '⚽ Top Goals', callback_data: `goals_${dailyData.date}` }
+          ],
+          [
+            { text: '🔥 Match Highlights', callback_data: `highlights_${dailyData.date}` },
+            { text: '🏆 League Tables', callback_data: `tables_${dailyData.date}` }
+          ],
+          [
+            { text: '📱 Share Summary', switch_inline_query: `daily_summary_${dailyData.date}` }
+          ]
+        ];
+      } else {
+        const weeklyData = summaryData as WeeklySummaryData;
+        return [
+          [
+            { text: '📈 Week Stats', callback_data: `week_stats_${weeklyData.weekStart}` },
+            { text: '🏆 Team Rankings', callback_data: `rankings_${weeklyData.weekStart}` }
+          ],
+          [
+            { text: '🔮 Next Week', callback_data: `next_week_${weeklyData.weekStart}` },
+            { text: '📊 Form Guide', callback_data: `form_${weeklyData.weekStart}` }
+          ],
+          [
+            { text: '📱 Share Weekly Review', switch_inline_query: `weekly_review_${weeklyData.weekStart}` }
+          ]
+        ];
+      }
+    }
+
+    // Use custom buttons from channel configuration
+    const enabledButtons = buttonConfig.custom_buttons.filter(btn => btn.enabled);
+    
+    // Group buttons into rows (max 2 per row)
+    for (let i = 0; i < enabledButtons.length; i += 2) {
+      const row = [];
+      
+      for (let j = 0; j < 2 && i + j < enabledButtons.length; j++) {
+        const button = enabledButtons[i + j];
+        const buttonData: any = { text: button.text };
+        
+        if (button.type === 'url') {
+          buttonData.url = button.data;
+        } else if (button.type === 'callback') {
+          buttonData.callback_data = button.data;
+        } else if (button.type === 'switch_inline') {
+          buttonData.switch_inline_query = button.data;
+        }
+        
+        row.push(buttonData);
+      }
+      
+      if (row.length > 0) {
+        keyboard.push(row);
+      }
+    }
+
+    // Add social media row if enabled
+    if (buttonConfig.channel_settings.enable_social_sharing) {
+      const socialRow = [];
+      
+      if (buttonConfig.social_media.facebook) {
+        socialRow.push({ text: '🔵 Facebook', url: buttonConfig.social_media.facebook });
+      }
+      if (buttonConfig.social_media.twitter) {
+        socialRow.push({ text: '🐦 Twitter', url: buttonConfig.social_media.twitter });
+      }
+      
+      if (socialRow.length > 0) {
+        keyboard.push(socialRow);
+      }
+
+      // Second social row
+      const socialRow2 = [];
+      if (buttonConfig.social_media.instagram) {
+        socialRow2.push({ text: '📸 Instagram', url: buttonConfig.social_media.instagram });
+      }
+      if (buttonConfig.social_media.telegram) {
+        socialRow2.push({ text: '📱 Channel', url: buttonConfig.social_media.telegram });
+      }
+      
+      if (socialRow2.length > 0) {
+        keyboard.push(socialRow2);
+      }
+    }
+
+    // Add main website button if available
+    if (buttonConfig.main_website) {
+      keyboard.push([
+        { text: '🌐 Visit Website', url: buttonConfig.main_website }
+      ]);
+    }
+
+    return keyboard;
+  }
 
   /**
    * 📅 MAIN FUNCTION - Generate daily or weekly summary
@@ -232,7 +418,11 @@ export class DailyWeeklySummaryGenerator {
       weekendPreview: this.isWeekendPreviewDay() ? await this.generateWeekendPreview() : undefined
     };
 
-    // Step 6: Generate content and visuals
+    // Step 6: Fetch channel button configuration
+    const buttonConfig = await this.fetchChannelButtonConfig(request.channelId);
+    console.log(`🔗 Button config fetched for channel ${request.channelId}:`, buttonConfig ? 'Found' : 'Using defaults');
+
+    // Step 7: Generate content and visuals
     const { content, aiEditedContent } = await this.generateDailyContent(summaryData, request);
     const imageUrl = await this.generateDailySummaryImage(summaryData);
     const visualElements = await this.generateDailyVisualElements(summaryData);
@@ -249,19 +439,7 @@ export class DailyWeeklySummaryGenerator {
         enableShareButton: true,
         enableWebApp: true,
         priority: 'high',
-        inlineKeyboard: [
-          [
-            { text: '📊 Full Stats', callback_data: `stats_${summaryData.date}` },
-            { text: '⚽ Top Goals', callback_data: `goals_${summaryData.date}` }
-          ],
-          [
-            { text: '🔥 Match Highlights', callback_data: `highlights_${summaryData.date}` },
-            { text: '🏆 League Tables', callback_data: `tables_${summaryData.date}` }
-          ],
-          [
-            { text: '📱 Share Summary', switch_inline_query: `daily_summary_${summaryData.date}` }
-          ]
-        ],
+        inlineKeyboard: this.generateChannelInlineKeyboard(buttonConfig, summaryData, 'daily'),
         messageThreadId: undefined,
         disableWebPagePreview: false,
         parseMode: 'HTML',
@@ -318,7 +496,11 @@ export class DailyWeeklySummaryGenerator {
       nextWeekPreview
     };
 
-    // Step 7: Generate content and visuals
+    // Step 7: Fetch channel button configuration
+    const buttonConfig = await this.fetchChannelButtonConfig(request.channelId);
+    console.log(`🔗 Button config fetched for weekly summary channel ${request.channelId}:`, buttonConfig ? 'Found' : 'Using defaults');
+
+    // Step 8: Generate content and visuals
     const { content, aiEditedContent } = await this.generateWeeklyContent(summaryData, request);
     const imageUrl = await this.generateWeeklySummaryImage(summaryData);
     const visualElements = await this.generateWeeklyVisualElements(summaryData);
@@ -335,19 +517,7 @@ export class DailyWeeklySummaryGenerator {
         enableShareButton: true,
         enableWebApp: true,
         priority: 'high',
-        inlineKeyboard: [
-          [
-            { text: '📈 Week Stats', callback_data: `week_stats_${weekStart}` },
-            { text: '🏆 Team Rankings', callback_data: `rankings_${weekStart}` }
-          ],
-          [
-            { text: '🔮 Next Week', callback_data: `next_week_${weekStart}` },
-            { text: '📊 Form Guide', callback_data: `form_${weekStart}` }
-          ],
-          [
-            { text: '📱 Share Weekly Review', switch_inline_query: `weekly_review_${weekStart}` }
-          ]
-        ],
+        inlineKeyboard: this.generateChannelInlineKeyboard(buttonConfig, summaryData, 'weekly'),
         messageThreadId: undefined,
         disableWebPagePreview: false,
         parseMode: 'HTML',
@@ -623,134 +793,278 @@ export class DailyWeeklySummaryGenerator {
     const date = new Date(summaryData.date).toLocaleDateString();
     
     if (language === 'am') {
-      // Build full content in Amharic
-      let content = `📅 የዕለት እግርኳስ ማጠቃለያ - ${date}\n\n`;
+      // BUILD ENHANCED AMHARIC CONTENT WITH MODERN TELEGRAM FEATURES
+      let content = `<b>⚽ የዕለት እግርኳስ ማጠቃለያ</b> 📅 ${date}\n`;
+      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
       
       if (summaryData.interestingMatches.length > 0) {
-        content += `🏆 ዋና ዋና ውጤቶች\n\n`;
+        content += `<b>🏆 ዛሬ የተከናወኑ ጉልህ ጨዋታዎች</b>\n\n`;
+        
         summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
           const match = interestingMatch.match;
-          content += `${index + 1}. ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}\n`;
-          content += `   🏟️ ${match.competition} | ${interestingMatch.highlightReason}\n\n`;
+          const totalGoals = match.homeScore + match.awayScore;
+          const isHighScoring = totalGoals >= 5;
+          const isUpset = Math.abs(match.homeScore - match.awayScore) >= 3;
+          
+          content += `<b>${index + 1}. ${match.homeTeam}</b> <code>${match.homeScore}-${match.awayScore}</code> <b>${match.awayTeam}</b>\n`;
+          content += `   🏟️ <i>${match.competition}</i>\n`;
+          content += `   ${isHighScoring ? '🔥' : '⚽'} ${interestingMatch.highlightReason}\n`;
+          
+          if (isHighScoring) {
+            content += `   ✨ <i>ከፍተኛ ጎል የተሰማርበት ጨዋታ (${totalGoals} ጎሎች)</i>\n`;
+          }
+          if (isUpset) {
+            content += `   😱 <i>የሚያስደንቅ ውጤት!</i>\n`;
+          }
+          content += `\n`;
         });
       }
+
+      // ENHANCED STATISTICS WITH VISUAL ELEMENTS
+      content += `<b>📊 የዛሬ የእግርኳስ ዓለም በቁጥሮች</b>\n`;
+      content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+      content += `┃ 🎯 ጨዋታዎች: <b>${summaryData.statistics.totalMatches}</b> ድምር ጨዋታዎች\n`;
+      content += `┃ ⚽ ጎሎች: <b>${summaryData.statistics.totalGoals}</b> ጠቅላላ ጎሎች\n`;
+      content += `┃ 📈 አማካይ: <b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b> ጎሎች በጨዋታ\n`;
       
-      content += `📊 ስታትስቲክስ\n`;
-      content += `• ${summaryData.statistics.totalMatches} ጨዋታዎች\n`;
-      content += `• ${summaryData.statistics.totalGoals} ጎሎች\n`;
+      if (summaryData.statistics.biggestWin.teams) {
+        content += `┃ 🏆 ከፍተኛ ድል: <i>${summaryData.statistics.biggestWin.teams}</i>\n`;
+      }
       
+      if (summaryData.statistics.surpriseResults.length > 0) {
+        content += `┃ 😱 ያልተጠበቁ ውጤቶች: <b>${summaryData.statistics.surpriseResults.length}</b>\n`;
+      }
+      content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+
+      // STANDOUT PERFORMANCES WITH EMOJIS
+      if (Object.values(summaryData.standoutPerformances).some(v => v)) {
+        content += `<b>⭐ የዛሬ ምርጥ አፈጻጸሞች</b>\n`;
+        if (summaryData.standoutPerformances.goalOfDay) {
+          content += `🥅 <b>የቀኑ ጎል:</b> <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
+        }
+        if (summaryData.standoutPerformances.playerOfDay) {
+          content += `👑 <b>የቀኑ ተጫዋች:</b> <i>${summaryData.standoutPerformances.playerOfDay}</i>\n`;
+        }
+        if (summaryData.standoutPerformances.saveOfDay) {
+          content += `🧤 <b>የቀኑ ማዳን:</b> <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
+        }
+        if (summaryData.standoutPerformances.upsetOfDay) {
+          content += `🎭 <b>የቀኑ አስደናቂ:</b> <i>${summaryData.standoutPerformances.upsetOfDay}</i>\n`;
+        }
+        content += `\n`;
+      }
+      
+      // TOMORROW'S FIXTURES WITH ENHANCED PREVIEW
       if (summaryData.tomorrowsFixtures.length > 0) {
-        content += `\n👀 የነገ ጨዋታዎች\n`;
-        summaryData.tomorrowsFixtures.slice(0, 3).forEach(fixture => {
-          content += `• ${fixture.homeTeam} vs ${fixture.awayTeam}\n`;
+        content += `<b>🔮 የነገ ዋና ዋና ጨዋታዎች</b>\n`;
+        content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        summaryData.tomorrowsFixtures.slice(0, 5).forEach((fixture, index) => {
+          const importance = this.determineMatchImportance(fixture);
+          const importanceEmoji = importance === 'HIGH' ? '🔥' : importance === 'MEDIUM' ? '⚡' : '⚽';
+          content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b>\n`;
+          content += `   📍 <i>${fixture.competition}</i>\n`;
+          if (index < summaryData.tomorrowsFixtures.length - 1) content += `\n`;
         });
+        content += `\n`;
       }
+
+      // CALL TO ACTION WITH ENHANCED FORMATTING
+      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      content += `<b>📱 ከታች ያሉትን ቁልፎች ተጠቅመው የበለጠ ይከታተሉ!</b>\n`;
+      content += `💫 <i>ዝርዝር ስታትስቲክስ | ጎል ሰብሳቢዎች | ሊግ ጠረጴዛዎች</i>\n\n`;
+      content += `<i>🌟 በየቀኑ የእግርኳስ ዓለም ከእኛ ጋር ይከታተሉ!</i>`;
       
       return content;
     }
     
     if (language === 'sw') {
-      // Build full content in Swahili
-      let content = `📅 Muhtasari wa Mpira wa Miguu - ${date}\n\n`;
+      // BUILD ENHANCED SWAHILI CONTENT WITH MODERN TELEGRAM FEATURES
+      let content = `<b>⚽ Muhtasari wa Mpira wa Miguu</b> 📅 ${date}\n`;
+      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
       
       if (summaryData.interestingMatches.length > 0) {
-        content += `🏆 Mechi Kuu za Leo\n\n`;
+        content += `<b>🏆 Mechi Muhimu za Leo</b>\n\n`;
+        
         summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
           const match = interestingMatch.match;
-          content += `${index + 1}. ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}\n`;
-          content += `   🏟️ ${match.competition} | ${interestingMatch.highlightReason}\n\n`;
+          const totalGoals = match.homeScore + match.awayScore;
+          const isHighScoring = totalGoals >= 5;
+          const isUpset = Math.abs(match.homeScore - match.awayScore) >= 3;
+          
+          content += `<b>${index + 1}. ${match.homeTeam}</b> <code>${match.homeScore}-${match.awayScore}</code> <b>${match.awayTeam}</b>\n`;
+          content += `   🏟️ <i>${match.competition}</i>\n`;
+          content += `   ${isHighScoring ? '🔥' : '⚽'} ${interestingMatch.highlightReason}\n`;
+          
+          if (isHighScoring) {
+            content += `   ✨ <i>Mchezo wa mabao mengi (mabao ${totalGoals})</i>\n`;
+          }
+          if (isUpset) {
+            content += `   😱 <i>Matokeo ya kushangaza!</i>\n`;
+          }
+          content += `\n`;
         });
       }
+
+      // ENHANCED STATISTICS WITH VISUAL ELEMENTS
+      content += `<b>📊 Takwimu za Leo katika Dunia ya Mpira</b>\n`;
+      content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+      content += `┃ 🎯 Mechi: <b>${summaryData.statistics.totalMatches}</b> jumla ya mechi\n`;
+      content += `┃ ⚽ Mabao: <b>${summaryData.statistics.totalGoals}</b> jumla ya mabao\n`;
+      content += `┃ 📈 Wastani: <b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b> mabao kwa mechi\n`;
       
-      content += `📊 Takwimu\n`;
-      content += `• Mechi ${summaryData.statistics.totalMatches}\n`;
-      content += `• Mabao ${summaryData.statistics.totalGoals}\n`;
+      if (summaryData.statistics.biggestWin.teams) {
+        content += `┃ 🏆 Ushindi mkubwa: <i>${summaryData.statistics.biggestWin.teams}</i>\n`;
+      }
       
+      if (summaryData.statistics.surpriseResults.length > 0) {
+        content += `┃ 😱 Matokeo ya kushangaza: <b>${summaryData.statistics.surpriseResults.length}</b>\n`;
+      }
+      content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+
+      // STANDOUT PERFORMANCES WITH EMOJIS
+      if (Object.values(summaryData.standoutPerformances).some(v => v)) {
+        content += `<b>⭐ Utendaji Bora wa Leo</b>\n`;
+        if (summaryData.standoutPerformances.goalOfDay) {
+          content += `🥅 <b>Bao la Siku:</b> <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
+        }
+        if (summaryData.standoutPerformances.playerOfDay) {
+          content += `👑 <b>Mchezaji wa Siku:</b> <i>${summaryData.standoutPerformances.playerOfDay}</i>\n`;
+        }
+        if (summaryData.standoutPerformances.saveOfDay) {
+          content += `🧤 <b>Uokoaji wa Siku:</b> <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
+        }
+        if (summaryData.standoutPerformances.upsetOfDay) {
+          content += `🎭 <b>Mshangao wa Siku:</b> <i>${summaryData.standoutPerformances.upsetOfDay}</i>\n`;
+        }
+        content += `\n`;
+      }
+      
+      // TOMORROW'S FIXTURES WITH ENHANCED PREVIEW
       if (summaryData.tomorrowsFixtures.length > 0) {
-        content += `\n👀 Mechi za Kesho\n`;
-        summaryData.tomorrowsFixtures.slice(0, 3).forEach(fixture => {
-          content += `• ${fixture.homeTeam} vs ${fixture.awayTeam}\n`;
+        content += `<b>🔮 Mechi Muhimu za Kesho</b>\n`;
+        content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        summaryData.tomorrowsFixtures.slice(0, 5).forEach((fixture, index) => {
+          const importance = this.determineMatchImportance(fixture);
+          const importanceEmoji = importance === 'HIGH' ? '🔥' : importance === 'MEDIUM' ? '⚡' : '⚽';
+          content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b>\n`;
+          content += `   📍 <i>${fixture.competition}</i>\n`;
+          if (index < summaryData.tomorrowsFixtures.length - 1) content += `\n`;
         });
+        content += `\n`;
       }
+
+      // CALL TO ACTION WITH ENHANCED FORMATTING
+      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      content += `<b>📱 Tumia vitufe hapa chini kufuata zaidi!</b>\n`;
+      content += `💫 <i>Takwimu kamili | Wafungaji | Jedwali za Ligi</i>\n\n`;
+      content += `<i>🌟 Fuatilia dunia ya mpira wa miguu kila siku!</i>`;
       
       return content;
     }
 
-    let content = `📅 DAILY FOOTBALL ROUNDUP\n`;
-    content += `${new Date(summaryData.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n`;
+    // BUILD ENHANCED ENGLISH CONTENT WITH MODERN TELEGRAM FEATURES
+    let content = `<b>⚽ DAILY FOOTBALL ROUNDUP</b> 📅\n`;
+    content += `<i>${new Date(summaryData.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</i>\n`;
+    content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     // Interesting matches section
     if (summaryData.interestingMatches.length > 0) {
-      content += `🏆 TODAY'S STANDOUT MATCHES\n\n`;
+      content += `<b>🏆 TODAY'S STANDOUT MATCHES</b>\n\n`;
       summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
         const match = interestingMatch.match;
-        content += `${index + 1}. ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}\n`;
-        content += `   🏟️ ${match.competition} | ${interestingMatch.highlightReason}\n`;
+        const totalGoals = match.homeScore + match.awayScore;
+        const isHighScoring = totalGoals >= 5;
+        const isUpset = Math.abs(match.homeScore - match.awayScore) >= 3;
+        
+        content += `<b>${index + 1}. ${match.homeTeam}</b> <code>${match.homeScore}-${match.awayScore}</code> <b>${match.awayTeam}</b>\n`;
+        content += `   🏟️ <i>${match.competition}</i>\n`;
+        content += `   ${isHighScoring ? '🔥' : '⚽'} ${interestingMatch.highlightReason}\n`;
+        
+        if (isHighScoring) {
+          content += `   ✨ <i>High-scoring thriller (${totalGoals} goals)</i>\n`;
+        }
+        if (isUpset) {
+          content += `   😱 <i>Stunning upset result!</i>\n`;
+        }
         if (interestingMatch.interestFactors.length > 0) {
-          content += `   ✨ ${interestingMatch.interestFactors.slice(0, 2).join(', ')}\n`;
+          content += `   💫 <i>${interestingMatch.interestFactors.slice(0, 2).join(', ')}</i>\n`;
         }
         content += `\n`;
       });
     }
 
-    // Standout performances
+    // Standout performances with enhanced formatting
     if (Object.values(summaryData.standoutPerformances).some(v => v)) {
-      content += `⭐ STANDOUT PERFORMANCES\n`;
-      if (summaryData.standoutPerformances.playerOfDay) {
-        content += `👑 Player of the Day: ${summaryData.standoutPerformances.playerOfDay}\n`;
-      }
+      content += `<b>⭐ TODAY'S STANDOUT PERFORMANCES</b>\n`;
       if (summaryData.standoutPerformances.goalOfDay) {
-        content += `⚽ Goal of the Day: ${summaryData.standoutPerformances.goalOfDay}\n`;
+        content += `🥅 <b>Goal of the Day:</b> <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
+      }
+      if (summaryData.standoutPerformances.playerOfDay) {
+        content += `👑 <b>Player of the Day:</b> <i>${summaryData.standoutPerformances.playerOfDay}</i>\n`;
       }
       if (summaryData.standoutPerformances.saveOfDay) {
-        content += `🧤 Save of the Day: ${summaryData.standoutPerformances.saveOfDay}\n`;
+        content += `🧤 <b>Save of the Day:</b> <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
       }
       if (summaryData.standoutPerformances.upsetOfDay) {
-        content += `😱 Upset of the Day: ${summaryData.standoutPerformances.upsetOfDay}\n`;
+        content += `🎭 <b>Upset of the Day:</b> <i>${summaryData.standoutPerformances.upsetOfDay}</i>\n`;
       }
       content += `\n`;
     }
 
-    // Statistics section
-    content += `📊 BY THE NUMBERS\n`;
-    content += `• ${summaryData.statistics.totalMatches} matches played\n`;
-    content += `• ${summaryData.statistics.totalGoals} total goals scored\n`;
+    // Enhanced statistics section with visual elements
+    content += `<b>📊 TODAY'S FOOTBALL WORLD BY THE NUMBERS</b>\n`;
+    content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+    content += `┃ 🎯 Matches: <b>${summaryData.statistics.totalMatches}</b> total matches\n`;
+    content += `┃ ⚽ Goals: <b>${summaryData.statistics.totalGoals}</b> total goals\n`;
+    content += `┃ 📈 Average: <b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b> goals per match\n`;
+    
     if (summaryData.statistics.biggestWin.teams) {
-      content += `• Biggest win: ${summaryData.statistics.biggestWin.teams} (${summaryData.statistics.biggestWin.score})\n`;
+      content += `┃ 🏆 Biggest win: <i>${summaryData.statistics.biggestWin.teams} (${summaryData.statistics.biggestWin.score})</i>\n`;
     }
+    
     if (summaryData.statistics.surpriseResults.length > 0) {
-      content += `• ${summaryData.statistics.surpriseResults.length} surprise result${summaryData.statistics.surpriseResults.length > 1 ? 's' : ''}\n`;
+      content += `┃ 😱 Surprise results: <b>${summaryData.statistics.surpriseResults.length}</b>\n`;
     }
-    content += `• Disciplinary: ${summaryData.statistics.disciplinaryActions.redCards} red cards, ${summaryData.statistics.disciplinaryActions.yellowCards} yellow cards\n\n`;
+    content += `┃ 🟨 Disciplinary: ${summaryData.statistics.disciplinaryActions.redCards} red, ${summaryData.statistics.disciplinaryActions.yellowCards} yellow cards\n`;
+    content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
 
-    // Key storylines
+    // Key storylines with better formatting
     if (summaryData.keyStorylines.length > 0) {
-      content += `📰 KEY STORYLINES\n`;
+      content += `<b>📰 KEY STORYLINES</b>\n`;
       summaryData.keyStorylines.slice(0, 3).forEach(story => {
-        content += `• ${story.headline}\n`;
+        content += `🔹 <b>${story.headline}</b>\n`;
         if (story.summary.length > 50) {
-          content += `  ${story.summary}\n`;
+          content += `   <i>${story.summary}</i>\n`;
         }
       });
       content += `\n`;
     }
 
-    // Tomorrow's fixtures
+    // Tomorrow's fixtures with enhanced preview
     if (summaryData.tomorrowsFixtures.length > 0) {
-      content += `👀 TOMORROW'S FIXTURES\n`;
-      summaryData.tomorrowsFixtures.slice(0, 5).forEach(fixture => {
-        content += `• ${fixture.homeTeam} vs ${fixture.awayTeam} (${fixture.competition})\n`;
+      content += `<b>🔮 TOMORROW'S KEY FIXTURES</b>\n`;
+      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      summaryData.tomorrowsFixtures.slice(0, 5).forEach((fixture, index) => {
+        const importance = this.determineMatchImportance(fixture);
+        const importanceEmoji = importance === 'HIGH' ? '🔥' : importance === 'MEDIUM' ? '⚡' : '⚽';
+        content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b>\n`;
+        content += `   📍 <i>${fixture.competition}</i>\n`;
+        if (index < summaryData.tomorrowsFixtures.length - 1) content += `\n`;
       });
       content += `\n`;
     }
 
     // Weekend preview (if Friday)
     if (summaryData.weekendPreview) {
-      content += `🔮 WEEKEND PREVIEW\n`;
+      content += `<b>🔮 WEEKEND PREVIEW</b>\n`;
       content += `${summaryData.weekendPreview}\n\n`;
     }
 
-    content += `📱 Stay tuned for more football action!`;
+    // Call to action with enhanced formatting
+    content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    content += `<b>📱 Use the buttons below to explore more!</b>\n`;
+    content += `💫 <i>Detailed stats | Goal highlights | League tables</i>\n\n`;
+    content += `<i>🌟 Stay tuned for daily football action!</i>`;
 
     return content;
   }
@@ -1378,9 +1692,33 @@ export class DailyWeeklySummaryGenerator {
       sw: "Write ONLY in Swahili with native football terminology and engaging style"
     };
     
-    const prompt = `You are a professional football journalist. Create a comprehensive daily football summary based on the following data:
+    const formatInstructions = {
+      en: `Format your content using MODERN TELEGRAM HTML formatting:
+- Use <b>bold text</b> for titles and important information
+- Use <i>italic text</i> for descriptions and details
+- Use <code>monospace</code> for scores and numbers
+- Use Unicode box drawing characters for visual borders (━, ┏, ┓, ┗, ┛, ┃)
+- Include emojis strategically for visual appeal
+- Structure content with clear sections and spacing`,
+      am: `በዘመናዊ ቴሌግራም HTML ቅርጸት ይጻፉ:
+- ለርዕሶች እና አስፈላጊ መረጃዎች <b>ደማቅ ጽሑፍ</b> ይጠቀሙ
+- ለመግለጫዎች እና ዝርዝሮች <i>ዘንበል ያለ ጽሑፍ</i> ይጠቀሙ
+- ለውጤቶች እና ቁጥሮች <code>monospace</code> ይጠቀሙ
+- ለዕይታ ድንበሮች የዩኒኮድ ሳጥን መሳል ቁምፊዎችን ይጠቀሙ (━, ┏, ┓, ┗, ┛, ┃)
+- ለዕይታ ማሳያ emojis በስልት ያካትቱ
+- ዓይነቶችን በግልጽ ክፍሎች እና ክፍተት ያደራጁ`,
+      sw: `Tumia muundo wa kisasa wa Telegram HTML:
+- Tumia <b>maandishi mazito</b> kwa vichwa na taarifa muhimu
+- Tumia <i>maandishi ya italiki</i> kwa maelezo na undani
+- Tumia <code>monospace</code> kwa alama na namba
+- Tumia herufi za kuchora kisanduku cha Unicode kwa mipaka ya kuona (━, ┏, ┓, ┗, ┛, ┃)
+- Jumuisha emoji kwa mkakati wa kuona
+- Panga maudhui na sehemu na nafasi wazi`
+    };
 
-    Original content:
+    const prompt = `You are a professional football journalist creating content for MODERN TELEGRAM with enhanced formatting. Create a comprehensive daily football summary based on the following data:
+
+    Original content template:
     ${content}
     
     Match Details:
@@ -1395,18 +1733,22 @@ export class DailyWeeklySummaryGenerator {
       `${index + 1}. ${match.match.homeTeam} ${match.match.homeScore}-${match.match.awayScore} ${match.match.awayTeam} (${match.match.competition})`
     ).join('\n')}
     
-    INSTRUCTIONS:
-    1. ${languageInstructions[language]}
-    2. Create a comprehensive, engaging summary with specific details about the matches
-    3. Include team names, scores, and competitions mentioned above
-    4. Add analysis about what made these matches interesting
-    5. Include the statistics (total matches and goals)
-    6. Mention tomorrow's fixtures if available
-    7. Make it informative but not too long (maximum 2 paragraphs)
-    8. NO generic content - only specific match details and real statistics
-    9. Use appropriate football emojis for better engagement
+    FORMATTING REQUIREMENTS:
+    ${formatInstructions[language]}
     
-    Return ONLY the final summary content - no explanations or additional text.`;
+    CONTENT INSTRUCTIONS:
+    1. ${languageInstructions[language]}
+    2. FOLLOW THE EXACT FORMAT from the template above with HTML tags
+    3. Use the SAME visual structure: title with separators, boxed statistics, enhanced sections
+    4. Include specific team names, scores, and competitions from the data above
+    5. Add intelligent analysis about what made these matches interesting
+    6. Calculate and include averages (goals per match, etc.)
+    7. Highlight high-scoring games (5+ goals) with 🔥 and upsets (3+ goal difference) with 😱
+    8. Include tomorrow's fixtures with importance indicators (🔥 HIGH, ⚡ MEDIUM, ⚽ LOW)
+    9. End with the call-to-action about interactive buttons
+    10. NO generic content - use ONLY the specific match data provided
+    
+    CRITICAL: Return content in the EXACT SAME HTML format as the template, maintaining the visual structure with borders, sections, and enhanced formatting.`;
 
     try {
       const response = await openai.chat.completions.create({

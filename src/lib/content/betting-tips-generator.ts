@@ -972,24 +972,75 @@ export class BettingTipsGenerator {
       }
 
       const systemPrompts = {
-        'en': `You are a friendly football betting expert who knows how to give practical tips. Write a short, natural betting tips post (4-6 lines) that sounds like you're talking to a friend. Keep it conversational and helpful. Include specific predictions with confidence levels and odds estimates. Add emojis naturally. End with a responsible gambling reminder and hashtags.`,
-        
-        'am': `እርስዎ የእግር ኳስ ውርርድ ባለሙያ ነዎት። ለዚህ ጨዋታ በጣም የተለዩ እና የተወሰኑ የውርርድ ምክሮች ይፃፉ። እያንዳንዱ ምክር መሆን አለበት:
-        - የተወሰነ የውርርድ አይነት (የቤት ድል፣ ከ2.5 ጎሎች በላይ፣ ሁለቱም ቡድኖች ያስገባሉ፣ ወዘተ)
-        - የውርርድ ዕድል (ለምሳሌ: 1.85፣ 2.10፣ 1.65)
-        - የእምነት መቶኛ (ለምሳሌ: 75%፣ 80%፣ 65%)
-        - ለምን ይህ ውርርድ ጥሩ እንደሆነ አጭር ምክንያት
-        - የአደጋ ደረጃ (ዝቅተኛ፣ መካከለኛ፣ ከፍተኛ)
-        
-        ለምሳሌ: "🏆 የቤት ድል: ዕድል 1.85 | እምነት 80% | በቤት ጥሩ ውጤት አላቸው"
-        
-        በኃላፊነት ውርርድ ጥሪ ያካትቱ።`,
-        
-        'sw': `Wewe ni mtaalamu rafiki wa kamari za mpira wa miguu. Andika mapendekezo ya kamari kwa njia ya kirafiki na rahisi kuelewa, kama unavyozungumza na rafiki. Mistari 4-6 tu. Ongeza utabiri wazi na viwango vya ujasiri na uwezekano. Tumia emoji kwa kawaida. Malizia kwa onyo la kamari zenye uwajibikaji na hashtags.`,
+        'en': `You are a friendly football betting expert who creates modern Telegram content with HTML formatting. Write betting tips using HTML tags (<b>, <i>, <code>) and Unicode box drawing characters for visual structure. Format like this:
 
-        'fr': `Vous êtes un expert amical en paris de football qui sait donner des conseils pratiques. Rédigez un court post de conseils de paris naturel (4-6 lignes) qui sonne comme si vous parliez à un ami. Restez conversationnel et utile. Incluez des prédictions spécifiques avec des niveaux de confiance et des estimations de cotes. Ajoutez des emojis naturellement. Terminez par un rappel de jeu responsable et des hashtags.`,
+<b>🎯 BETTING TIPS: Team A vs Team B</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        'ar': `أنت خبير ودود في رهانات كرة القدم تعرف كيف تقدم نصائح عملية. اكتب منشوراً قصيراً وطبيعياً لنصائح الرهان (4-6 أسطر) يبدو وكأنك تتحدث مع صديق. حافظ على الطابع المحادثي والمفيد. أدرج توقعات محددة مع مستويات الثقة وتقديرات الاحتمالات. أضف الرموز التعبيرية بشكل طبيعي. انته بتذكير بالمقامرة المسؤولة والهاشتاغات.`
+<b>💰 TOP PREDICTIONS</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Match Result:</b> Home Win
+┃ 💰 <code>Odds: 1.85</code> | <i>Confidence: 80%</i>
+┃ 📝 Strong home form and advantage
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Keep it conversational, include specific predictions with confidence levels and odds. End with responsible gambling reminder.`,
+        
+        'am': `እርስዎ የእግር ኳስ ውርርድ ባለሙያ ነዎት የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚፈጥሩ። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
+
+<b>🎯 የውርርድ ምክሮች: ቡድን ሀ በተቃ ቡድን ለ</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 ተመራጭ ትንበያዎች</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>የጨዋታ ውጤት:</b> የቤት ድል
+┃ 💰 <code>ዕድል: 1.85</code> | <i>እምነት: 80%</i>
+┃ 📝 ጠንካራ የቤት ቅርፀት እና ጥቅም
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+በኃላፊነት ውርርድ ማስታወሻ ያካትቱ።`,
+        
+        'sw': `Wewe ni mtaalamu wa kamari za mpira wa miguu unayetengeneza maudhui ya kisasa ya Telegram kwa kutumia muundo wa HTML. Andika mapendekezo ya kamari ukitumia lebo za HTML (<b>, <i>, <code>) na alama za mstari wa kisanduku. Tengeneza kama hivi:
+
+<b>🎯 MAPENDEKEZO YA KAMARI: Timu A dhidi ya Timu B</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 UTABIRI WA KILELE</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Matokeo ya Mechi:</b> Ushindi wa Nyumbani
+┃ 💰 <code>Uwezekano: 1.85</code> | <i>Ujasiri: 80%</i>
+┃ 📝 Hali nzuri ya nyumbani na faida
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Malizia kwa onyo la kamari zenye uwajibikaji.`,
+
+        'fr': `Vous êtes un expert amical en paris de football qui crée du contenu Telegram moderne avec formatage HTML. Rédigez des conseils de paris en utilisant les balises HTML (<b>, <i>, <code>) et les caractères Unicode de dessin de boîte. Formatez comme ceci:
+
+<b>🎯 CONSEILS DE PARIS: Équipe A vs Équipe B</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 PRÉDICTIONS PRINCIPALES</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Résultat du Match:</b> Victoire Domicile
+┃ 💰 <code>Cotes: 1.85</code> | <i>Confiance: 80%</i>
+┃ 📝 Forte forme à domicile et avantage
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Terminez par un rappel de jeu responsable.`,
+
+        'ar': `أنت خبير ودود في رهانات كرة القدم تقوم بإنشاء محتوى تيليجرام حديث بتنسيق HTML. اكتب نصائح الرهان باستخدام علامات HTML (<b>, <i>, <code>) وأحرف رسم الصندوق Unicode. قم بالتنسيق كما يلي:
+
+<b>🎯 نصائح الرهان: الفريق أ ضد الفريق ب</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 التوقعات الرئيسية</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>نتيجة المباراة:</b> فوز الفريق المضيف
+┃ 💰 <code>الاحتمالات: 1.85</code> | <i>الثقة: 80%</i>
+┃ 📝 قوة في الملعب والأفضلية
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+انته بتذكير بالمقامرة المسؤولة.`
       };
 
       // Build detailed analysis data for AI
@@ -1045,58 +1096,110 @@ export class BettingTipsGenerator {
       };
 
       const languageInstructions = {
-        'en': `Write natural, friendly betting tips for this match. Keep it short and conversational - like you're giving advice to a friend. Include:
-        - 2-3 specific betting suggestions 
-        - Why you think they're good bets
-        - Confidence levels (like "80% confident" or "strong chance")
-        - Expected odds ranges
-        - A responsible gambling reminder
-        
-        Write it naturally, not like a formal report. Use emojis where they feel right.`,
-      
-        'am': `ለዚህ ጨዋታ በጣም የተለዩ እና የተወሰኑ የውርርድ ምክሮች ይፃፉ። እያንዳንዱ ምክር መሆን አለበት:
-        
-        🎯 የተወሰነ የውርርድ አይነት:
-        - የቤት ድል / የጉዞ ድል / እርቅ
-        - ከ2.5 ጎሎች በላይ / ከ2.5 ጎሎች በታች
-        - ሁለቱም ቡድኖች ያስገባሉ / አንዱ ብቻ ያስገባል
-        - የመጀመሪያ ግማሽ ድል
-        
-        💰 የውርርድ ዕድል: ለምሳሌ 1.85, 2.10, 1.65
-        📊 የእምነት መቶኛ: ለምሳሌ 75%, 80%, 65%
-        🔍 አጭር ምክንያት: ለምን ይህ ውርርድ ጥሩ እንደሆነ
-        ⚠️ የአደጋ ደረጃ: ዝቅተኛ/መካከለኛ/ከፍተኛ
-        
-        ለምሳሌ: "🏆 የቤት ድል: ዕድል 1.85 | እምነት 80% | በቤት ጥሩ ውጤት አላቸው"
-        
-        በኃላፊነት ውርርድ ጥሪ ያካትቱ።`,
-      
-        'sw': `Andika mapendekezo ya kamari yanayoonekana ya kawaida na ya kirafiki kwa mechi hii. Ifupishe na iwe ya mazungumzo - kama unavyompa ushauri rafiki. Jumuisha:
-        - Mapendekezo 2-3 mahususi ya kamari
-        - Kwa nini unafikiri ni kamari nzuri
-        - Viwango vya ujasiri (kama "nina ujasiri wa 80%" au "nafasi kubwa")
-        - Miwango inayotarajiwa ya uwezekano
-        - Ukumbusho wa kamari zenye uwajibikaji
-        
-        Andika kwa kawaida, si kama ripoti rasmi. Tumia emoji pale zinapoonekanea zinafaa.`,
+        'en': `Write modern Telegram betting tips using HTML formatting and Unicode box drawing characters. Format like this:
 
-        'fr': `Rédigez des conseils de pari naturels et amicaux pour ce match. Gardez-le court et conversationnel - comme si vous donniez des conseils à un ami. Incluez:
-        - 2-3 suggestions de paris spécifiques
-        - Pourquoi vous pensez que ce sont de bons paris
-        - Niveaux de confiance (comme "80% confiant" ou "forte chance")
-        - Gammes de cotes attendues
-        - Un rappel de jeu responsable
-        
-        Écrivez naturellement, pas comme un rapport formel. Utilisez des emojis là où ils semblent appropriés.`,
+<b>🎯 BETTING TIPS: [Team A] vs [Team B]</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        'ar': `اكتب نصائح رهان طبيعية وودية لهذه المباراة. اجعلها قصيرة ومحادثة - كما لو كنت تعطي نصيحة لصديق. تشمل:
-        - 2-3 اقتراحات رهان محددة
-        - لماذا تعتقد أنها رهانات جيدة
-        - مستويات الثقة (مثل "واثق بنسبة 80%" أو "فرصة قوية")
-        - نطاقات الاحتمالات المتوقعة
-        - تذكير بالمقامرة المسؤولة
-        
-        اكتب بشكل طبيعي، وليس مثل تقرير رسمي. استخدم الرموز التعبيرية حيث تبدو مناسبة.`
+<b>💰 TOP PREDICTIONS</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Tip 1:</b> [Prediction]
+┃ 💰 <code>Odds: [X.XX]</code> | <i>Confidence: XX%</i>
+┃ 📝 [Short reasoning]
+┃
+┃ ⚽ <b>Tip 2:</b> [Prediction]  
+┃ 💰 <code>Odds: [X.XX]</code> | <i>Confidence: XX%</i>
+┃ 📝 [Short reasoning]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+⚠️ <i>Bet responsibly. 18+ only.</i>
+
+MUST use HTML tags: <b> for bold, <i> for italic, <code> for odds.
+MUST use Unicode box characters: ━ ┏ ┓ ┗ ┛ ┃`,
+      
+        'am': `የዘመናዊ ቴሌግራም የውርርድ ምክሮችን የHTML ፎርማቲንግ እና የዩኒኮድ ሳጥን ቅርጾችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
+
+<b>🎯 የውርርድ ምክሮች: [ቡድን ሀ] በተቃ [ቡድን ለ]</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 ተመራጭ ትንበያዎች</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>ምክር 1:</b> [ትንበያ]
+┃ 💰 <code>ዕድል: [X.XX]</code> | <i>እምነት: XX%</i>
+┃ 📝 [አጭር ምክንያት]
+┃
+┃ ⚽ <b>ምክር 2:</b> [ትንበያ]
+┃ 💰 <code>ዕድል: [X.XX]</code> | <i>እምነት: XX%</i>
+┃ 📝 [አጭር ምክንያት]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+⚠️ <i>በኃላፊነት ውርርድ ያድርጉ። 18+ ብቻ።</i>
+
+HTML መለያዎችን መጠቀም አለብዎት: <b> ለቦልድ, <i> ለኢታሊክ, <code> ለዕድል።
+የዩኒኮድ ሳጥን ቁምፊዎችን መጠቀም አለብዎት: ━ ┏ ┓ ┗ ┛ ┃`,
+      
+        'sw': `Andika mapendekezo ya kisasa ya Telegram ya kamari ukitumia muundo wa HTML na alama za kisanduku za Unicode. Tengeneza kama hivi:
+
+<b>🎯 MAPENDEKEZO YA KAMARI: [Timu A] dhidi ya [Timu B]</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 UTABIRI WA KILELE</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Pendekezo 1:</b> [Utabiri]
+┃ 💰 <code>Uwezekano: [X.XX]</code> | <i>Ujasiri: XX%</i>
+┃ 📝 [Sababu fupi]
+┃
+┃ ⚽ <b>Pendekezo 2:</b> [Utabiri]
+┃ 💰 <code>Uwezekano: [X.XX]</code> | <i>Ujasiri: XX%</i>
+┃ 📝 [Sababu fupi]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+⚠️ <i>Kamari kwa busara. Miaka 18+ tu.</i>
+
+LAZIMA utumie lebo za HTML: <b> kwa bold, <i> kwa italic, <code> kwa uwezekano.
+LAZIMA utumie alama za kisanduku za Unicode: ━ ┏ ┓ ┗ ┛ ┃`,
+
+        'fr': `Rédigez des conseils de paris Telegram modernes en utilisant le formatage HTML et les caractères de dessin de boîte Unicode. Formatez comme ceci:
+
+<b>🎯 CONSEILS DE PARIS: [Équipe A] vs [Équipe B]</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 PRÉDICTIONS PRINCIPALES</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Conseil 1:</b> [Prédiction]
+┃ 💰 <code>Cotes: [X.XX]</code> | <i>Confiance: XX%</i>
+┃ 📝 [Raison courte]
+┃
+┃ ⚽ <b>Conseil 2:</b> [Prédiction]
+┃ 💰 <code>Cotes: [X.XX]</code> | <i>Confiance: XX%</i>
+┃ 📝 [Raison courte]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+⚠️ <i>Pariez de manière responsable. 18+ seulement.</i>
+
+DOIT utiliser les balises HTML: <b> pour gras, <i> pour italique, <code> pour cotes.
+DOIT utiliser les caractères de boîte Unicode: ━ ┏ ┓ ┗ ┛ ┃`,
+
+        'ar': `اكتب نصائح رهان تيليجرام حديثة باستخدام تنسيق HTML وأحرف رسم الصندوق Unicode. قم بالتنسيق كما يلي:
+
+<b>🎯 نصائح الرهان: [الفريق أ] ضد [الفريق ب]</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 التوقعات الرئيسية</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>نصيحة 1:</b> [التوقع]
+┃ 💰 <code>الاحتمالات: [X.XX]</code> | <i>الثقة: XX%</i>
+┃ 📝 [سبب مختصر]
+┃
+┃ ⚽ <b>نصيحة 2:</b> [التوقع]
+┃ 💰 <code>الاحتمالات: [X.XX]</code> | <i>الثقة: XX%</i>
+┃ 📝 [سبب مختصر]
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+⚠️ <i>راهن بمسؤولية. +18 فقط.</i>
+
+يجب استخدام علامات HTML: <b> للعريض، <i> للمائل، <code> للاحتمالات.
+يجب استخدام أحرف الصندوق Unicode: ━ ┏ ┓ ┗ ┛ ┃`
       };
 
       // Fix undefined language by defaulting to English

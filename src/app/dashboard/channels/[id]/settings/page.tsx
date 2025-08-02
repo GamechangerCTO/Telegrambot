@@ -87,6 +87,41 @@ export default function ChannelSettings() {
   const [newWebsite, setNewWebsite] = useState({ name: '', url: '', description: '' });
   const [showAddWebsite, setShowAddWebsite] = useState(false);
 
+  // Button configuration state
+  const [buttonConfig, setButtonConfig] = useState({
+    main_website: '',
+    betting_platform: '',
+    live_scores: '',
+    news_source: '',
+    social_media: {
+      telegram: '',
+      twitter: '',
+      facebook: '',
+      instagram: '',
+      youtube: '',
+      tiktok: ''
+    },
+    affiliate_codes: {
+      betting: '',
+      bookmaker: '',
+      casino: ''
+    },
+    channel_settings: {
+      enable_betting_links: true,
+      enable_affiliate_links: true,
+      enable_social_sharing: true,
+      enable_custom_buttons: true,
+      custom_website: ''
+    },
+    custom_buttons: [
+      { text: '📊 Full Stats', type: 'callback', data: '', enabled: true },
+      { text: '⚽ Top Goals', type: 'callback', data: '', enabled: true },
+      { text: '🔥 Match Highlights', type: 'callback', data: '', enabled: true },
+      { text: '🏆 League Tables', type: 'url', data: '', enabled: true },
+      { text: '📱 Share Summary', type: 'switch_inline', data: '', enabled: true }
+    ]
+  });
+
   useEffect(() => {
     if (channelId) {
       fetchChannelData();
@@ -143,6 +178,19 @@ export default function ChannelSettings() {
           setWebsites(Array.isArray(websitesData) ? websitesData : []);
         } catch {
           setWebsites([]);
+        }
+
+        // Fetch button configuration
+        try {
+          const buttonResponse = await fetch(`/api/channels/${channelId}/button-links`);
+          if (buttonResponse.ok) {
+            const buttonData = await buttonResponse.json();
+            if (buttonData.success && buttonData.buttonConfig) {
+              setButtonConfig(buttonData.buttonConfig);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching button config:', error);
         }
       }
       
@@ -271,6 +319,44 @@ export default function ChannelSettings() {
     setWebsites(prev => prev.filter((_, i) => i !== index));
   };
 
+  const saveButtonConfig = async () => {
+    try {
+      const response = await fetch(`/api/channels/${channelId}/button-links`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ buttonConfig }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert('Button configuration saved successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to save button configuration');
+      }
+    } catch (error) {
+      console.error('Error saving button config:', error);
+      alert('Error saving button configuration');
+    }
+  };
+
+  const updateButtonConfig = (path: string, value: any) => {
+    setButtonConfig(prev => {
+      const newConfig = { ...prev };
+      const keys = path.split('.');
+      let current = newConfig;
+      
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      
+      current[keys[keys.length - 1]] = value;
+      return newConfig;
+    });
+  };
+
   const toggleLeague = (leagueId: string) => {
     setFormData(prev => ({
       ...prev,
@@ -294,6 +380,7 @@ export default function ChannelSettings() {
   const tabs = [
     { id: 'basic', label: 'Basic Settings', icon: Settings },
     { id: 'content', label: 'Content & Types', icon: MessageSquare },
+    { id: 'buttons', label: 'Button Configuration', icon: MessageSquare },
     { id: 'monetization', label: 'Monetization', icon: CreditCard },
     { id: 'websites', label: 'Websites & Links', icon: Globe }
   ];
@@ -552,6 +639,270 @@ export default function ChannelSettings() {
                         </label>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Button Configuration Tab */}
+          {activeTab === 'buttons' && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Social Media & Website Links</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Main Website</label>
+                      <TextInput
+                        value={buttonConfig.main_website}
+                        onChange={(value) => updateButtonConfig('main_website', value)}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Betting Platform</label>
+                      <TextInput
+                        value={buttonConfig.betting_platform}
+                        onChange={(value) => updateButtonConfig('betting_platform', value)}
+                        placeholder="https://1xbet.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Live Scores</label>
+                      <TextInput
+                        value={buttonConfig.live_scores}
+                        onChange={(value) => updateButtonConfig('live_scores', value)}
+                        placeholder="https://livescore.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">News Source</label>
+                      <TextInput
+                        value={buttonConfig.news_source}
+                        onChange={(value) => updateButtonConfig('news_source', value)}
+                        placeholder="https://bbc.com/sport/football"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-gray-900 mb-3">Social Media Links</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">🔵 Facebook</label>
+                        <TextInput
+                          value={buttonConfig.social_media.facebook}
+                          onChange={(value) => updateButtonConfig('social_media.facebook', value)}
+                          placeholder="https://facebook.com/yourpage"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">🐦 Twitter</label>
+                        <TextInput
+                          value={buttonConfig.social_media.twitter}
+                          onChange={(value) => updateButtonConfig('social_media.twitter', value)}
+                          placeholder="https://twitter.com/youraccount"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">📸 Instagram</label>
+                        <TextInput
+                          value={buttonConfig.social_media.instagram}
+                          onChange={(value) => updateButtonConfig('social_media.instagram', value)}
+                          placeholder="https://instagram.com/youraccount"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">📱 Telegram</label>
+                        <TextInput
+                          value={buttonConfig.social_media.telegram}
+                          onChange={(value) => updateButtonConfig('social_media.telegram', value)}
+                          placeholder="https://t.me/yourchannel"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">📺 YouTube</label>
+                        <TextInput
+                          value={buttonConfig.social_media.youtube}
+                          onChange={(value) => updateButtonConfig('social_media.youtube', value)}
+                          placeholder="https://youtube.com/@yourchannel"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">🎵 TikTok</label>
+                        <TextInput
+                          value={buttonConfig.social_media.tiktok}
+                          onChange={(value) => updateButtonConfig('social_media.tiktok', value)}
+                          placeholder="https://tiktok.com/@youraccount"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Custom Button Configuration</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Configure the buttons that appear in your daily summaries and other content.
+                  </p>
+                  
+                  {buttonConfig.custom_buttons.map((button, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Button Text</label>
+                          <TextInput
+                            value={button.text}
+                            onChange={(value) => {
+                              const newButtons = [...buttonConfig.custom_buttons];
+                              newButtons[index].text = value;
+                              setButtonConfig(prev => ({ ...prev, custom_buttons: newButtons }));
+                            }}
+                            placeholder="📊 Button Text"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Button Type</label>
+                          <select
+                            value={button.type}
+                            onChange={(e) => {
+                              const newButtons = [...buttonConfig.custom_buttons];
+                              newButtons[index].type = e.target.value;
+                              setButtonConfig(prev => ({ ...prev, custom_buttons: newButtons }));
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="url">Website Link</option>
+                            <option value="callback">Callback Data</option>
+                            <option value="switch_inline">Inline Share</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {button.type === 'url' ? 'URL' : button.type === 'callback' ? 'Callback Data' : 'Inline Query'}
+                          </label>
+                          <TextInput
+                            value={button.data}
+                            onChange={(value) => {
+                              const newButtons = [...buttonConfig.custom_buttons];
+                              newButtons[index].data = value;
+                              setButtonConfig(prev => ({ ...prev, custom_buttons: newButtons }));
+                            }}
+                            placeholder={
+                              button.type === 'url' ? 'https://example.com' : 
+                              button.type === 'callback' ? 'stats_data' : 
+                              'share_text'
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={button.enabled}
+                            onChange={(e) => {
+                              const newButtons = [...buttonConfig.custom_buttons];
+                              newButtons[index].enabled = e.target.checked;
+                              setButtonConfig(prev => ({ ...prev, custom_buttons: newButtons }));
+                            }}
+                            className="rounded border-gray-300 text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">Enabled</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newButtons = buttonConfig.custom_buttons.filter((_, i) => i !== index);
+                            setButtonConfig(prev => ({ ...prev, custom_buttons: newButtons }));
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newButton = { text: '🔥 New Button', type: 'url', data: '', enabled: true };
+                      setButtonConfig(prev => ({ 
+                        ...prev, 
+                        custom_buttons: [...prev.custom_buttons, newButton] 
+                      }));
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Custom Button
+                  </Button>
+
+                  <div className="border-t pt-4">
+                    <Button
+                      type="button"
+                      onClick={saveButtonConfig}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Button Configuration
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Button Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={buttonConfig.channel_settings.enable_betting_links}
+                        onChange={(e) => updateButtonConfig('channel_settings.enable_betting_links', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600"
+                      />
+                      <label className="text-sm font-medium text-gray-700">Enable Betting Links</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={buttonConfig.channel_settings.enable_affiliate_links}
+                        onChange={(e) => updateButtonConfig('channel_settings.enable_affiliate_links', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600"
+                      />
+                      <label className="text-sm font-medium text-gray-700">Enable Affiliate Links</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={buttonConfig.channel_settings.enable_social_sharing}
+                        onChange={(e) => updateButtonConfig('channel_settings.enable_social_sharing', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600"
+                      />
+                      <label className="text-sm font-medium text-gray-700">Enable Social Sharing</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={buttonConfig.channel_settings.enable_custom_buttons}
+                        onChange={(e) => updateButtonConfig('channel_settings.enable_custom_buttons', e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600"
+                      />
+                      <label className="text-sm font-medium text-gray-700">Enable Custom Buttons</label>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
