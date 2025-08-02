@@ -1099,16 +1099,26 @@ export class BettingTipsGenerator {
         اكتب بشكل طبيعي، وليس مثل تقرير رسمي. استخدم الرموز التعبيرية حيث تبدو مناسبة.`
       };
 
+      // Fix undefined language by defaulting to English
+      const safeLanguage = request.language || 'en';
+      const systemPrompt = systemPrompts[safeLanguage] || systemPrompts['en'];
+      const languageInstruction = languageInstructions[safeLanguage] || languageInstructions['en'];
+      
+      if (!systemPrompt || !languageInstruction) {
+        console.error(`❌ Missing prompts for language: ${safeLanguage}, falling back to template`);
+        return this.enhanceBettingContent(content, analysis, safeLanguage);
+      }
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: systemPrompts[request.language]
+            content: systemPrompt
           },
           { 
             role: "user", 
-            content: `${languageInstructions[request.language]}
+            content: `${languageInstruction}
 
 MATCH ANALYSIS DATA:
 ${JSON.stringify(analysisData, null, 2)}

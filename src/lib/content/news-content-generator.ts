@@ -85,8 +85,8 @@ export class OptimizedNewsContentGenerator {
       // Step 1: Get RSS news feeds (with caching)
       const rssNews = await this.fetchRSSNewsOptimized();
       if (rssNews.length === 0) {
-        console.log(`❌ No RSS news found`);
-        return null;
+        console.log(`❌ No RSS news found, attempting AI-generated fallback news`);
+        return await this.generateFallbackNewsContent(request);
       }
       console.log(`✅ Fetched ${rssNews.length} news items in ${Date.now() - startTime}ms`);
 
@@ -925,6 +925,153 @@ export class OptimizedNewsContentGenerator {
     };
     
     return Math.ceil(wordCount * (tokenMultiplier['en'] || 0.75));
+  }
+
+  /**
+   * 🔄 Generate fallback news content when RSS feeds fail
+   */
+  private async generateFallbackNewsContent(request: NewsGenerationRequest): Promise<GeneratedNews | null> {
+    console.log(`🔄 Generating AI fallback news content for ${request.language}`);
+    
+    try {
+      const openai = await getOpenAIClient();
+      if (!openai) {
+        console.log('❌ OpenAI not available for fallback news, returning basic template');
+        return this.createBasicFallbackNews(request);
+      }
+
+      const currentDate = new Date().toLocaleDateString();
+      const topicPrompts = {
+        'en': `Create football news content for today (${currentDate}). Write about general football topics like transfer rumors, upcoming matches, league updates, or player performances. Make it timely and engaging.`,
+        'am': `ለዛሬ (${currentDate}) የእግር ኳስ ዜና ይፍጠሩ። የተጫዋች ዝውውር፣ የሊግ ዝማኔዎች፣ ወይም አመቺ የእግር ኳስ ርዕሶች ላይ በአማርኛ ይፃፉ።`,
+        'sw': `Unda habari za mpira wa miguu za leo (${currentDate}). Andika kuhusu mada za mpira kama vile uhamisho wa wachezaji, mechi zinazokuja, au maendeleo ya ligi.`
+      };
+
+      const systemPrompts = {
+        'en': `You are a football journalist creating daily news content. Write 4-5 complete sentences about current football topics. Include emojis naturally. End with hashtags #Football #Sports #News`,
+        'am': `እርስዎ የእግር ኳስ ዜና ጸሐፊ ናቸው። ስለ ወቅታዊ እግር ኳስ ርዕሶች 4-5 ሙሉ ዓረፍተ ነገሮች ይፃፉ። ተፈጥሮአዊ ኢሞጂዎችን ያካትቱ። በ #እግርኳስ #ስፖርት #ዜና ይጨርሱ`,
+        'sw': `Wewe ni mwandishi wa habari za mpira wa miguu. Andika sentensi 4-5 kamili kuhusu mada za mpira za sasa. Jumuisha emoji kwa kawaida. Malizia na hashtags #MpiraMiguu #Michezo #Habari`
+      };
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompts[request.language] || systemPrompts['en'] },
+          { role: "user", content: topicPrompts[request.language] || topicPrompts['en'] }
+        ],
+        max_tokens: 400,
+        temperature: 0.8
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      if (!content) {
+        return this.createBasicFallbackNews(request);
+      }
+
+      // Generate an image for the fallback news
+      const imageUrl = await this.generateFallbackNewsImage(request.language);
+
+      return {
+        title: this.getFallbackNewsTitle(request.language),
+        content: content,
+        imageUrl: imageUrl,
+        sourceUrl: `https://telegrambotsport.vercel.app/news/fallback/${Date.now()}`,
+        aiEditedContent: content, // Already AI generated
+        metadata: {
+          language: request.language,
+          source: 'AI Generated Fallback',
+          contentId: `fallback_${Date.now()}`,
+          generatedAt: new Date().toISOString(),
+          relevanceScore: 75, // Good baseline score
+          telegramEnhancements: {
+            protectContent: false,
+            enableShareButton: true,
+            enableWebApp: true,
+            priority: 'normal',
+            spoilerImage: false
+          }
+        }
+      };
+
+    } catch (error) {
+      console.error('❌ Error generating fallback news:', error);
+      return this.createBasicFallbackNews(request);
+    }
+  }
+
+  /**
+   * 📰 Create basic template fallback news when AI fails
+   */
+  private createBasicFallbackNews(request: NewsGenerationRequest): GeneratedNews {
+    const templates = {
+      'en': {
+        title: '⚽ Daily Football Updates',
+        content: `🏆 Stay updated with the latest football news and match results.\n\n📊 Check back soon for fresh updates from leagues around the world.\n\n⚽ Your source for reliable football content!\n\n#Football #Sports #Updates`
+      },
+      'am': {
+        title: '⚽ የእግር ኳስ ዕለታዊ ዝማኔዎች',
+        content: `🏆 ከዓለም አቀፍ እግር ኳስ ዓለም የቅርብ ጊዜ ዜናዎች ጋር ይዘምኑ።\n\n📊 ከተለያዩ ሊጎች የሚመጡ አዳዲስ መረጃዎች ለማየት በቅርቡ ይመለሱ።\n\n⚽ ለአስተማማኝ እግር ኳስ ይዘት የእርስዎ ምንጭ!\n\n#እግርኳስ #ስፖርት #ዝማኔዎች`
+      },
+      'sw': {
+        title: '⚽ Habari za Kila Siku za Mpira',
+        content: `🏆 Baki umejua habari za hivi karibuni za mpira wa miguu na matokeo ya mechi.\n\n📊 Rudi hivi karibuni kwa habari mpya kutoka ligi duniani.\n\n⚽ Chanzo chako cha kuaminika cha maudhui ya mpira!\n\n#MpiraMiguu #Michezo #Habari`
+      }
+    };
+
+    const template = templates[request.language] || templates['en'];
+
+    return {
+      title: template.title,
+      content: template.content,
+      sourceUrl: `https://telegrambotsport.vercel.app/news/template/${Date.now()}`,
+      metadata: {
+        language: request.language,
+        source: 'Template Fallback',
+        contentId: `template_${Date.now()}`,
+        generatedAt: new Date().toISOString(),
+        relevanceScore: 60,
+        telegramEnhancements: {
+          protectContent: false,
+          enableShareButton: true,
+          enableWebApp: true,
+          priority: 'normal'
+        }
+      }
+    };
+  }
+
+  /**
+   * 🖼️ Generate fallback news image
+   */
+  private async generateFallbackNewsImage(language: string): Promise<string | undefined> {
+    try {
+      const prompts = {
+        'en': 'Football stadium atmosphere with fans cheering, modern sports photography style',
+        'am': 'Ethiopian football fans celebrating in stadium, vibrant atmosphere, sports photography',
+        'sw': 'African football stadium with passionate fans, colorful banners, sports photography'
+      };
+
+      return await aiImageGenerator.generateImage({
+        type: 'news',
+        prompt: prompts[language] || prompts['en'],
+        language: language as 'en' | 'am' | 'sw'
+      });
+    } catch (error) {
+      console.error('❌ Error generating fallback news image:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * 📰 Get fallback news title
+   */
+  private getFallbackNewsTitle(language: string): string {
+    const titles = {
+      'en': '⚽ Football News Update',
+      'am': '⚽ የእግር ኳስ ዜና ዝማኔ', 
+      'sw': '⚽ Habari za Mpira'
+    };
+    return titles[language] || titles['en'];
   }
 }
 

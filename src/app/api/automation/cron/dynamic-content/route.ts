@@ -17,10 +17,10 @@ let contentPatternsCache: {
 } = {
   lastExecuted: {},
   cooldownPeriods: {
-    'news': 3 * 60 * 60 * 1000, // 3 hours
-    'polls': 4 * 60 * 60 * 1000, // 4 hours  
-    'coupons': 6 * 60 * 60 * 1000, // 6 hours
-    'betting': 2 * 60 * 60 * 1000 // 2 hours
+    'news': 2 * 60 * 60 * 1000, // 2 hours
+    'polls': 3 * 60 * 60 * 1000, // 3 hours  
+    'coupons': 4 * 60 * 60 * 1000, // 4 hours
+    'betting': 1 * 60 * 60 * 1000 // 1 hour
   }
 };
 
@@ -97,10 +97,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 🚀 OPTIMIZED GENERAL CONTENT: Execute with smart cooldown management
+    // Always check optimized patterns regardless of scheduled content
+    console.log('🔄 Checking optimized content patterns...');
+    const generalContentResult = await executeOptimizedContentPatterns(currentHour, currentMinute);
+    
     if (!dueContent || dueContent.length === 0) {
-      console.log('ℹ️ No scheduled content due, checking optimized content patterns...');
-      
-      const generalContentResult = await executeOptimizedContentPatterns(currentHour, currentMinute);
+      console.log('ℹ️ No scheduled content due, using optimized content patterns only');
       
       if (generalContentResult.executed > 0) {
         const duration = Date.now() - startTime;
@@ -144,7 +146,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`📋 Found ${dueContent.length} content items due for execution`);
+    console.log(`📋 Found ${dueContent.length} scheduled content items due for execution`);
+    
+    // Track total execution count including both scheduled and pattern-based content
+    executedContent += generalContentResult.executed;
 
     // Process each due content item
     for (const contentItem of dueContent) {
@@ -243,10 +248,11 @@ async function executeScheduledContent(contentItem: any, isMatchBased: boolean =
     const contentRouter = new ContentRouter();
     const telegramDistributor = new TelegramDistributor();
 
-    // Prepare content request for ContentRouter
+    // Prepare content request for ContentRouter with safe language handling
+    const safeLanguage = contentItem.language || 'en'; // Default to English if undefined
     const contentRequest = {
       type: contentItem.content_type as any, // Map to ContentRouter's ContentType
-      language: contentItem.language,
+      language: safeLanguage,
       maxItems: 1, // Generate single piece of content for this match
       channelId: 'scheduled-content',
       
@@ -307,7 +313,7 @@ async function executeScheduledContent(contentItem: any, isMatchBased: boolean =
           language: contentItem.language,
           content_items: result.contentItems
         },
-        language: contentItem.language as 'en' | 'am' | 'sw',
+        language: safeLanguage as 'en' | 'am' | 'sw',
         mode: contentItem.content_type,
         targetChannels: contentItem.target_channels,
         includeImages: true
@@ -438,59 +444,111 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
   const importanceBoost = smartTimingResult.importanceBoost;
   console.log(`🚀 Smart timing: ${smartTimingResult.reasoning} (boost: ${importanceBoost}x)`);
 
-  // 📰 OPTIMIZED NEWS PATTERNS: 9:00, 15:00, 21:00 (with cooldown protection)
-  if (([9, 15, 21].includes(currentHour) || (importanceBoost >= 1.5 && smartTimingResult.isOptimalTime)) && canExecuteContent('news')) {
+  // 📰 OPTIMIZED NEWS PATTERNS: Every 3 hours (9, 12, 15, 17, 18, 21) + importance boost
+  if (([9, 12, 15, 17, 18, 21].includes(currentHour) || (importanceBoost >= 1.5 && smartTimingResult.isOptimalTime)) && canExecuteContent('news')) {
     console.log(`📰 Executing optimized news pattern at ${currentHour}:00`);
-    try {
-      const newsResult = await contentRouter.generateContent({
-        type: 'news',
-        language: 'en', // Default to English, channels will auto-detect their language
-        maxItems: 1
-      });
+    
+    // 🌍 Get all active channels to generate content for each language
+    const { data: channels } = await supabase
+      .from('channels')
+      .select('id, language, name')
+      .eq('is_active', true);
 
-      if (newsResult.contentItems && newsResult.contentItems.length > 0) {
-        await telegramDistributor.sendContentToTelegram({
-          content: newsResult.contentItems[0],
-          language: 'en',
-          mode: 'optimized_scheduler_news',
-          includeImages: true
-        });
-        executed++;
-        patterns.push(`news_${currentHour}h_optimized`);
-        contentPatternsCache.lastExecuted['news'] = now;
-        optimizations.push('news_cooldown_updated');
-        console.log(`✅ Optimized news pattern executed successfully`);
+    if (channels && channels.length > 0) {
+      // Group channels by language
+      const languageGroups = channels.reduce((groups: any, channel: any) => {
+        const lang = channel.language || 'en';
+        if (!groups[lang]) groups[lang] = [];
+        groups[lang].push(channel);
+        return groups;
+      }, {});
+
+      // Generate content for each language
+      for (const [language, languageChannels] of Object.entries(languageGroups)) {
+        try {
+          console.log(`📰 Generating news for ${languageChannels.length} channels in ${language}`);
+          
+          const newsResult = await contentRouter.generateContent({
+            type: 'news',
+            language: language as 'en' | 'am' | 'sw',
+            maxItems: 1,
+            channelId: 'optimized-scheduler',
+            targetChannels: languageChannels.map((ch: any) => ch.id)
+          });
+
+          if (newsResult.contentItems && newsResult.contentItems.length > 0) {
+            await telegramDistributor.sendContentToTelegram({
+              content: newsResult.contentItems[0],
+              language: language as 'en' | 'am' | 'sw',
+              mode: 'optimized_scheduler_news',
+              targetChannels: languageChannels.map((ch: any) => ch.id),
+              includeImages: true
+            });
+            executed++;
+            patterns.push(`news_${currentHour}h_${language}_optimized`);
+            console.log(`✅ Optimized news pattern executed successfully for ${language}`);
+          }
+        } catch (error) {
+          console.error(`❌ Optimized news pattern failed for ${language}:`, error);
+        }
       }
-    } catch (error) {
-      console.error(`❌ Optimized news pattern failed:`, error);
+      
+      contentPatternsCache.lastExecuted['news'] = now;
+      optimizations.push('news_cooldown_updated');
     }
   }
 
-  // 📊 OPTIMIZED POLLS PATTERNS: 7:00, 13:00, 19:00 (with cooldown protection)
-  if (([7, 13, 19].includes(currentHour) || (importanceBoost >= 2 && smartTimingResult.isOptimalTime)) && canExecuteContent('polls')) {
+  // 📊 OPTIMIZED POLLS PATTERNS: Multiple times per day (7, 13, 17, 19) + importance boost
+  if (([7, 13, 17, 19].includes(currentHour) || (importanceBoost >= 2 && smartTimingResult.isOptimalTime)) && canExecuteContent('polls')) {
     console.log(`📊 Executing optimized polls pattern at ${currentHour}:00`);
-    try {
-      const pollsResult = await contentRouter.generateContent({
-        type: 'polls',
-        language: 'en',
-        maxItems: 1
-      });
+    
+    // 🌍 Get all active channels to generate content for each language
+    const { data: channels } = await supabase
+      .from('channels')
+      .select('id, language, name')
+      .eq('is_active', true);
 
-      if (pollsResult.contentItems && pollsResult.contentItems.length > 0) {
-        await telegramDistributor.sendContentToTelegram({
-          content: pollsResult.contentItems[0],
-          language: 'en',
-          mode: 'optimized_scheduler_polls',
-          includeImages: true
-        });
-        executed++;
-        patterns.push(`polls_${currentHour}h_optimized`);
-        contentPatternsCache.lastExecuted['polls'] = now;
-        optimizations.push('polls_cooldown_updated');
-        console.log(`✅ Optimized polls pattern executed successfully`);
+    if (channels && channels.length > 0) {
+      // Group channels by language
+      const languageGroups = channels.reduce((groups: any, channel: any) => {
+        const lang = channel.language || 'en';
+        if (!groups[lang]) groups[lang] = [];
+        groups[lang].push(channel);
+        return groups;
+      }, {});
+
+      // Generate content for each language
+      for (const [language, languageChannels] of Object.entries(languageGroups)) {
+        try {
+          console.log(`📊 Generating polls for ${languageChannels.length} channels in ${language}`);
+          
+          const pollsResult = await contentRouter.generateContent({
+            type: 'polls',
+            language: language as 'en' | 'am' | 'sw',
+            maxItems: 1,
+            channelId: 'optimized-scheduler',
+            targetChannels: languageChannels.map((ch: any) => ch.id)
+          });
+
+          if (pollsResult.contentItems && pollsResult.contentItems.length > 0) {
+            await telegramDistributor.sendContentToTelegram({
+              content: pollsResult.contentItems[0],
+              language: language as 'en' | 'am' | 'sw',
+              mode: 'optimized_scheduler_polls',
+              targetChannels: languageChannels.map((ch: any) => ch.id),
+              includeImages: true
+            });
+            executed++;
+            patterns.push(`polls_${currentHour}h_${language}_optimized`);
+            console.log(`✅ Optimized polls pattern executed successfully for ${language}`);
+          }
+        } catch (error) {
+          console.error(`❌ Optimized polls pattern failed for ${language}:`, error);
+        }
       }
-    } catch (error) {
-      console.error(`❌ Optimized polls pattern failed:`, error);
+      
+      contentPatternsCache.lastExecuted['polls'] = now;
+      optimizations.push('polls_cooldown_updated');
     }
   }
 
@@ -522,32 +580,58 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
     }
   }
 
-  // 📱 OPTIMIZED SMART PUSH PATTERNS: Dynamic + live match periods (with cooldown)
-  if (([19].includes(currentHour) || (importanceBoost >= 2.5 && smartTimingResult.isOptimalTime)) && canExecuteContent('betting')) {
+  // 📱 OPTIMIZED BETTING PATTERNS: Multiple times (15, 17, 19, 21) + live match periods
+  if (([15, 17, 19, 21].includes(currentHour) || (importanceBoost >= 2.5 && smartTimingResult.isOptimalTime)) && canExecuteContent('betting')) {
     console.log(`📱 Executing optimized smart push pattern at ${currentHour}:00`);
-    try {
-      // Smart push could be betting tips or analysis based on current matches
-      const smartPushResult = await contentRouter.generateContent({
-        type: 'betting',
-        language: 'en',
-        maxItems: 1
-      });
+    
+    // 🌍 Get all active channels to generate content for each language
+    const { data: channels } = await supabase
+      .from('channels')
+      .select('id, language, name')
+      .eq('is_active', true);
 
-      if (smartPushResult.contentItems && smartPushResult.contentItems.length > 0) {
-        await telegramDistributor.sendContentToTelegram({
-          content: smartPushResult.contentItems[0],
-          language: 'en',
-          mode: 'optimized_scheduler_push',
-          includeImages: true
-        });
-        executed++;
-        patterns.push(`smart_push_${currentHour}h_optimized`);
-        contentPatternsCache.lastExecuted['betting'] = now;
-        optimizations.push('betting_cooldown_updated');
-        console.log(`✅ Optimized smart push pattern executed successfully`);
+    if (channels && channels.length > 0) {
+      // Group channels by language
+      const languageGroups = channels.reduce((groups: any, channel: any) => {
+        const lang = channel.language || 'en';
+        if (!groups[lang]) groups[lang] = [];
+        groups[lang].push(channel);
+        return groups;
+      }, {});
+
+      // Generate content for each language
+      for (const [language, languageChannels] of Object.entries(languageGroups)) {
+        try {
+          console.log(`📱 Generating betting content for ${languageChannels.length} channels in ${language}`);
+          
+          // Smart push could be betting tips or analysis based on current matches
+          const smartPushResult = await contentRouter.generateContent({
+            type: 'betting',
+            language: language as 'en' | 'am' | 'sw',
+            maxItems: 1,
+            channelId: 'optimized-scheduler',
+            targetChannels: languageChannels.map((ch: any) => ch.id)
+          });
+
+          if (smartPushResult.contentItems && smartPushResult.contentItems.length > 0) {
+            await telegramDistributor.sendContentToTelegram({
+              content: smartPushResult.contentItems[0],
+              language: language as 'en' | 'am' | 'sw',
+              mode: 'optimized_scheduler_push',
+              targetChannels: languageChannels.map((ch: any) => ch.id),
+              includeImages: true
+            });
+            executed++;
+            patterns.push(`smart_push_${currentHour}h_${language}_optimized`);
+            console.log(`✅ Optimized smart push pattern executed successfully for ${language}`);
+          }
+        } catch (error) {
+          console.error(`❌ Optimized smart push pattern failed for ${language}:`, error);
+        }
       }
-    } catch (error) {
-      console.error(`❌ Optimized smart push pattern failed:`, error);
+      
+      contentPatternsCache.lastExecuted['betting'] = now;
+      optimizations.push('betting_cooldown_updated');
     }
   }
 
