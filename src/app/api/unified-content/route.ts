@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🚀 Unified Content API: ${action} | Type: ${type} | Mode: ${mode} | Language: ${requestedLanguage || 'auto'}`);
+    console.log(`🎯 Enhanced features: Buttons: ${useChannelButtons}, Images: ${includeImages}, Manual: ${manualExecution}`);
 
     // Resolve target channels and language
     const channelResolution = await channelResolver.resolveTargetChannels({
@@ -114,15 +115,29 @@ export async function POST(request: NextRequest) {
 
     // 🎯 Extract channel settings for targeted content generation
     const firstChannel = channelResolution.resolvedChannels[0];
+    
+    // Merge database channel settings with any passed channel_config from dashboard
     const channelSettings = firstChannel ? {
       selected_leagues: firstChannel.selected_leagues,
       selected_teams: firstChannel.selected_teams,
       affiliate_code: firstChannel.affiliate_code,
       smart_scheduling: firstChannel.smart_scheduling,
-      max_posts_per_day: firstChannel.max_posts_per_day,
-      channel_name: firstChannel.name,
-      telegram_channel_id: firstChannel.telegram_channel_id
-    } : undefined;
+      max_posts_per_day: firstChannel.max_posts_per_day || body.channel_config?.max_posts_per_day,
+      channel_name: firstChannel.name || body.channel_config?.name,
+      telegram_channel_id: firstChannel.telegram_channel_id,
+      // Add additional config from dashboard if provided
+      content_types: body.channel_config?.content_types || firstChannel.content_types,
+      timezone: body.channel_config?.timezone || firstChannel.timezone,
+      preferred_post_times: body.channel_config?.preferred_post_times || firstChannel.preferred_post_times
+    } : body.channel_config;
+
+    // Log channel-specific configuration
+    if (channelSettings) {
+      console.log(`📊 Channel config: ${channelSettings.channel_name} (${language})`);
+      console.log(`🎯 Content types: ${JSON.stringify(channelSettings.content_types)}`);
+      console.log(`🌍 Timezone: ${channelSettings.timezone || 'default'}`);
+      console.log(`🔗 Affiliate: ${channelSettings.affiliate_code || 'none'}`);
+    }
 
     // Generate content using the content router with channel-specific settings
     const contentResult = await contentRouter.generateContent({
@@ -133,7 +148,7 @@ export async function POST(request: NextRequest) {
       customContent: body.custom_content,
       channelSettings,  // 🎯 Pass channel settings for targeted content
       useChannelButtons,  // 🔗 Enable channel-specific buttons
-      targetChannels: resolvedChannels  // 📡 Channel info for button customization
+      targetChannels: channelResolution.resolvedChannels  // 📡 Channel info for button customization
     });
 
     // Check if content generation failed

@@ -212,6 +212,62 @@ export default function Dashboard() {
     }
   };
 
+  const sendContentWithChannelConfig = async (channelId: string, contentType: string, channelName: string, channelLanguage: string) => {
+    const key = `${channelId}-${contentType}`;
+    setSendingContent(prev => ({ ...prev, [key]: true }));
+
+    try {
+      // Find the channel to get its full configuration
+      const channel = channels.find(c => c.id === channelId);
+      
+      const response = await fetch('/api/unified-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'send_now',
+          type: contentType,
+          language: channelLanguage, // Use channel's specific language
+          target_channels: [channelId],
+          manual_execution: true,
+          use_channel_buttons: true, // Enable channel-specific buttons and links
+          include_images: true,
+          // Pass channel-specific configuration
+          channel_config: {
+            name: channelName,
+            language: channelLanguage,
+            content_types: channel?.content_types,
+            max_posts_per_day: channel?.max_posts_per_day,
+            timezone: channel?.timezone,
+            preferred_post_times: channel?.preferred_post_times
+          }
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        const languageDisplay = getLanguageDisplay(channelLanguage);
+        alert(
+          `✅ ${getContentTypeDisplay(contentType)} sent successfully!\n\n` +
+          `📱 Channel: ${channelName}\n` +
+          `🌍 Language: ${languageDisplay}\n` +
+          `📊 Generated: ${result.statistics?.total_content_sent || 1} item(s)\n` +
+          `🎯 Content customized for this channel's settings`
+        );
+        fetchDashboardData(); // Refresh to update stats
+      } else {
+        throw new Error(result.error || 'Failed to send content');
+      }
+    } catch (error) {
+      console.error('Error sending content:', error);
+      alert(`❌ Error sending ${getContentTypeDisplay(contentType)} to ${channelName}:\n${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSendingContent(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+
   const getLanguageDisplay = (language: string) => {
     const languages: { [key: string]: string } = {
       'he': 'Hebrew',
@@ -671,6 +727,136 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Send Now Section - Quick Content Generation */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Send className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                Send Now - Generate & Send Content
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {safeChannels.filter(c => c.is_active).length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Bot className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="font-medium">No active channels</p>
+                  <p className="text-sm">Activate channels to start sending content</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {safeChannels.filter(c => c.is_active).map(channel => {
+                    // Get all possible content types with their configurations
+                    const allContentTypes = [
+                      { type: 'news', label: 'News', icon: Newspaper, color: 'bg-blue-500' },
+                      { type: 'betting', label: 'Betting', icon: TrendingUp, color: 'bg-green-500' },
+                      { type: 'analysis', label: 'Analysis', icon: BarChart3, color: 'bg-purple-500' },
+                      { type: 'live', label: 'Live', icon: Activity, color: 'bg-red-500' },
+                      { type: 'polls', label: 'Polls', icon: MessageSquare, color: 'bg-orange-500' },
+                      { type: 'daily_summary', label: 'Summary', icon: Users, color: 'bg-cyan-500' },
+                      { type: 'weekly_summary', label: 'Weekly', icon: Calendar, color: 'bg-indigo-500' },
+                      { type: 'coupons', label: 'Coupons', icon: Zap, color: 'bg-yellow-500' },
+                      { type: 'memes', label: 'Memes', icon: Bot, color: 'bg-pink-500' }
+                    ];
+
+                    // Filter content types based on channel configuration
+                    const getChannelContentTypes = (channel: Channel) => {
+                      if (!channel.content_types) {
+                        // If no content types configured, show all available
+                        return allContentTypes;
+                      }
+
+                      let enabledTypes: string[] = [];
+                      
+                      // Handle both object format {news: true, betting: true} and array format ['news', 'betting']
+                      if (Array.isArray(channel.content_types)) {
+                        enabledTypes = channel.content_types;
+                      } else if (typeof channel.content_types === 'object') {
+                        // Filter only the true values from the object
+                        enabledTypes = Object.keys(channel.content_types).filter(key => channel.content_types[key] === true);
+                      }
+
+                      // If no enabled types found, show basic content types
+                      if (enabledTypes.length === 0) {
+                        enabledTypes = ['news', 'betting', 'polls'];
+                      }
+
+                      // Return only the content types that are enabled for this channel
+                      return allContentTypes.filter(ct => enabledTypes.includes(ct.type));
+                    };
+
+                    const channelContentTypes = getChannelContentTypes(channel);
+
+                    return (
+                      <div key={channel.id} className="border rounded-lg p-4 bg-gray-50">
+                        {/* Channel Header */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg">{channel.name}</h3>
+                              <Badge variant={channel.is_active ? "default" : "secondary"}>
+                                {channel.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                              <Badge variant="outline">
+                                {getLanguageDisplay(channel.language)}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {channel.telegram_channel_id} • {channel.total_posts_sent || 0} posts sent
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Configured types: {getContentTypesDisplay(channel.content_types)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Content Type Buttons for this Channel */}
+                        {channelContentTypes.length === 0 ? (
+                          <div className="text-center py-4 text-gray-500">
+                            <p className="text-sm">No content types configured for this channel</p>
+                            <p className="text-xs">Configure content types in channel settings</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                            {channelContentTypes.map(({ type, label, icon: Icon, color }) => {
+                              const key = `${channel.id}-${type}`;
+                              const isLoading = sendingContent[key];
+                              const isAnySending = Object.values(sendingContent).some(Boolean);
+                              
+                              return (
+                                <Button
+                                  key={type}
+                                  onClick={() => sendContentWithChannelConfig(channel.id, type, channel.name, channel.language)}
+                                  disabled={isAnySending}
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-auto p-3 flex flex-col items-center gap-2 bg-white hover:bg-gray-50 relative"
+                                >
+                                  <div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center`}>
+                                    <Icon className="w-4 h-4 text-white" />
+                                  </div>
+                                  <span className="text-xs font-medium">{label}</span>
+                                  <span className="text-xs text-gray-400">
+                                    {getLanguageDisplay(channel.language).substring(0, 2)}
+                                  </span>
+                                  
+                                  {isLoading && (
+                                    <div className="absolute inset-0 bg-blue-50 bg-opacity-90 flex items-center justify-center rounded-lg">
+                                      <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                  )}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
