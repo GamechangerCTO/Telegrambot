@@ -152,6 +152,22 @@ export interface GeneratedSummary {
     charts?: string[];
     highlights?: string[];
   };
+  telegramEnhancements?: {
+    protectContent: boolean;
+    enableShareButton: boolean;
+    enableWebApp: boolean;
+    priority: 'high' | 'medium' | 'low';
+    inlineKeyboard: Array<Array<{
+      text: string;
+      callback_data?: string;
+      switch_inline_query?: string;
+      url?: string;
+    }>>;
+    messageThreadId?: number;
+    disableWebPagePreview: boolean;
+    parseMode: 'HTML' | 'Markdown' | 'MarkdownV2';
+    replyMarkup: 'inline_keyboard' | 'reply_keyboard' | 'none';
+  };
   metadata: {
     type: 'daily' | 'weekly';
     language: string;
@@ -228,6 +244,29 @@ export class DailyWeeklySummaryGenerator {
       summaryData,
       aiEditedContent,
       visualElements,
+      telegramEnhancements: {
+        protectContent: false,
+        enableShareButton: true,
+        enableWebApp: true,
+        priority: 'high',
+        inlineKeyboard: [
+          [
+            { text: '📊 Full Stats', callback_data: `stats_${summaryData.date}` },
+            { text: '⚽ Top Goals', callback_data: `goals_${summaryData.date}` }
+          ],
+          [
+            { text: '🔥 Match Highlights', callback_data: `highlights_${summaryData.date}` },
+            { text: '🏆 League Tables', callback_data: `tables_${summaryData.date}` }
+          ],
+          [
+            { text: '📱 Share Summary', switch_inline_query: `daily_summary_${summaryData.date}` }
+          ]
+        ],
+        messageThreadId: undefined,
+        disableWebPagePreview: false,
+        parseMode: 'HTML',
+        replyMarkup: 'inline_keyboard'
+      },
       metadata: {
         type: 'daily',
         language: request.language,
@@ -291,6 +330,29 @@ export class DailyWeeklySummaryGenerator {
       summaryData,
       aiEditedContent,
       visualElements,
+      telegramEnhancements: {
+        protectContent: false,
+        enableShareButton: true,
+        enableWebApp: true,
+        priority: 'high',
+        inlineKeyboard: [
+          [
+            { text: '📈 Week Stats', callback_data: `week_stats_${weekStart}` },
+            { text: '🏆 Team Rankings', callback_data: `rankings_${weekStart}` }
+          ],
+          [
+            { text: '🔮 Next Week', callback_data: `next_week_${weekStart}` },
+            { text: '📊 Form Guide', callback_data: `form_${weekStart}` }
+          ],
+          [
+            { text: '📱 Share Weekly Review', switch_inline_query: `weekly_review_${weekStart}` }
+          ]
+        ],
+        messageThreadId: undefined,
+        disableWebPagePreview: false,
+        parseMode: 'HTML',
+        replyMarkup: 'inline_keyboard'
+      },
       metadata: {
         type: 'weekly',
         language: request.language,
