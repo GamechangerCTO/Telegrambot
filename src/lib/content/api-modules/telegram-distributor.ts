@@ -808,12 +808,27 @@ export class TelegramDistributor {
    */
   private async sendBettingContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
     // Use the pre-formatted HTML content from the generator instead of reformatting
-    const bettingContent = content.content_items?.[0]?.content || content.content || 'Betting content not available';
+    let bettingContent = content.content_items?.[0]?.content || content.content || 'Betting content not available';
+    
+    // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
+    const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
+    if (bettingContent.length > maxLength) {
+      console.log(`⚠️ Betting content too long (${bettingContent.length} chars), truncating to ${maxLength}`);
+      bettingContent = this.truncateHTMLContent(bettingContent, maxLength);
+    }
     
     console.log(`🎯 Sending betting content with preserved HTML formatting (${bettingContent.length} chars)`);
     
     // Create interactive buttons for betting
     const keyboard = this.createBettingKeyboard(content, channel.language, buttonConfig);
+    
+    // FORCE HTML parsing by ensuring parse_mode is set correctly
+    const messageOptions = {
+      parse_mode: 'HTML' as const,
+      reply_markup: keyboard,
+      protect_content: true,
+      disable_web_page_preview: true
+    };
     
     // Send the content with preserved HTML formatting
     if (imageUrl) {
@@ -821,17 +836,13 @@ export class TelegramDistributor {
         chat_id: channel.telegram_channel_id,
         photo: imageUrl,
         caption: bettingContent,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-        protect_content: true
+        ...messageOptions
       });
     } else {
       return await enhancedAPI.sendMessage({
         chat_id: channel.telegram_channel_id,
         text: bettingContent,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-        protect_content: true
+        ...messageOptions
       });
     }
   }
@@ -841,12 +852,27 @@ export class TelegramDistributor {
    */
   private async sendNewsContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
     // Use the pre-formatted HTML content from the generator instead of reformatting
-    const newsContent = content.content_items?.[0]?.content || content.content || 'News content not available';
+    let newsContent = content.content_items?.[0]?.content || content.content || 'News content not available';
+    
+    // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
+    const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
+    if (newsContent.length > maxLength) {
+      console.log(`⚠️ News content too long (${newsContent.length} chars), truncating to ${maxLength}`);
+      newsContent = this.truncateHTMLContent(newsContent, maxLength);
+    }
     
     console.log(`📰 Sending news content with preserved HTML formatting (${newsContent.length} chars)`);
     
     // Create interactive buttons for news
     const keyboard = this.createNewsKeyboard(content, channel.language, buttonConfig);
+    
+    // FORCE HTML parsing by ensuring parse_mode is set correctly
+    const messageOptions = {
+      parse_mode: 'HTML' as const,
+      reply_markup: keyboard,
+      protect_content: true,
+      disable_web_page_preview: true
+    };
     
     // Send the content with preserved HTML formatting
     if (imageUrl) {
@@ -854,19 +880,60 @@ export class TelegramDistributor {
         chat_id: channel.telegram_channel_id,
         photo: imageUrl,
         caption: newsContent,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-        protect_content: true
+        ...messageOptions
       });
     } else {
       return await enhancedAPI.sendMessage({
         chat_id: channel.telegram_channel_id,
         text: newsContent,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-        protect_content: true
+        ...messageOptions
       });
     }
+  }
+
+  /**
+   * ✂️ Truncate HTML content while preserving formatting
+   */
+  private truncateHTMLContent(content: string, maxLength: number): string {
+    if (content.length <= maxLength) {
+      return content;
+    }
+
+    // Try to truncate at a sentence boundary first
+    const truncated = content.substring(0, maxLength);
+    const lastSentence = truncated.lastIndexOf('.');
+    const lastNewline = truncated.lastIndexOf('\n');
+    
+    // Find the best truncation point
+    let cutPoint = maxLength;
+    if (lastSentence > maxLength * 0.7) {
+      cutPoint = lastSentence + 1;
+    } else if (lastNewline > maxLength * 0.7) {
+      cutPoint = lastNewline;
+    }
+    
+    let result = content.substring(0, cutPoint);
+    
+    // Add continuation indicator
+    const continuationText = {
+      'en': '\n\n📖 <i>Continue reading...</i>',
+      'am': '\n\n📖 <i>ተጨማሪ ያንብቡ...</i>',
+      'sw': '\n\n📖 <i>Endelea kusoma...</i>'
+    };
+    
+    // Add appropriate continuation based on detected language
+    const isAmharic = /[\u1200-\u137F]/.test(result);
+    const isSwahili = /\b(na|ya|wa|la|kwa)\b/i.test(result);
+    
+    if (isAmharic) {
+      result += continuationText['am'];
+    } else if (isSwahili) {
+      result += continuationText['sw'];
+    } else {
+      result += continuationText['en'];
+    }
+    
+    return result;
   }
 
   /**
@@ -874,12 +941,27 @@ export class TelegramDistributor {
    */
   private async sendAnalysisContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
     // Use the pre-formatted HTML content from the generator instead of reformatting
-    const analysisContent = content.content_items?.[0]?.content || content.content || 'Analysis content not available';
+    let analysisContent = content.content_items?.[0]?.content || content.content || 'Analysis content not available';
+    
+    // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
+    const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
+    if (analysisContent.length > maxLength) {
+      console.log(`⚠️ Content too long (${analysisContent.length} chars), truncating to ${maxLength}`);
+      analysisContent = this.truncateHTMLContent(analysisContent, maxLength);
+    }
     
     console.log(`📊 Sending analysis content with preserved HTML formatting (${analysisContent.length} chars)`);
     
     // Create interactive buttons for analysis
     const keyboard = this.createAnalysisKeyboard(content, channel.language, buttonConfig);
+    
+    // FORCE HTML parsing by ensuring parse_mode is set correctly
+    const messageOptions = {
+      parse_mode: 'HTML' as const,
+      reply_markup: keyboard,
+      protect_content: true,
+      disable_web_page_preview: true
+    };
     
     // Send the content with preserved HTML formatting
     if (imageUrl) {
@@ -887,17 +969,13 @@ export class TelegramDistributor {
         chat_id: channel.telegram_channel_id,
         photo: imageUrl,
         caption: analysisContent,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-        protect_content: true
+        ...messageOptions
       });
     } else {
       return await enhancedAPI.sendMessage({
         chat_id: channel.telegram_channel_id,
         text: analysisContent,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-        protect_content: true
+        ...messageOptions
       });
     }
   }
@@ -922,26 +1000,44 @@ export class TelegramDistributor {
    * 📋 Send daily summary content with interactive features
    */
   private async sendDailySummaryContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    // For daily summary, we'll use news format with special category 'summary'
-    // This tells the Enhanced API to use the pre-formatted content as-is
-    const summaryData = this.extractSummaryData(content);
+    // Use the pre-formatted HTML content directly from the generator - NO double formatting
+    let summaryContent = content.content_items?.[0]?.content || content.content || 'Daily summary not available';
     
-    console.log(`📋 Sending daily summary content for ${channel.name}:`, {
-      title: summaryData.title,
-      contentLength: summaryData.content?.length || 0,
-      hasImage: !!imageUrl
-    });
+    // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
+    const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
+    if (summaryContent.length > maxLength) {
+      console.log(`⚠️ Summary content too long (${summaryContent.length} chars), truncating to ${maxLength}`);
+      summaryContent = this.truncateHTMLContent(summaryContent, maxLength);
+    }
     
-    return await enhancedAPI.sendNews({
-      chat_id: channel.telegram_channel_id,
-      title: summaryData.title,
-      content: summaryData.content,
-      language: channel.language,
-      images: imageUrl ? [imageUrl] : undefined,
-      source_url: undefined,
-      category: 'summary', // This is the key - tells formatNewsContent to use content as-is
-      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
-    });
+    console.log(`📋 Sending daily summary with preserved HTML formatting (${summaryContent.length} chars)`);
+    
+    // Create interactive buttons for summary
+    const keyboard = this.createNewsKeyboard(content, channel.language, buttonConfig);
+    
+    // FORCE HTML parsing by ensuring parse_mode is set correctly - NO double formatting
+    const messageOptions = {
+      parse_mode: 'HTML' as const,
+      reply_markup: keyboard,
+      protect_content: true,
+      disable_web_page_preview: true
+    };
+    
+    // Send the content with preserved HTML formatting directly - bypass sendNews formatting
+    if (imageUrl) {
+      return await enhancedAPI.sendPhoto({
+        chat_id: channel.telegram_channel_id,
+        photo: imageUrl,
+        caption: summaryContent,
+        ...messageOptions
+      });
+    } else {
+      return await enhancedAPI.sendMessage({
+        chat_id: channel.telegram_channel_id,
+        text: summaryContent,
+        ...messageOptions
+      });
+    }
   }
 
   /**

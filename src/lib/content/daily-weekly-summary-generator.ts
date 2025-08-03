@@ -1693,27 +1693,57 @@ export class DailyWeeklySummaryGenerator {
     };
     
     const formatInstructions = {
-      en: `Format your content using MODERN TELEGRAM HTML formatting:
-- Use <b>bold text</b> for titles and important information
-- Use <i>italic text</i> for descriptions and details
-- Use <code>monospace</code> for scores and numbers
-- Use Unicode box drawing characters for visual borders (━, ┏, ┓, ┗, ┛, ┃)
-- Include emojis strategically for visual appeal
-- Structure content with clear sections and spacing`,
-      am: `በዘመናዊ ቴሌግራም HTML ቅርጸት ይጻፉ:
-- ለርዕሶች እና አስፈላጊ መረጃዎች <b>ደማቅ ጽሑፍ</b> ይጠቀሙ
-- ለመግለጫዎች እና ዝርዝሮች <i>ዘንበል ያለ ጽሑፍ</i> ይጠቀሙ
-- ለውጤቶች እና ቁጥሮች <code>monospace</code> ይጠቀሙ
-- ለዕይታ ድንበሮች የዩኒኮድ ሳጥን መሳል ቁምፊዎችን ይጠቀሙ (━, ┏, ┓, ┗, ┛, ┃)
-- ለዕይታ ማሳያ emojis በስልት ያካትቱ
-- ዓይነቶችን በግልጽ ክፍሎች እና ክፍተት ያደራጁ`,
-      sw: `Tumia muundo wa kisasa wa Telegram HTML:
-- Tumia <b>maandishi mazito</b> kwa vichwa na taarifa muhimu
-- Tumia <i>maandishi ya italiki</i> kwa maelezo na undani
-- Tumia <code>monospace</code> kwa alama na namba
-- Tumia herufi za kuchora kisanduku cha Unicode kwa mipaka ya kuona (━, ┏, ┓, ┗, ┛, ┃)
-- Jumuisha emoji kwa mkakati wa kuona
-- Panga maudhui na sehemu na nafasi wazi`
+      en: `MANDATORY: Use ALL AVAILABLE Telegram HTML formatting features - BE EXTREMELY STRICT:
+      
+🔥 REQUIRED HTML TAGS - USE EVERY ONE THAT IS RELEVANT:
+• <b>BOLD</b> and <strong>STRONG</strong> - Main titles, team names, scores, important stats
+• <i>ITALIC</i> and <em>EMPHASIS</em> - Competition names, match descriptions, analysis insights
+• <u>UNDERLINE</u> and <ins>UNDERLINE</ins> - Highlight key statistics, record-breaking performances
+• <s>STRIKETHROUGH</s> and <del>STRIKETHROUGH</del> - Show upsets, surprising results
+• <code>MONOSPACE</code> - All scores, numbers, percentages, time stamps
+• <pre>PREFORMATTED CODE BLOCK</pre> - For structured data like league tables
+• <a href="URL">CLICKABLE LINKS</a> - Reference links (when relevant)
+• <span class="tg-spoiler">SPOILER TEXT</span> - Hidden content for dramatic reveals
+
+🎯 VISUAL STRUCTURE REQUIREMENTS:
+• Unicode box characters for ALL borders: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
+• Strategic emoji placement for visual hierarchy
+• Multiple formatting layers: <b><i>BOLD + ITALIC</i></b>, <u><code>UNDERLINE + CODE</code></u>
+• Clear section dividers and spacing`,
+      
+      am: `አስገዳጅ: ሁሉንም የሚገኙ ቴሌግራም HTML ቅርጸት ባህሪያት ይጠቀሙ - በጣም ጥብቅ ይሁኑ:
+
+🔥 ያስፈልጋሉ HTML ታጎች - ተዛማጅ የሆነውን እያንዳንዱን ይጠቀሙ:
+• <b>ደማቅ</b> እና <strong>ጠንካራ</strong> - ዋና ርዕሶች፣ የቡድን ስሞች፣ ውጤቶች፣ አስፈላጊ ስታትስ
+• <i>ዘንበል</i> እና <em>አጽንኦት</em> - የውድድር ስሞች፣ የጨዋታ መግለጫዎች፣ የትንታኔ ግንዛቤዎች
+• <u>ስር መስመር</u> እና <ins>ስር መስመር</ins> - ዋና ስታትስቲክስ፣ ሪከርድ-አሰባሪ አፈጻጸሞች ማጉላት
+• <s>መሰረዝ</s> እና <del>መሰረዝ</del> - የሚያስደንቁ ውጤቶች ማሳየት
+• <code>ሞኖስፔስ</code> - ሁሉም ውጤቶች፣ ቁጥሮች፣ ፐርሰንቴጅ፣ ጊዜ ማህተሞች
+• <pre>ቅድመ-ቅርጸት የኮድ ብሎክ</pre> - ለተዋቀረ ውሂብ እንደ ሊግ ሠንጠረዥ
+• <a href="URL">የሚጫን አገናኞች</a> - ማጣቀሻ አገናኞች (ተዛማጅ በሚሆንበት ጊዜ)
+• <span class="tg-spoiler">ስፖይለር ፅሁፍ</span> - ለድራማዊ መከፋፈቻዎች የተደበቀ ይዘት
+
+🎯 የእይታ መዋቅር መስፈርቶች:
+• ለሁሉም ድንበሮች የዩኒኮድ ሳጥን ቁምፊዎች: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
+• ለእይታ ሹመና ስልታዊ emoji አቀማመጥ
+• በርካታ የቅርጸት ንብርብሮች: <b><i>ደማቅ + ዘንበል</i></b>, <u><code>ስር መስመር + ኮድ</code></u>`,
+      
+      sw: `LAZIMA: Tumia VIPENGELE VYOTE vya uundaji wa Telegram HTML - KUWA MKALI SANA:
+
+🔥 HTML TAGS ZINAZOHITAJIKA - TUMIA KILA MOJA INAYOHUSIANA:
+• <b>NZITO</b> na <strong>IMARA</strong> - Vichwa vikuu, majina ya timu, alama, takwimu muhimu
+• <i>ITALIKI</i> na <em>MSISITIZO</em> - Majina ya mashindano, maelezo ya mechi, maarifa ya uchambuzi
+• <u>MSTARI CHINI</u> na <ins>MSTARI CHINI</ins> - Oanisha takwimu muhimu, utendaji wa kuvunja rekodi
+• <s>KUFUTA</s> na <del>KUFUTA</del> - Onyesha matokeo ya kushangaza
+• <code>MONOSPACE</code> - Alama zote, namba, asilimia, stempu za wakati
+• <pre>BLOCK YA NAMBARI ILIYOPANGWA MAPEMA</pre> - Kwa data iliyopangwa kama jedwali la ligi
+• <a href="URL">VIUNGO VINAVYOBONYWA</a> - Viungo vya marejeleo (vinapohusiana)
+• <span class="tg-spoiler">MAANDISHI YA SPOILER</span> - Maudhui yaliyofichwa kwa mafunuo ya kielezi
+
+🎯 MAHITAJI YA MUUNDO WA KUONA:
+• Herufi za kisanduku cha Unicode kwa mipaka yote: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
+• Uwekaji wa emoji wa kimkakati kwa utaratibu wa kuona
+• Safu nyingi za uundaji: <b><i>NZITO + ITALIKI</i></b>, <u><code>MSTARI CHINI + NAMBARI</code></u>`
     };
 
     const prompt = `You are a professional football journalist creating content for MODERN TELEGRAM with enhanced formatting. Create a comprehensive daily football summary based on the following data:
@@ -1736,17 +1766,24 @@ export class DailyWeeklySummaryGenerator {
     FORMATTING REQUIREMENTS:
     ${formatInstructions[language]}
     
-    CONTENT INSTRUCTIONS:
+    STRICT CONTENT INSTRUCTIONS - FOLLOW EXACTLY:
     1. ${languageInstructions[language]}
-    2. FOLLOW THE EXACT FORMAT from the template above with HTML tags
-    3. Use the SAME visual structure: title with separators, boxed statistics, enhanced sections
-    4. Include specific team names, scores, and competitions from the data above
-    5. Add intelligent analysis about what made these matches interesting
-    6. Calculate and include averages (goals per match, etc.)
-    7. Highlight high-scoring games (5+ goals) with 🔥 and upsets (3+ goal difference) with 😱
-    8. Include tomorrow's fixtures with importance indicators (🔥 HIGH, ⚡ MEDIUM, ⚽ LOW)
-    9. End with the call-to-action about interactive buttons
-    10. NO generic content - use ONLY the specific match data provided
+    2. MANDATORY: Use EVERY AVAILABLE HTML tag that is relevant to each piece of content
+    3. Team names: ALWAYS <b><strong>TEAM NAME</strong></b> or <b><i>TEAM NAME</i></b>
+    4. Scores: ALWAYS <code>X-X</code> format with monospace
+    5. Competitions: ALWAYS <i><em>Competition Name</em></i> with italic emphasis  
+    6. Key statistics: ALWAYS <u><code>NUMBER</code></u> with underline + monospace
+    7. Record-breaking performances: <u><ins>UNDERLINED EMPHASIS</ins></u>
+    8. Surprising results/upsets: <s><del>Expected result CROSSED OUT</del></s> → Actual result
+    9. Dramatic reveals: Use <span class="tg-spoiler">HIDDEN SPOILER TEXT</span> for suspense
+    10. League tables/structured data: Use <pre>PREFORMATTED BLOCKS</pre> when appropriate
+    11. High-scoring games (5+ goals): 🔥 <b><u>FIRE + BOLD + UNDERLINE</u></b>
+    12. Major upsets (3+ goal difference): 😱 <s><del>favorite team</del></s> → <b><strong>UPSET WINNER</strong></b>
+    13. Tomorrow's fixtures: <b>🔥 <u>HIGH PRIORITY</u></b>, <i>⚡ MEDIUM</i>, ⚽ <em>standard</em>
+    14. Multiple formatting layers: <b><i><u>BOLD + ITALIC + UNDERLINE</u></i></b> for ultra-important content
+    15. Box characters: Use ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋ for ALL visual borders and dividers
+    16. NO plain text allowed - EVERY word must have appropriate HTML formatting
+    17. END with call-to-action using <b><i>BOLD ITALIC COMBINATION</i></b>
     
     CRITICAL: Return content in the EXACT SAME HTML format as the template, maintaining the visual structure with borders, sections, and enhanced formatting.`;
 
