@@ -434,7 +434,8 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
   const smartTimingResult = await getCachedSmartTiming(currentHour, currentMinute);
   
   // 🚀 OPTIMIZATION: Execute only on scheduled times OR optimal periods
-  const isScheduledTime = currentMinute <= 5 || currentMinute >= 25 && currentMinute <= 35;
+  // Expanded time windows for better coverage: 0-10, 20-40 minutes past the hour
+  const isScheduledTime = currentMinute <= 10 || (currentMinute >= 20 && currentMinute <= 40);
   if (!isScheduledTime && !smartTimingResult.isOptimalTime) {
     optimizations.push('skipped_non_optimal_time');
     return { executed: 0, patterns: [], optimizations };
