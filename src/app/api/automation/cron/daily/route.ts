@@ -85,6 +85,7 @@ async function generateChannelSpecificContent(options: {
 }
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // מאלץ את Next.js לרצות את זה באופן דינמי
 
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Daily job started:', new Date().toISOString());

@@ -4,6 +4,9 @@ import { ContentRouter } from '@/lib/content/api-modules/content-router';
 import { TelegramDistributor } from '@/lib/content/api-modules/telegram-distributor';
 import { performanceMonitor, type PerformanceMetrics } from '@/lib/automation/performance-monitor';
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // מאלץ את Next.js לרצות את זה באופן דינמי
+
 // 🚀 PERFORMANCE OPTIMIZATION: Cache for smart timing results
 let smartTimingCache: {
   lastCheck: number;
@@ -414,8 +417,9 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
   const now = Date.now();
   
   // 🚀 Import content systems dynamically
-  const { contentRouter } = await import('@/lib/content/api-modules/content-router');
+  const { ContentRouter } = await import('@/lib/content/api-modules/content-router');
   const { TelegramDistributor } = await import('@/lib/content/api-modules/telegram-distributor');
+  const contentRouter = new ContentRouter();
   const telegramDistributor = new TelegramDistributor();
 
   // 🚀 PERFORMANCE OPTIMIZATION: Check cooldown periods first

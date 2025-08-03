@@ -3,6 +3,7 @@ import { LiveUpdatesGenerator } from '@/lib/content/live-updates-generator';
 import { FootballMatchScorer } from '@/lib/content/football-match-scorer';
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // מאלץ את Next.js לרצות את זה באופן דינמי
 
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Live updates job started:', new Date().toISOString());

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { unifiedFootballService } from '@/lib/content/unified-football-service';
 import { FootballMatchScorer } from '@/lib/content/football-match-scorer';
-import { smartContentScheduler } from '@/lib/automation/smart-content-scheduler';
+import { SmartContentScheduler } from '@/lib/automation/smart-content-scheduler';
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // מאלץ את Next.js לרצות את זה באופן דינמי
 
 export async function GET(request: NextRequest) {
   console.log('🌅 [CRON] Morning Discovery started:', new Date().toISOString());
@@ -142,6 +142,10 @@ async function discoverTodaysImportantMatches(): Promise<any[]> {
     // Get today's date
     const today = new Date().toISOString().split('T')[0];
     
+    // 🚀 Import unified football service dynamically
+    const { UnifiedFootballService } = await import('@/lib/content/unified-football-service');
+    const unifiedFootballService = new UnifiedFootballService();
+    
     // Get all matches for today
     const todayMatches = await unifiedFootballService.getMatchesByDate(today);
     console.log(`📅 Found ${todayMatches.length} total matches for ${today}`);
@@ -268,11 +272,19 @@ async function scheduleContentForMatch(match: any): Promise<number> {
 
     console.log(`🌍 Scheduling for languages: ${languages.join(', ')}`);
 
-    // Use SmartContentScheduler to create intelligent schedule
+    // Use SmartContentScheduler to create intelligent schedule  
+    const smartContentScheduler = new SmartContentScheduler();
     const scheduleItems = await smartContentScheduler.scheduleContentForMatch({
-      match,
-      languages,
-      targetChannels
+      matchId: match.id,
+      homeTeam: match.home_team,
+      awayTeam: match.away_team,
+      kickoffTime: match.kickoff_time,
+      importanceScore: match.importance_score,
+      channels: channels.map(ch => ({
+        id: ch.id,
+        language: ch.language,
+        timezone: 'UTC'
+      }))
     });
 
     console.log(`✅ Smart scheduling created ${scheduleItems.length} content items`);

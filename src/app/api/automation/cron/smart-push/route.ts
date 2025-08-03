@@ -4,6 +4,7 @@ import { SmartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // מאלץ את Next.js לרצות את זה באופן דינמי
 
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Smart push job started:', new Date().toISOString());

@@ -3,6 +3,7 @@ import { backgroundScheduler } from '@/lib/automation/background-scheduler';
 import { AutomationEngine } from '@/lib/automation/automation-engine';
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic' // מאלץ את Next.js לרצות את זה באופן דינמי
 
 export async function GET(request: NextRequest) {
   console.log('⏰ [CRON] Hourly system tasks started:', new Date().toISOString());
