@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         images_generated: contentResult?.processingInfo?.image_generation ? (contentResult?.content_items?.length || 0) : 0,
         average_ai_score: mode === 'ai_enhanced' ? 85 : 65,
         processing_time_seconds: Math.floor(Math.random() * 30) + 15,
-        fallback_used: contentResult.processingInfo.fallback_used
+        fallback_used: contentResult?.processingInfo?.fallback_used || false
       },
       processing_info: contentResult?.processingInfo || {},
       content_items: contentResult?.content_items || [],
@@ -235,11 +235,11 @@ export async function POST(request: NextRequest) {
           language: language,
           statistics: {
             channels_processed: targetChannels.length,
-            total_content_analyzed: contentResult.contentItems.length,
-            ai_recommendations_generated: mode === 'ai_enhanced' ? contentResult.contentItems.length * 2 : contentResult.contentItems.length,
-            fallback_used: contentResult.processingInfo.fallback_used
+            total_content_analyzed: contentResult?.content_items?.length || 0,
+            ai_recommendations_generated: mode === 'ai_enhanced' ? (contentResult?.content_items?.length || 0) * 2 : (contentResult?.content_items?.length || 0),
+            fallback_used: contentResult?.processingInfo?.fallback_used || false
           },
-          preview_items: contentResult.contentItems.map((item: any, index: number) => ({
+          preview_items: (contentResult?.content_items || []).map((item: any, index: number) => ({
             id: index + 1,
             title: item.title || `${type} content ${index + 1}`,
             type: type,
@@ -259,11 +259,11 @@ export async function POST(request: NextRequest) {
           language: language,
           scheduled_for: scheduleTime.toISOString(),
           statistics: {
-            content_scheduled: contentResult.contentItems.length,
+            content_scheduled: contentResult?.content_items?.length || 0,
             estimated_send_time: scheduleTime.toISOString(),
-            fallback_used: contentResult.processingInfo.fallback_used
+            fallback_used: contentResult?.processingInfo?.fallback_used || false
           },
-          message: `⏰ Scheduled ${contentResult.contentItems.length} ${type} items for ${scheduleTime.toLocaleString('he-IL')}`
+          message: `⏰ Scheduled ${contentResult?.content_items?.length || 0} ${type} items for ${scheduleTime.toLocaleString('he-IL')}`
         });
 
       default:

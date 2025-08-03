@@ -534,16 +534,18 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
           console.log(`📊 Generating polls for ${languageChannels.length} channels in ${language}`);
           
           const pollsResult = await contentRouter.generateContent({
-            type: 'polls',
+            contentType: 'polls',
             language: language as 'en' | 'am' | 'sw',
-            maxItems: 1,
-            channelId: 'optimized-scheduler',
-            targetChannels: languageChannels.map((ch: any) => ch.id)
+            channelIds: languageChannels.map((ch: any) => ch.id),
+            isAutomationExecution: true
           });
 
-          if (pollsResult.contentItems && pollsResult.contentItems.length > 0) {
+          if (pollsResult.success && pollsResult.content_items && pollsResult.content_items.length > 0) {
             await telegramDistributor.sendContentToTelegram({
-              content: pollsResult.contentItems[0],
+              content: {
+                content_type: 'polls',
+                content_items: pollsResult.content_items
+              },
               language: language as 'en' | 'am' | 'sw',
               mode: 'optimized_scheduler_polls',
               targetChannels: languageChannels.map((ch: any) => ch.id),
@@ -568,14 +570,18 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
     console.log(`🎫 Executing optimized coupons pattern at ${currentHour}:00`);
     try {
       const couponsResult = await contentRouter.generateContent({
-        type: 'coupons',
+        contentType: 'smart_push',
         language: 'en',
-        maxItems: 1
+        channelIds: ['optimized-scheduler'],
+        isAutomationExecution: true
       });
 
-      if (couponsResult.contentItems && couponsResult.contentItems.length > 0) {
+      if (couponsResult.success && couponsResult.content_items && couponsResult.content_items.length > 0) {
         await telegramDistributor.sendContentToTelegram({
-          content: couponsResult.contentItems[0],
+          content: {
+            content_type: 'smart_push',
+            content_items: couponsResult.content_items
+          },
           language: 'en',
           mode: 'optimized_scheduler_coupons',
           includeImages: true
@@ -617,16 +623,18 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
           
           // Smart push could be betting tips or analysis based on current matches
           const smartPushResult = await contentRouter.generateContent({
-            type: 'betting',
+            contentType: 'betting',
             language: language as 'en' | 'am' | 'sw',
-            maxItems: 1,
-            channelId: 'optimized-scheduler',
-            targetChannels: languageChannels.map((ch: any) => ch.id)
+            channelIds: languageChannels.map((ch: any) => ch.id),
+            isAutomationExecution: true
           });
 
-          if (smartPushResult.contentItems && smartPushResult.contentItems.length > 0) {
+          if (smartPushResult.success && smartPushResult.content_items && smartPushResult.content_items.length > 0) {
             await telegramDistributor.sendContentToTelegram({
-              content: smartPushResult.contentItems[0],
+              content: {
+                content_type: 'betting',
+                content_items: smartPushResult.content_items
+              },
               language: language as 'en' | 'am' | 'sw',
               mode: 'optimized_scheduler_push',
               targetChannels: languageChannels.map((ch: any) => ch.id),
