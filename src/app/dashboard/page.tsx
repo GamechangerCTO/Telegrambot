@@ -268,16 +268,34 @@ export default function Dashboard() {
       const result = await response.json();
       if (result.success) {
         const languageDisplay = getLanguageDisplay(channelLanguage);
-        alert(
-          `✅ ${getContentTypeDisplay(contentType)} sent successfully!\n\n` +
+        let message = `✅ ${getContentTypeDisplay(contentType)} content generated successfully!\n\n` +
           `📱 Channel: ${channelName}\n` +
           `🌍 Language: ${languageDisplay}\n` +
           `📊 Generated: ${result.statistics?.total_content_sent || 1} item(s)\n` +
-          `🎯 Content customized for this channel's settings`
-        );
+          `🎯 Content customized for this channel's settings`;
+        
+        // Check if Telegram delivery had issues
+        if (result.telegram && !result.telegram.success) {
+          message += `\n\n⚠️ Note: Content was generated but Telegram delivery encountered an issue:\n${result.telegram.error || 'Unknown Telegram error'}`;
+        } else {
+          message += `\n\n🚀 Successfully sent to Telegram!`;
+        }
+        
+        alert(message);
         fetchDashboardData(); // Refresh to update stats
       } else {
-        throw new Error(result.error || 'Failed to send content');
+        // Only fail if content generation itself failed
+        if (!result.content_items || result.content_items.length === 0) {
+          throw new Error(result.error || 'No content available');
+        } else {
+          // Content was generated but there was some other issue
+          alert(
+            `⚠️ ${getContentTypeDisplay(contentType)} content was generated but with warnings:\n\n` +
+            `📊 Generated: ${result.content_items.length} item(s)\n` +
+            `⚠️ Issue: ${result.error || 'Unknown issue'}`
+          );
+          fetchDashboardData(); // Still refresh as content was created
+        }
       }
     } catch (error) {
       console.error('Error sending content:', error);

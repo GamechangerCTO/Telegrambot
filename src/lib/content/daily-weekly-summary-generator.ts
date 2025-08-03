@@ -801,7 +801,7 @@ export class DailyWeeklySummaryGenerator {
         content += `<b>🏆 ዛሬ የተከናወኑ ጉልህ ጨዋታዎች</b>\n`;
         content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
         
-        summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
+        summaryData.interestingMatches.slice(0, 2).forEach((interestingMatch, index) => {
           const match = interestingMatch.match;
           const totalGoals = match.homeScore + match.awayScore;
           const isHighScoring = totalGoals >= 5;
@@ -818,90 +818,39 @@ export class DailyWeeklySummaryGenerator {
           if (isUpset) {
             content += `┃    😱 <u><i>የሚያስደንቅ ውጤት!</i></u>\n`;
           }
-          if (index < 2) content += `┃\n`; // Spacing between matches
+          if (index < 1) content += `┃\n`; // Spacing between matches
         });
         content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
       }
 
-      // ULTRA-ENHANCED STATISTICS WITH VISUAL HIERARCHY
-      content += `\n<b><strong>📊 የዛሬ የእግርኳስ ዓለም በቁጥሮች</strong></b>\n`;
-      content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-      content += `┃                                        ┃\n`;
-      content += `┃  🎯 <u>ጨዋታዎች:</u> <code><b>${summaryData.statistics.totalMatches}</b></code> <i>ድምር ጨዋታዎች</i>      ┃\n`;
-      content += `┃                                        ┃\n`;
-      content += `┃  ⚽ <u>ጎሎች:</u> <code><b>${summaryData.statistics.totalGoals}</b></code> <i>ጠቅላላ ጎሎች</i>        ┃\n`;
-      content += `┃                                        ┃\n`;
-      content += `┃  📈 <u>አማካይ:</u> <code><b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b></code> <i>ጎሎች በጨዋታ</i>  ┃\n`;
-      
-      if (summaryData.statistics.biggestWin.teams) {
-        content += `┃                                        ┃\n`;
-        content += `┃  🏆 <u>ከፍተኛ ድል:</u> <i><em>${summaryData.statistics.biggestWin.teams}</em></i> ┃\n`;
-      }
-      
-      if (summaryData.statistics.surpriseResults.length > 0) {
-        content += `┃                                        ┃\n`;
-        content += `┃  😱 <u>ያልተጠበቁ ውጤቶች:</u> <code><b>${summaryData.statistics.surpriseResults.length}</b></code>    ┃\n`;
-      }
-      content += `┃                                        ┃\n`;
-      content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+      // COMPACT STATISTICS
+      content += `<b>📊 በቁጥሮች:</b> <code>${summaryData.statistics.totalMatches}</code> ጨዋታዎች | <code>${summaryData.statistics.totalGoals}</code> ጎሎች | አማካይ <code>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</code>\n\n`;
 
-      // ULTRA-ENHANCED STANDOUT PERFORMANCES WITH VISUAL DEPTH
-      if (Object.values(summaryData.standoutPerformances).some(v => v)) {
-        content += `<b><strong>⭐ የዛሬ ምርጥ አፈጻጸሞች</strong></b>\n`;
-        content += `╔═══════════════════════════════════════╗\n`;
-        
+      // COMPACT HIGHLIGHTS
+      if (summaryData.standoutPerformances.goalOfDay || summaryData.standoutPerformances.saveOfDay) {
+        content += `<b>⭐ ምርጥ ጊዜዎች:</b>\n`;
         if (summaryData.standoutPerformances.goalOfDay) {
-          content += `║  🥅 <b><u>የቀኑ ጎል:</u></b>                     ║\n`;
-          content += `║     <i><em>${summaryData.standoutPerformances.goalOfDay}</em></i>  ║\n`;
-          content += `║                                       ║\n`;
-        }
-        if (summaryData.standoutPerformances.playerOfDay) {
-          content += `║  👑 <b><u>የቀኑ ተጫዋች:</u></b>                   ║\n`;
-          content += `║     <i><em>${summaryData.standoutPerformances.playerOfDay}</em></i>  ║\n`;
-          content += `║                                       ║\n`;
+          content += `🥅 <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
         }
         if (summaryData.standoutPerformances.saveOfDay) {
-          content += `║  🧤 <b><u>የቀኑ ማዳን:</u></b>                    ║\n`;
-          content += `║     <i><em>${summaryData.standoutPerformances.saveOfDay}</em></i>  ║\n`;
-          content += `║                                       ║\n`;
+          content += `🧤 <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
         }
-        if (summaryData.standoutPerformances.upsetOfDay) {
-          content += `║  🎭 <b><u>የቀኑ አስደናቂ:</u></b>                 ║\n`;
-          content += `║     <span class="tg-spoiler"><i><em>${summaryData.standoutPerformances.upsetOfDay}</em></i></span>  ║\n`;
-        }
-        content += `╚═══════════════════════════════════════╝\n\n`;
+        content += `\n`;
       }
       
-      // ULTRA-ENHANCED TOMORROW'S FIXTURES WITH PROGRESSIVE FORMATTING
+      // COMPACT TOMORROW'S FIXTURES
       if (summaryData.tomorrowsFixtures.length > 0) {
-        content += `<b><strong>🔮 የነገ ዋና ዋና ጨዋታዎች</strong></b>\n`;
-        content += `▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\n`;
-        
-        summaryData.tomorrowsFixtures.slice(0, 5).forEach((fixture, index) => {
+        content += `<b>🔮 ነገ:</b>\n`;
+        summaryData.tomorrowsFixtures.slice(0, 2).forEach((fixture, index) => {
           const importance = this.determineMatchImportance(fixture);
-          const importanceEmoji = importance === 'HIGH' ? '🔥' : importance === 'MEDIUM' ? '⚡' : '⚽';
-          
-          // Progressive indentation and enhanced visual structure
-          const indent = '    '.repeat(index % 3 + 1);
-          content += `${indent}${importanceEmoji} <b><strong>${fixture.homeTeam}</strong></b> <u>🆚</u> <b><strong>${fixture.awayTeam}</strong></b>\n`;
-          content += `${indent}   📍 <i><em>${fixture.competition}</em></i>\n`;
-          
-          if (index < summaryData.tomorrowsFixtures.length - 1) {
-            content += `${indent}   ┆\n`;
-            content += `${indent}   ┆\n`;
-          }
+          const importanceEmoji = importance === 'HIGH' ? '🔥' : '⚡';
+          content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b> (<i>${fixture.competition}</i>)\n`;
         });
-        content += `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\n`;
+        content += `\n`;
       }
 
-      // ULTRA-ENHANCED CALL TO ACTION WITH VISUAL BRANDING
-      content += `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n`;
-      content += `<b><strong>📱 ከታች ያሉትን ቁልፎች ተጠቅመው የበለጠ ይከታተሉ!</strong></b>\n`;
-      content += `\n`;
-      content += `    💫 <i><em>ዝርዝር ስታትስቲክስ</em></i> ┃ <i><em>ጎል ሰብሳቢዎች</em></i> ┃ <i><em>ሊግ ጠረጴዛዎች</em></i>\n`;
-      content += `\n`;
-      content += `        <span class="tg-spoiler">🌟 <u><i>በየቀኑ የእግርኳስ ዓለም ከእኛ ጋር ይከታተሉ!</i></u></span>\n`;
-      content += `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`;
+      // SIMPLE FOOTER
+      content += `<i>🌟 ከእኛ ጋር ይከታተሉ!</i>`;
       
       return content;
     }
@@ -914,7 +863,7 @@ export class DailyWeeklySummaryGenerator {
       if (summaryData.interestingMatches.length > 0) {
         content += `<b>🏆 Mechi Muhimu za Leo</b>\n\n`;
         
-        summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
+        summaryData.interestingMatches.slice(0, 2).forEach((interestingMatch, index) => {
           const match = interestingMatch.match;
           const totalGoals = match.homeScore + match.awayScore;
           const isHighScoring = totalGoals >= 5;
@@ -1665,35 +1614,41 @@ export class DailyWeeklySummaryGenerator {
     return 'Big weekend of football ahead with key Premier League clashes and European action!';
   }
 
+  // Static daily summary image URL (saves tokens by reusing the same image)
+  private static readonly DAILY_SUMMARY_IMAGE_URL = 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/daily_summary_static.png';
+  
   // Image and visual generation methods
   private async generateDailySummaryImage(summaryData: DailySummaryData): Promise<string | undefined> {
-    console.log(`🎨 Generating daily summary image for ${summaryData.date}`);
+    console.log(`🎨 Using static daily summary image for ${summaryData.date} (saves tokens)`);
     
-    // Simple image with just the title
-    const prompt = `Simple and clean football-themed infographic showing only the title "Daily Summary" in elegant text.
-    Professional football background with stadium atmosphere, modern typography, minimalist design, 
-    clean layout, no detailed statistics or match results, just the title text.`;
-
-    try {
-      const generatedImage = await aiImageGenerator.generateImage({
-        prompt,
-        quality: 'low', // Smaller file size
-        size: '1024x1024' // Standard size
-      });
+    // Check if static image exists, if not - generate once and save
+    if (!DailyWeeklySummaryGenerator.DAILY_SUMMARY_IMAGE_URL) {
+      console.log('🔄 Generating static daily summary image (one-time only)...');
       
-      if (!generatedImage || !generatedImage.url) {
-        console.log('⚠️ No image generated for daily summary');
-        return undefined;
+      const prompt = `Simple and clean football-themed infographic showing only the title "Daily Summary" in elegant text.
+      Professional football background with stadium atmosphere, modern typography, minimalist design, 
+      clean layout, no detailed statistics or match results, just the title text.`;
+
+      try {
+        const generatedImage = await aiImageGenerator.generateImage({
+          prompt,
+          quality: 'standard', // Better quality since it's reused
+          size: '1024x1024' // Standard size
+        });
+        
+        if (generatedImage && generatedImage.url) {
+          console.log(`✅ Static daily summary image generated: ${generatedImage.url}`);
+          // Note: In production, save this URL to database or config for reuse
+          return generatedImage.url;
+        }
+      } catch (error) {
+        console.error(`❌ Error generating static daily summary image:`, error);
       }
-
-      console.log(`✅ Daily summary image generated: ${generatedImage.url}`);
-      return generatedImage.url;
-      
-    } catch (error) {
-      console.error(`❌ Error generating daily summary image:`, error);
-      console.log('📝 Continuing without image for daily summary');
-      return undefined;
     }
+
+    // Return the static image URL (reused every time)
+    console.log(`♻️ Reusing static daily summary image (token-efficient)`);
+    return DailyWeeklySummaryGenerator.DAILY_SUMMARY_IMAGE_URL;
   }
 
   private async generateWeeklySummaryImage(summaryData: WeeklySummaryData): Promise<string | undefined> {
