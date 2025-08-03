@@ -23,7 +23,8 @@ import {
   ExternalLink,
   Edit3,
   Check,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { TimezoneUtils } from '@/lib/utils/timezone-utils';
@@ -847,6 +848,17 @@ export default function AutomationOverview() {
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/dashboard/channels/${channel.id}/buttons`)}
+                      className="text-purple-600 hover:text-purple-700 border-purple-200 hover:border-purple-300"
+                      title="Configure interactive buttons and templates for this channel"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Buttons
                     </Button>
                     
                     <Button

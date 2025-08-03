@@ -40,8 +40,9 @@ const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', native: 'English' },
   { code: 'am', name: 'Amharic', flag: '🇪🇹', native: 'አማርኛ' },
   { code: 'sw', name: 'Swahili', flag: '🇰🇪', native: 'Kiswahili' },
-  { code: 'he', name: 'Hebrew', flag: '🇮🇱', native: 'עברית' },
-  { code: 'fr', name: 'French', flag: '🇫🇷', native: 'Français' }
+  { code: 'fr', name: 'French', flag: '🇫🇷', native: 'Français' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦', native: 'العربية' },
+  { code: 'he', name: 'Hebrew', flag: '🇮🇱', native: 'עברית' }
 ];
 
 const POPULAR_LEAGUES = [
@@ -648,9 +649,31 @@ export default function ChannelSettings() {
           {/* Button Configuration Tab */}
           {activeTab === 'buttons' && (
             <div className="space-y-6">
+              {/* Advanced Button Configuration Link */}
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-blue-900">🎨 Advanced Button Configuration</h3>
+                      <p className="text-sm text-blue-700">
+                        Configure interactive buttons, templates, and behavior for your channel content
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => router.push(`/dashboard/channels/${channelId}/buttons`)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Manage Buttons
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader>
-                  <CardTitle>Social Media & Website Links</CardTitle>
+                  <CardTitle>Basic Links & URLs</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

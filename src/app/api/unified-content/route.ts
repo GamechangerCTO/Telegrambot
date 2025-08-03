@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     
     // Parse request parameters
     const action = (body.action || searchParams.get('action') || 'send_now') as ActionType;
-    const type = (body.type || body.contentType || searchParams.get('type') || 'news') as ContentType;
+    const type = (body.type || body.contentType || body.content_type || searchParams.get('type') || 'news') as ContentType;
     const mode = (body.mode || searchParams.get('mode') || 'ai_enhanced') as ModeType;
     const requestedLanguage = (body.language || searchParams.get('language')) as Language;
     const maxItems = body.max_posts_per_channel || 2;

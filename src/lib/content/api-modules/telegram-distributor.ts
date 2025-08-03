@@ -11,6 +11,7 @@ import { aiImageGenerator } from '@/lib/content/ai-image-generator';
 import { Language } from './channel-resolver';
 import { ContentConfigUtils } from './content-config';
 import { contentSpamPreventer } from '@/lib/utils/content-spam-preventer';
+import { enhancedTelegramAPI, EnhancedTelegramAPI } from '../../telegram/enhanced-telegram-api';
 
 export interface TelegramDistributionOptions {
   content: any;
@@ -326,30 +327,89 @@ export class TelegramDistributor {
         results: pollResults
       };
     } else {
-      // Regular content sending
-      const telegramChannels = channels.map(channel => ({
-        botToken: channel.bot_token,
-        channelId: channel.telegram_channel_id,
-        name: channel.name,
-        language: channel.language
-      }));
+      // Enhanced content sending with interactive features
+      console.log('🚀 Using Enhanced Telegram API for interactive content...');
+      
+      const results = [];
+      let successCount = 0;
+      let failedCount = 0;
 
-      const telegramResult = await telegramSender.sendToMultipleChannels(
-        telegramChannels,
-        messageContent,
-        imageUrl,
-        keyboard,
-        telegramSettings.disableNotification,  // 🌙 Smart silent messaging
-        telegramSettings.protectContent,      // 🛡️ Content protection
-        telegramSettings.hasSpoiler          // 🙈 Spoiler images
-      );
+      for (const channel of channels) {
+        try {
+          // Create Enhanced API instance with channel's bot token
+          const enhancedAPI = new EnhancedTelegramAPI(channel.bot_token);
+          
+          // Load channel-specific button configuration
+          const buttonConfig = await this.loadChannelButtonConfig(channel.id);
+          console.log(`🔗 Loaded button config for ${channel.name}:`, buttonConfig ? 'Custom' : 'Default');
+          
+          let sendResult;
+          
+          // Determine content type and send with appropriate enhanced method
+          const contentType = content.content_type || content.type || 'unknown';
+          
+          console.log(`📤 Sending ${contentType} to ${channel.name} (${channel.language}) with enhanced features...`);
+          
+          // Apply channel-specific button configuration
+          this.applyChannelButtonConfig(enhancedAPI, buttonConfig, channel.id);
+          
+          switch (contentType) {
+            case 'betting':
+              sendResult = await this.sendBettingContent(enhancedAPI, channel, content, imageUrl, buttonConfig);
+              break;
+              
+            case 'news':
+              sendResult = await this.sendNewsContent(enhancedAPI, channel, content, imageUrl, buttonConfig);
+              break;
+              
+            case 'analysis':
+              sendResult = await this.sendAnalysisContent(enhancedAPI, channel, content, imageUrl, buttonConfig);
+              break;
+              
+            case 'live_updates':
+              sendResult = await this.sendLiveUpdatesContent(enhancedAPI, channel, content, imageUrl, buttonConfig);
+              break;
+              
+            case 'daily_summary':
+              sendResult = await this.sendDailySummaryContent(enhancedAPI, channel, content, imageUrl, buttonConfig);
+              break;
+              
+            default:
+              // Default enhanced content with interactive buttons
+              sendResult = await this.sendGenericEnhancedContent(enhancedAPI, channel, content, messageContent, imageUrl, buttonConfig);
+          }
+          
+          if (sendResult && sendResult.result) {
+            successCount++;
+            results.push({
+              channelName: channel.name,
+              success: true,
+              messageId: sendResult.result.message_id,
+              channelId: channel.telegram_channel_id
+            });
+            console.log(`✅ Enhanced message sent successfully to ${channel.name}`);
+          } else {
+            throw new Error('No result returned from Enhanced API');
+          }
+          
+        } catch (error) {
+          console.error(`❌ Enhanced sending failed for ${channel.name}:`, error);
+          failedCount++;
+          results.push({
+            channelName: channel.name,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            channelId: channel.telegram_channel_id
+          });
+        }
+      }
 
-      console.log(`✅ Distribution completed: ${telegramResult.success}/${telegramResult.success + telegramResult.failed} channels`);
+      console.log(`✅ Enhanced distribution completed: ${successCount}/${successCount + failedCount} channels`);
       
       return {
-        success: telegramResult.success > 0,
-        channels: telegramResult.success + telegramResult.failed,
-        results: telegramResult.results
+        success: successCount > 0,
+        channels: successCount + failedCount,
+        results
       };
     }
   }
@@ -739,6 +799,257 @@ export class TelegramDistributor {
       hasSpoiler: telegramEnhancements.spoilerImage || false,
       priority: telegramEnhancements.priority || 'normal'
     };
+  }
+
+  // ====== ENHANCED CONTENT SENDING METHODS ======
+
+  /**
+   * 🎯 Send betting content with interactive features
+   */
+  private async sendBettingContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
+    const bettingData = this.extractBettingData(content);
+    
+    return await enhancedAPI.sendBettingTips({
+      chat_id: channel.telegram_channel_id,
+      match: bettingData.match,
+      tips: bettingData.tips,
+      language: channel.language,
+      image_url: imageUrl,
+      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+    });
+  }
+
+  /**
+   * 📰 Send news content with interactive features
+   */
+  private async sendNewsContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
+    const newsData = this.extractNewsData(content);
+    
+    return await enhancedAPI.sendNews({
+      chat_id: channel.telegram_channel_id,
+      title: newsData.title,
+      content: newsData.content,
+      language: channel.language,
+      images: imageUrl ? [imageUrl] : undefined,
+      source_url: newsData.sourceUrl,
+      category: newsData.category || 'general',
+      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+    });
+  }
+
+  /**
+   * 📊 Send analysis content with interactive features
+   */
+  private async sendAnalysisContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
+    const analysisData = this.extractAnalysisData(content);
+    
+    // For analysis, we'll use the betting tips format with analysis-specific data
+    return await enhancedAPI.sendBettingTips({
+      chat_id: channel.telegram_channel_id,
+      match: analysisData.match,
+      tips: analysisData.insights,
+      language: channel.language,
+      image_url: imageUrl,
+      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+    });
+  }
+
+  /**
+   * 🔴 Send live updates content with interactive features
+   */
+  private async sendLiveUpdatesContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
+    const liveData = this.extractLiveData(content);
+    
+    return await enhancedAPI.sendLiveUpdate({
+      chat_id: channel.telegram_channel_id,
+      match: liveData.match,
+      score: liveData.score,
+      events: liveData.events,
+      language: channel.language,
+      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+    });
+  }
+
+  /**
+   * 📋 Send daily summary content with interactive features
+   */
+  private async sendDailySummaryContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
+    // For daily summary, we'll use news format with special category 'summary'
+    // This tells the Enhanced API to use the pre-formatted content as-is
+    const summaryData = this.extractSummaryData(content);
+    
+    console.log(`📋 Sending daily summary content for ${channel.name}:`, {
+      title: summaryData.title,
+      contentLength: summaryData.content?.length || 0,
+      hasImage: !!imageUrl
+    });
+    
+    return await enhancedAPI.sendNews({
+      chat_id: channel.telegram_channel_id,
+      title: summaryData.title,
+      content: summaryData.content,
+      language: channel.language,
+      images: imageUrl ? [imageUrl] : undefined,
+      source_url: undefined,
+      category: 'summary', // This is the key - tells formatNewsContent to use content as-is
+      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+    });
+  }
+
+  /**
+   * 🎮 Send generic enhanced content with interactive buttons
+   */
+  private async sendGenericEnhancedContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, messageContent: string, imageUrl?: string, buttonConfig?: any) {
+    // Generic enhanced message with interactive buttons
+    return await enhancedAPI.sendNews({
+      chat_id: channel.telegram_channel_id,
+      title: content.title || 'Sports Update',
+      content: messageContent,
+      language: channel.language,
+      images: imageUrl ? [imageUrl] : undefined,
+      source_url: undefined,
+      category: 'general',
+      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+    });
+  }
+
+  // ====== DATA EXTRACTION HELPERS ======
+
+  private extractBettingData(content: any) {
+    // Extract betting-specific data from content
+    return {
+      match: {
+        home: content.match?.home || content.home_team || 'Home Team',
+        away: content.match?.away || content.away_team || 'Away Team',
+        competition: content.match?.competition || content.league || 'Competition'
+      },
+      tips: content.tips || content.predictions || [{
+        type: 'Main Tip',
+        prediction: content.main_prediction || 'Check our analysis',
+        odds: content.odds || '2.0',
+        confidence: content.confidence || 75,
+        risk: content.risk || 'MEDIUM'
+      }]
+    };
+  }
+
+  private extractNewsData(content: any) {
+    return {
+      title: content.title || content.headline || 'Sports News',
+      content: content.content || content.body || content.text || 'News content',
+      sourceUrl: content.source_url || content.url,
+      category: content.category || 'general'
+    };
+  }
+
+  private extractAnalysisData(content: any) {
+    return {
+      match: {
+        home: content.match?.home || content.home_team || 'Home Team',
+        away: content.match?.away || content.away_team || 'Away Team',
+        competition: content.match?.competition || content.league || 'Competition'
+      },
+      insights: content.insights || content.analysis_points || [{
+        type: 'Key Insight',
+        prediction: content.main_insight || 'Analysis available',
+        odds: '1.0',
+        confidence: 80,
+        risk: 'LOW'
+      }]
+    };
+  }
+
+  private extractLiveData(content: any) {
+    return {
+      match: {
+        home: content.match?.home || content.home_team || 'Home Team',
+        away: content.match?.away || content.away_team || 'Away Team',
+        competition: content.match?.competition || content.league || 'Competition',
+        status: content.status || 'LIVE',
+        time: content.time || content.minute || '90'
+      },
+      score: {
+        home: content.score?.home || content.home_score || 0,
+        away: content.score?.away || content.away_score || 0
+      },
+      events: content.events || []
+    };
+  }
+
+  private extractSummaryData(content: any) {
+    return {
+      title: content.title || 'Daily Summary',
+      content: content.content || content.text || content.summary || 'Daily sports summary'
+    };
+  }
+
+  /**
+   * 🔗 Load channel-specific button configuration
+   */
+  private async loadChannelButtonConfig(channelId: string) {
+    try {
+      const { data: channelData, error } = await supabase
+        .from('channels')
+        .select('button_config')
+        .eq('id', channelId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error loading button config:', error);
+        return null;
+      }
+
+      return channelData?.button_config || null;
+    } catch (error) {
+      console.error('❌ Error loading channel button config:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🎨 Get button templates for channel language
+   */
+  private async getButtonTemplates(language: string, category: string) {
+    try {
+      const { data: templates, error } = await supabase
+        .from('button_templates')
+        .select('*')
+        .eq('language', language)
+        .eq('category', category)
+        .eq('is_system', true)
+        .limit(1);
+
+      if (error) {
+        console.error('❌ Error loading button templates:', error);
+        return null;
+      }
+
+      return templates?.[0] || null;
+    } catch (error) {
+      console.error('❌ Error loading button templates:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🔧 Apply channel button configuration to Enhanced API
+   */
+  private applyChannelButtonConfig(enhancedAPI: any, buttonConfig: any, channelId: string) {
+    if (!buttonConfig) return;
+
+    // Update the button link manager with channel-specific config
+    const buttonLinkManager = enhancedAPI.buttonLinkManager || (global as any).buttonLinkManager;
+    if (buttonLinkManager && typeof buttonLinkManager.setChannelConfig === 'function') {
+      buttonLinkManager.setChannelConfig(channelId, {
+        main_website: buttonConfig.main_website,
+        betting_platform: buttonConfig.betting_platform,
+        live_scores: buttonConfig.live_scores,
+        news_source: buttonConfig.news_source,
+        social_media: buttonConfig.social_media || {},
+        affiliate_codes: buttonConfig.affiliate_codes || {},
+        channel_settings: buttonConfig.channel_settings || {}
+      });
+    }
   }
 }
 

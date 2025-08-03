@@ -2006,7 +2006,7 @@ Andika jibu lote kwa Kiswahili tu. Unda uchambuzi mkuu wa mechi wenye undani. On
             content: `${languagePrompts[language]}\n\n${content}` 
           }
         ],
-        max_tokens: 1200, // More space for comprehensive content
+        max_tokens: 2000, // Increased for complete HTML content without cutting
         temperature: 0.7
       });
 

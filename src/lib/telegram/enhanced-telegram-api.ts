@@ -512,6 +512,12 @@ export class EnhancedTelegramAPI {
     sourceUrl?: string,
     category?: string
   ): string {
+    // 📋 For daily/weekly summaries, use the pre-formatted content as-is
+    if (category === 'summary') {
+      // The content is already fully formatted with HTML and visual elements
+      return content;
+    }
+
     const categoryEmojis: Record<string, string> = {
       'transfer': '🔄',
       'match': '⚽',

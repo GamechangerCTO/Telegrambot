@@ -971,20 +971,12 @@ export class BettingTipsGenerator {
         return this.enhanceBettingContent(content, analysis, request.language);
       }
 
+      // TEMPORARY FIX: Disable AI editing to prevent timeouts
+      console.log('⚠️ AI editing temporarily disabled to prevent timeouts');
+      return this.enhanceBettingContent(content, analysis, request.language);
+
       const systemPrompts = {
-        'en': `You are a friendly football betting expert who creates modern Telegram content with HTML formatting. Write betting tips using HTML tags (<b>, <i>, <code>) and Unicode box drawing characters for visual structure. Format like this:
-
-<b>🎯 BETTING TIPS: Team A vs Team B</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 TOP PREDICTIONS</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>Match Result:</b> Home Win
-┃ 💰 <code>Odds: 1.85</code> | <i>Confidence: 80%</i>
-┃ 📝 Strong home form and advantage
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-Keep it conversational, include specific predictions with confidence levels and odds. End with responsible gambling reminder.`,
+        'en': `You are a friendly football betting expert. Create betting tips using HTML tags (<b>, <i>, <code>) and these symbols: ━ ┏ ┓ ┗ ┛ ┃. Keep it short and professional. Include odds and confidence levels.`,
         
         'am': `እርስዎ የእግር ኳስ ውርርድ ባለሙያ ነዎት የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚፈጥሩ። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
 
@@ -1237,7 +1229,7 @@ INSTRUCTIONS:
 Create betting tips that are specific to this exact match with the provided data.` 
           }
         ],
-        max_tokens: 400, // More space for detailed content
+        max_tokens: 1500, // Increased for complete HTML content without cutting
         temperature: 0.7 // Balanced creativity and accuracy
       });
 
@@ -1264,23 +1256,93 @@ Create betting tips that are specific to this exact match with the provided data
    */
   private enhanceBettingContent(content: string, analysis: BettingAnalysis, language: 'en' | 'am' | 'sw' | 'fr' | 'ar'): string {
     if (language === 'en') {
-      return `${content}\n\n🔥 Don't miss this ${analysis.matchAssessment.predictability.toLowerCase()}-confidence betting opportunity!\n\n💡 Remember: Bet responsibly and only what you can afford to lose!\n\n#BettingTips #Football #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')}`;
+      return `<b>🎯 BETTING TIPS: ${analysis.homeTeam} vs ${analysis.awayTeam}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 Top Predictions</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Match Result:</b> ${analysis.predictions[0]?.prediction || 'Home Win'}
+┃ 💰 <code>Odds: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>Confidence: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'Strong home form and advantage'}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+🔥 <b>Don't miss this ${analysis.matchAssessment.predictability.toLowerCase()}-confidence betting opportunity!</b>
+
+💡 <i>Remember: Bet responsibly and only what you can afford to lose!</i>
+
+#BettingTips #Football #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')}`;
     }
     
     if (language === 'am') {
-      return `${content}\n\n🔥 ይህን የ${analysis.matchAssessment.predictability.toLowerCase()}-እምነት የውርርድ እድል አታመልጡት!\n\n💡 ያስታውሱ: በኃላፊነት ይዋረዱ እና ማጣት የሚችሉትን ብቻ!\n\n#የውርርድምክሮች #እግርኳስ #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
+      return `<b>🎯 የውርርድ ምክሮች: ${analysis.homeTeam} በተቃወመ ${analysis.awayTeam}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 ተመራጭ ትንበያዎች</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>የጨዋታ ውጤት:</b> ${analysis.predictions[0]?.prediction || 'የቤት ድል'}
+┃ 💰 <code>ዕድል: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>እምነት: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'ጠንካራ የቤት ቅርፀት እና ጥቅም'}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+🔥 <b>ይህን የ${analysis.matchAssessment.predictability.toLowerCase()}-እምነት የውርርድ እድል አታመልጡት!</b>
+
+💡 <i>ያስታውሱ: በኃላፊነት ይዋረዱ እና ማጣት የሚችሉትን ብቻ!</i>
+
+#የውርርድምክሮች #እግርኳስ #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
     }
     
     if (language === 'sw') {
-      return `${content}\n\n🔥 Usikose fursa hii ya kamari ya ${analysis.matchAssessment.predictability.toLowerCase()}-uongozi!\n\n💡 Kumbuka: Weka kamari kwa busara na kile unachoweza kupoteza tu!\n\n#KamariTips #Mpira #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
+      return `<b>🎯 MAPENDEKEZO YA KAMARI: ${analysis.homeTeam} dhidi ya ${analysis.awayTeam}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 Utabiri Bora</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Matokeo ya Mchezo:</b> ${analysis.predictions[0]?.prediction || 'Ushindi wa Nyumbani'}
+┃ 💰 <code>Uwezekano: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>Uhakika: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'Umbo bora la nyumbani na faida'}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+🔥 <b>Usikose fursa hii ya kamari ya ${analysis.matchAssessment.predictability.toLowerCase()}-uongozi!</b>
+
+💡 <i>Kumbuka: Weka kamari kwa busara na kile unachoweza kupoteza tu!</i>
+
+#KamariTips #Mpira #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
     }
     
     if (language === 'fr') {
-      return `${content}\n\n🔥 Ne manquez pas cette opportunité de pari avec ${analysis.matchAssessment.predictability.toLowerCase()}-confiance!\n\n💡 Rappel: Pariez de manière responsable et seulement ce que vous pouvez vous permettre de perdre!\n\n#ConseilsParis #Football #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips`;
+      return `<b>🎯 CONSEILS DE PARIS: ${analysis.homeTeam} vs ${analysis.awayTeam}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 Prédictions Principales</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>Résultat du Match:</b> ${analysis.predictions[0]?.prediction || 'Victoire Domicile'}
+┃ 💰 <code>Cotes: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>Confiance: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'Forme solide à domicile et avantage'}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+🔥 <b>Ne manquez pas cette opportunité de pari avec ${analysis.matchAssessment.predictability.toLowerCase()}-confiance!</b>
+
+💡 <i>Rappel: Pariez de manière responsable et seulement ce que vous pouvez vous permettre de perdre!</i>
+
+#ConseilsParis #Football #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips`;
     }
     
     if (language === 'ar') {
-      return `${content}\n\n🔥 لا تفوت هذه الفرصة للرهان بثقة ${analysis.matchAssessment.predictability.toLowerCase()}!\n\n💡 تذكر: راهن بمسؤولية وفقط بما يمكنك تحمل خسارته!\n\n#نصائح_الرهان #كرة_القدم #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
+      return `<b>🎯 نصائح الرهان: ${analysis.homeTeam} ضد ${analysis.awayTeam}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>💰 التوقعات الرئيسية</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>نتيجة المباراة:</b> ${analysis.predictions[0]?.prediction || 'فوز الفريق المضيف'}
+┃ 💰 <code>الاحتمالات: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>الثقة: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'شكل قوي في الملعب والميزة'}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+🔥 <b>لا تفوت هذه الفرصة للرهان بثقة ${analysis.matchAssessment.predictability.toLowerCase()}!</b>
+
+💡 <i>تذكر: راهن بمسؤولية وفقط بما يمكنك تحمل خسارته!</i>
+
+#نصائح_الرهان #كرة_القدم #${analysis.homeTeam.replace(/\s+/g, '')} #${analysis.awayTeam.replace(/\s+/g, '')} #BettingTips #Football`;
     }
     
     return content;

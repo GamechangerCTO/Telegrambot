@@ -826,7 +826,7 @@ export class PollsGenerator {
             content: `${languagePrompts[language]}\n\n${content}` 
           }
         ],
-        max_tokens: 500,
+        max_tokens: 1600, // Increased for complete HTML content without cutting
         temperature: 0.8
       });
 
@@ -1804,6 +1804,10 @@ export class PollsGenerator {
         return this.enhancePollContentManually(content, analysis, language);
       }
 
+      // TEMPORARY FIX: Disable AI editing to prevent timeouts
+      console.log('⚠️ AI editing temporarily disabled to prevent timeouts');
+      return this.enhancePollContentManually(content, analysis, language);
+
       const languagePrompts = {
         'en': `Enhance this football poll content to be more engaging and viral. Keep it concise but exciting. Add relevant emojis naturally. Make it feel interactive and fun. Include strategic hashtags at the end:`,
         'am': `ይህን የእግር ኳስ የሕዝብ አስተያየት ይዘት የበለጠ አሳታፊ እና ተወዳጅ እንዲሆን ያሻሽሉት። አጭር ነገር ግን አስደሳች ያድርጉት። ተፈጥሯዊ ስሜቶችን ያክሉ። በመጨረሻ የሃሽታግ ይጨምሩ። IMPORTANT: Write entire response in AMHARIC only:`,
@@ -1879,7 +1883,7 @@ Fanya kura ziwe za kuvutia, za kushirikiwa na za kusisimua. Andika jibu lote kwa
             content: `${languagePrompts[language]}\n\n${content}` 
           }
         ],
-        max_tokens: 600,
+        max_tokens: 1600, // Increased for complete HTML content without cutting
         temperature: 0.8 // Higher creativity for polls
       });
 

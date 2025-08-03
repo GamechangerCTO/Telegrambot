@@ -500,6 +500,10 @@ export class OptimizedNewsContentGenerator {
         return this.createTemplateNewsContent(news, language);
       }
 
+      // TEMPORARY FIX: Disable AI editing to prevent timeouts
+      console.log('⚠️ AI editing temporarily disabled to prevent timeouts - using template');
+      return this.createTemplateNewsContent(news, language);
+
       // 📊 Log OpenAI call attempt
       await this.logOpenAICall('news-generation', language, news.title);
 
@@ -614,7 +618,7 @@ Terminez toujours les phrases complètement. Terminez par des hashtags.`,
               content: `Create a complete news summary in ${languageNames[language]}. Translate ALL the information. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 800)}` 
             }
           ],
-          max_tokens: 800, // Increased for complete content
+          max_tokens: 1800, // Increased for complete HTML content without cutting
           temperature: 0.7
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('AI_TIMEOUT_30_SECONDS')), 30000))
@@ -644,9 +648,29 @@ Terminez toujours les phrases complètement. Terminez par des hashtags.`,
     const shortContent = this.shortenContent(news.content, 400); // Increased from 200 to 400
     
     const templates = {
-      en: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 ${news.source}\n\n#FootballNews #Breaking`,
+      en: `<b>📰 FOOTBALL NEWS</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>⚽ ${news.title}</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📝 <i>${shortContent}</i>
+┃ 
+┃ 🔗 <b>Source:</b> ${news.source}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#FootballNews #Breaking</i>`,
       am: this.createAmharicNewsContent(news, shortContent),
-      sw: `⚽ ${news.title}\n\n${shortContent}\n\n🔗 Chanzo: ${news.source}\n\n#HabariMpira #FootballNews`,
+      sw: `<b>📰 HABARI ZA MPIRA</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>⚽ ${news.title}</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📝 <i>${shortContent}</i>
+┃ 
+┃ 🔗 <b>Chanzo:</b> ${news.source}
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#HabariMpira #FootballNews</i>`,
       fr: this.createFrenchNewsContent(news, shortContent),
       ar: this.createArabicNewsContent(news, shortContent)
     };
@@ -1076,7 +1100,7 @@ Terminez toujours les phrases complètement. Terminez par des hashtags.`,
           { role: "system", content: systemPrompts[request.language] || systemPrompts['en'] },
           { role: "user", content: topicPrompts[request.language] || topicPrompts['en'] }
         ],
-        max_tokens: 400,
+        max_tokens: 1800, // Increased for complete HTML content without cutting
         temperature: 0.8
       });
 
@@ -1123,15 +1147,51 @@ Terminez toujours les phrases complètement. Terminez par des hashtags.`,
     const templates = {
       'en': {
         title: '⚽ Daily Football Updates',
-        content: `🏆 Stay updated with the latest football news and match results.\n\n📊 Check back soon for fresh updates from leagues around the world.\n\n⚽ Your source for reliable football content!\n\n#Football #Sports #Updates`
+        content: `<b>📰 DAILY FOOTBALL UPDATES</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🏆 Latest Football News</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📊 <i>Stay updated with the latest football news</i>
+┃ <i>and match results from around the world</i>
+┃ 
+┃ ⚽ <b>Your source for reliable football content!</b>
+┃ 📈 Check back soon for fresh updates
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#Football #Sports #Updates</i>`
       },
       'am': {
         title: '⚽ የእግር ኳስ ዕለታዊ ዝማኔዎች',
-        content: `🏆 ከዓለም አቀፍ እግር ኳስ ዓለም የቅርብ ጊዜ ዜናዎች ጋር ይዘምኑ።\n\n📊 ከተለያዩ ሊጎች የሚመጡ አዳዲስ መረጃዎች ለማየት በቅርቡ ይመለሱ።\n\n⚽ ለአስተማማኝ እግር ኳስ ይዘት የእርስዎ ምንጭ!\n\n#እግርኳስ #ስፖርት #ዝማኔዎች`
+        content: `<b>📰 የእግር ኳስ ዕለታዊ ዝማኔዎች</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🏆 የቅርብ ጊዜ እግር ኳስ ዜናዎች</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📊 <i>ከዓለም አቀፍ እግር ኳስ ዓለም የቅርብ ጊዜ</i>
+┃ <i>ዜናዎች እና ውጤቶች ጋር ይዘምኑ</i>
+┃ 
+┃ ⚽ <b>ለአስተማማኝ እግር ኳስ ይዘት የእርስዎ ምንጭ!</b>
+┃ 📈 አዳዲስ መረጃዎች ለማየት በቅርቡ ይመለሱ
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#እግርኳስ #ስፖርት #ዝማኔዎች</i>`
       },
       'sw': {
         title: '⚽ Habari za Kila Siku za Mpira',
-        content: `🏆 Baki umejua habari za hivi karibuni za mpira wa miguu na matokeo ya mechi.\n\n📊 Rudi hivi karibuni kwa habari mpya kutoka ligi duniani.\n\n⚽ Chanzo chako cha kuaminika cha maudhui ya mpira!\n\n#MpiraMiguu #Michezo #Habari`
+        content: `<b>📰 HABARI ZA KILA SIKU ZA MPIRA</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🏆 Habari za Hivi Karibuni za Mpira</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 📊 <i>Baki umejua habari za hivi karibuni</i>
+┃ <i>za mpira wa miguu na matokeo ya mechi</i>
+┃ 
+┃ ⚽ <b>Chanzo chako cha kuaminika cha maudhui!</b>
+┃ 📈 Rudi hivi karibuni kwa habari mpya
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#MpiraMiguu #Michezo #Habari</i>`
       }
     };
 

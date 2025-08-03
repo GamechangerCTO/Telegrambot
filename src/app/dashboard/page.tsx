@@ -29,6 +29,7 @@ interface Channel {
   total_posts_sent?: number;
   last_post_at?: string;
   automation_rules?: any[];
+  selected_match?: DailyMatch; // המשחק הנבחר לאוטומציה
 }
 
 interface DailyMatch {
@@ -45,6 +46,7 @@ interface DailyMatch {
 export default function Dashboard() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [dailyMatches, setDailyMatches] = useState<DailyMatch[]>([]);
+  const [channelsWithSelectedMatches, setChannelsWithSelectedMatches] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(process.env.NODE_ENV === 'production');
   const [sendingContent, setSendingContent] = useState<{ [key: string]: boolean }>({});
   const [automationStats, setAutomationStats] = useState({
@@ -70,17 +72,33 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       // Use the API endpoints instead of direct database queries
-      const [channelsResponse, statsResponse] = await Promise.all([
+      const [channelsResponse, statsResponse, selectedMatchesResponse] = await Promise.all([
         fetch('/api/channels'),
-        fetch('/api/dashboard/stats')
+        fetch('/api/dashboard/stats'),
+        fetch('/api/channels/selected-matches') // המשחקים הנבחרים
       ]);
 
       const channelsData = await channelsResponse.json();
       const statsData = await statsResponse.json();
+      const selectedMatchesData = await selectedMatchesResponse.json();
 
-      // Set channels data
+      // Set channels data with selected matches
       if (channelsData.success && channelsData.channels) {
-        setChannels(channelsData.channels);
+        // אם יש נתוני משחקים נבחרים, נשלב אותם
+        if (selectedMatchesData.success && selectedMatchesData.channels_with_matches) {
+          setChannelsWithSelectedMatches(selectedMatchesData.channels_with_matches);
+          // מיזוג הנתונים
+          const mergedChannels = channelsData.channels.map((channel: Channel) => {
+            const channelWithMatch = selectedMatchesData.channels_with_matches.find((c: any) => c.id === channel.id);
+            return {
+              ...channel,
+              selected_match: channelWithMatch?.selected_match
+            };
+          });
+          setChannels(mergedChannels);
+        } else {
+          setChannels(channelsData.channels);
+        }
       } else {
         // Fallback to at least show our known channel
         setChannels([{
@@ -89,6 +107,8 @@ export default function Dashboard() {
           telegram_channel_id: "@africansportdata",
           language: "am",
           is_active: true,
+          auto_post: true,
+          content_types: ["news", "betting", "analysis"],
           total_posts_sent: 133
         }]);
       }
@@ -809,6 +829,30 @@ export default function Dashboard() {
                             <p className="text-xs text-gray-500 mt-1">
                               Configured types: {getContentTypesDisplay(channel.content_types)}
                             </p>
+                            
+                            {/* תצוגת המשחק הנבחר */}
+                            {channel.selected_match ? (
+                              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-medium text-blue-800">🎯 משחק נבחר לאוטומציה:</span>
+                                  <Badge variant="outline" className="bg-blue-100 text-blue-700 text-xs">
+                                    ציון {channel.selected_match.importance_score}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm font-medium text-blue-900">
+                                  {channel.selected_match.home_team} vs {channel.selected_match.away_team}
+                                </div>
+                                <div className="text-xs text-blue-700">
+                                  {channel.selected_match.competition} • {formatTimeWithTimezone(channel.selected_match.kickoff_time, channel)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="text-xs text-gray-500">
+                                  ⚪ לא נמצא משחק מתאים לאוטומציה היום
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1071,6 +1115,22 @@ export default function Dashboard() {
                         {channel.last_post_at && (
                           <div className="text-[10px] text-gray-500">
                             Last: {formatMatchTimeForChannel(channel.last_post_at, channel)}
+                          </div>
+                        )}
+                        
+                        {/* תצוגת המשחק הנבחר - גרסה מקוצרת */}
+                        {channel.selected_match ? (
+                          <div className="mt-1 p-1 bg-blue-50 rounded text-[10px]">
+                            <div className="font-medium text-blue-800 truncate">
+                              🎯 {channel.selected_match.home_team} vs {channel.selected_match.away_team}
+                            </div>
+                            <div className="text-blue-600 truncate">
+                              {channel.selected_match.competition}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-1 p-1 bg-gray-100 rounded text-[10px] text-gray-500">
+                            ⚪ אין משחק נבחר
                           </div>
                         )}
                       </div>
