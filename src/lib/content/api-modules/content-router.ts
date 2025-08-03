@@ -1,705 +1,232 @@
 /**
- * 🎯 CONTENT ROUTER - Content Generation and Routing Logic
- * Routes requests to appropriate content generators and handles fallback content
+ * 🚀 CONTENT ROUTER - Direct Content Generation for Automation
+ * 
+ * This router allows direct content generation without HTTP requests,
+ * perfect for automation systems and internal calls
  */
 
-import { Language } from './content-config';
+import { BettingTipsGenerator } from '../betting-tips-generator';
+import { OptimizedNewsContentGenerator } from '../news-content-generator';
+import { MatchAnalysisGenerator } from '../match-analysis-generator';
+import { LiveUpdatesGenerator } from '../live-updates-generator';
+import { PollsGenerator } from '../polls-generator';
+import { DailyWeeklySummaryGenerator } from '../daily-weekly-summary-generator';
 
-// Import all content generators
-import { liveUpdatesGenerator } from '@/lib/content/live-updates-generator';
-import { bettingTipsGenerator } from '@/lib/content/betting-tips-generator';
-import { OptimizedNewsContentGenerator } from '@/lib/content/news-content-generator';
-import { pollsGenerator } from '@/lib/content/polls-generator';
-import { matchAnalysisGenerator } from '@/lib/content/match-analysis-generator';
-import { smartCouponsGenerator } from '@/lib/content/smart-coupons-generator';
-import { dailyWeeklySummaryGenerator } from '@/lib/content/daily-weekly-summary-generator';
-import { ContentConfigUtils } from './content-config';
-
-export type ContentType = 'live' | 'betting' | 'news' | 'polls' | 'analysis' | 'coupons' | 'memes' | 'daily_summary' | 'weekly_summary';
-
-export interface ContentGenerationResult {
-  contentItems: any[];
-  processingInfo: {
-    data_source: string;
-    ai_processing: boolean;
-    image_generation: boolean;
-    fallback_used: boolean;
-    error?: string;
-    betting_fallback_to_news?: boolean;
-  };
+export interface ContentGenerationRequest {
+  contentType: string;
+  language: string;
+  channelIds?: string[];
+  isAutomationExecution?: boolean;
+  targetChannels?: string;
 }
 
-export interface ContentGenerationOptions {
-  type: ContentType;
-  language: Language;
-  maxItems: number;
-  channelId?: string;
-  customContent?: any;
-  
-  // 🎯 NEW: Channel-specific configuration for targeted content
-  channelSettings?: {
-    selected_leagues?: string[];
-    selected_teams?: string[];
-    affiliate_code?: string;
-    smart_scheduling?: boolean;
-    max_posts_per_day?: number;
-    channel_name?: string;
-    telegram_channel_id?: string;
-  };
+export interface ContentGenerationResult {
+  success: boolean;
+  content_items?: any[];
+    error?: string;
+  message?: string;
 }
 
 export class ContentRouter {
+  private bettingGenerator: BettingTipsGenerator;
+  private newsGenerator: OptimizedNewsContentGenerator;
+  private analysisGenerator: MatchAnalysisGenerator;
+  private liveGenerator: LiveUpdatesGenerator;
+  private pollsGenerator: PollsGenerator;
+  private summaryGenerator: DailyWeeklySummaryGenerator;
+
+  constructor() {
+    this.bettingGenerator = new BettingTipsGenerator();
+    this.newsGenerator = new OptimizedNewsContentGenerator();
+    this.analysisGenerator = new MatchAnalysisGenerator();
+    this.liveGenerator = new LiveUpdatesGenerator();
+    this.pollsGenerator = new PollsGenerator();
+    this.summaryGenerator = new DailyWeeklySummaryGenerator();
+  }
+
   /**
-   * Main content generation method - routes to appropriate generators
+   * 🎯 Generate content directly using the appropriate generator
    */
-  async generateContent(options: ContentGenerationOptions): Promise<ContentGenerationResult> {
-    const { type, language, maxItems, channelId = 'unified-content', customContent, channelSettings } = options;
+  async generateContent(request: ContentGenerationRequest): Promise<ContentGenerationResult> {
+    try {
+      console.log(`🎯 ContentRouter: Generating ${request.contentType} in ${request.language}`);
+      
+      const channelId = request.channelIds?.[0] || 'default';
+      let result: any = null;
 
-    console.log(`🎯 Content Router: Generating ${type} content for ${language}${channelSettings?.channel_name ? ` (Channel: ${channelSettings.channel_name})` : ''}`);
-    
-    // 🎯 Pass channel settings to all generators
-    if (channelSettings) {
-      console.log(`📋 Channel settings: Leagues: ${channelSettings.selected_leagues?.length || 0}, Teams: ${channelSettings.selected_teams?.length || 0}, Affiliate: ${channelSettings.affiliate_code || 'none'}`);
+      switch (request.contentType) {
+        case 'betting':
+          result = await this.bettingGenerator.generateBettingTips({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            maxPredictions: 3,
+            riskTolerance: 'moderate'
+          });
+          break;
+
+        case 'news':
+          result = await this.newsGenerator.generateNewsContent({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            maxItems: 1,
+            categories: ['general', 'breaking', 'transfer']
+          });
+          break;
+
+        case 'analysis':
+          result = await this.analysisGenerator.generateMatchAnalysis({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            analysisType: 'pre_match',
+            includeStatistics: true
+          });
+          break;
+
+        case 'live_updates':
+          result = await this.liveGenerator.generateLiveUpdate({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            updateType: 'auto'
+          });
+          break;
+
+        case 'poll':
+        case 'polls':
+          result = await this.pollsGenerator.generatePoll({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            pollType: 'prediction'
+          });
+          break;
+
+        case 'daily_summary':
+          result = await this.summaryGenerator.generateDailySummary({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            date: new Date().toISOString().split('T')[0]
+          });
+          break;
+
+        case 'weekly_summary':
+          result = await this.summaryGenerator.generateWeeklySummary({
+            language: request.language as 'en' | 'am' | 'sw',
+            channelId: channelId,
+            weekStart: new Date().toISOString().split('T')[0]
+          });
+          break;
+
+        default:
+          throw new Error(`Unknown content type: ${request.contentType}`);
+      }
+      
+      if (!result) {
+        return {
+          success: false,
+          error: `No content generated for ${request.contentType}`,
+          content_items: []
+        };
+      }
+
+      // Format the result to match the expected structure
+      const formattedResult = this.formatGeneratorResult(result, request.contentType);
+      
+      console.log(`✅ ContentRouter: Generated ${request.contentType} successfully`);
+      return {
+        success: true,
+        content_items: [formattedResult],
+        message: `Generated ${request.contentType} content successfully`
+      };
+
+    } catch (error) {
+      console.error(`❌ ContentRouter error for ${request.contentType}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        content_items: []
+      };
     }
+  }
 
-    // Route to specific content generator with channel settings
-    switch (type) {
-      case 'live':
-        return await this.generateLiveContent(language, maxItems, channelId, channelSettings);
-        
+  /**
+   * 🔧 Format generator result to match unified structure
+   */
+  private formatGeneratorResult(result: any, contentType: string): any {
+    if (!result) return null;
+
+    // Each generator has a different structure, normalize it
+    switch (contentType) {
       case 'betting':
-        return await this.generateBettingContent(language, maxItems, channelId, channelSettings);
-        
-      case 'news':
-        return await this.generateNewsContent(language, maxItems, channelId, channelSettings);
-        
-      case 'polls':
-        return await this.generatePollsContent(language, maxItems, channelId, customContent, channelSettings);
-        
-      case 'analysis':
-        return await this.generateAnalysisContent(language, maxItems, channelId, channelSettings);
-        
-      case 'coupons':
-        return await this.generateCouponsContent(language, maxItems, channelId, channelSettings);
-        
-      case 'memes':
-        return await this.generateMemesContent(language, maxItems, channelId, channelSettings);
-        
-      case 'daily_summary':
-        return await this.generateDailySummaryContent(language, maxItems, channelId, channelSettings);
-        
-      case 'weekly_summary':
-        return await this.generateWeeklySummaryContent(language, maxItems, channelId, channelSettings);
-        
-      default:
-        console.error(`❌ Unsupported content type: ${type}`);
-        return await this.generateFallbackContent(type, language, maxItems);
-    }
-  }
-
-  /**
-   * Generate live content
-   */
-  private async generateLiveContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`🔴 Using enhanced live content generator with fallback for ${language}`);
-      
-      // Get active live updates using the correct method
-      const results = await liveUpdatesGenerator.getActiveLiveUpdates(language as 'en' | 'am' | 'sw', maxItems);
-      
-      if (!results || results.length === 0) {
-        console.log('⚠️ No active live updates found');
-        return await this.generateFallbackContent('live', language, maxItems);
-      }
-      
-      const result = results[0]; // Use the first live update
-      
-      return {
-        contentItems: [{
-          id: result.metadata?.contentId || `live_${Date.now()}`,
-          type: 'live',
-          title: result.title,
-          content: result.content,
-          language: language,
-          imageUrl: result.imageUrl,
-          metadata: result.metadata
-        }],
-        processingInfo: {
-          data_source: 'Live Updates Generator',
-          ai_processing: true,
-          image_generation: ContentConfigUtils.shouldGenerateImage('live'),
-          fallback_used: false
-        }
-      };
-    } catch (error) {
-      console.error('Error generating live content with enhanced generator:', error);
-      return {
-        contentItems: [],
-        processingInfo: {
-          data_source: 'Live content generation failed',
-          ai_processing: false,
-          image_generation: ContentConfigUtils.shouldGenerateImage('live'),
-          fallback_used: true
-        }
-      };
-    }
-  }
-
-  /**
-   * Generate betting content
-   */
-  private async generateBettingContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`🎯 Using betting tips generator for ${language}`);
-      
-      // Try multiple attempts to get betting content
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`🎯 Betting attempt ${attempt}/3`);
-        
-        const result = await bettingTipsGenerator.generateBettingTips({
-          language: language as 'en' | 'am' | 'sw',
-          channelId,
-          // 🎯 Pass channel-specific settings for targeted betting content
-          selectedLeagues: channelSettings?.selected_leagues,
-          selectedTeams: channelSettings?.selected_teams,
-          affiliateCode: channelSettings?.affiliate_code,
-          channelName: channelSettings?.channel_name
-        });
-        
-        if (result) {
-          console.log('✅ Successfully generated betting content');
-          return {
-            contentItems: [{
-              id: result.metadata.contentId,
-              type: 'betting',
-              title: result.title,
-              content: result.content,
-              language: language,
-              imageUrl: result.imageUrl,
-              metadata: result.metadata
-            }],
-            processingInfo: {
-              data_source: `Betting Tips Generator (Attempt ${attempt})`,
-              ai_processing: true,
-              image_generation: !!result.imageUrl,
-              fallback_used: false
-            }
-          };
-        }
-        
-        console.log(`⚠️ Attempt ${attempt} failed, trying again...`);
-        // Wait a bit before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-      // Only fail if ALL attempts failed - don't fall back to news
-      console.log('❌ All betting attempts failed');
-      throw new Error('Betting content generation failed after 3 attempts');
-      
-    } catch (error) {
-      console.error('❌ Error generating betting content:', error);
-      
-      // Return a proper error instead of falling back to news
-      return {
-        contentItems: [],
-        processingInfo: {
-          data_source: 'Betting Generator Failed',
-          ai_processing: false,
-          image_generation: false,
-          fallback_used: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      };
-    }
-  }
-
-  /**
-   * Generate news content
-   */
-  private async generateNewsContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`📰 Using news content generator for ${language}`);
-      const newsGenerator = new OptimizedNewsContentGenerator();
-      const result = await newsGenerator.generateNewsContent({
-        language: language as 'en' | 'am' | 'sw',
-        channelId,
-        // 🎯 Pass channel-specific settings for targeted news content
-        selectedLeagues: channelSettings?.selected_leagues,
-        selectedTeams: channelSettings?.selected_teams,
-        channelName: channelSettings?.channel_name
-      });
-      
-      if (!result) {
-        console.log('❌ No RSS news available - returning empty content');
         return {
-          contentItems: [],
-          processingInfo: {
-            data_source: 'News Generator - No RSS Data Available',
-            ai_processing: false,
-            image_generation: false,
-            fallback_used: false,
-            error: 'No RSS feeds available'
-          }
-        };
-      }
-      
-      return {
-        contentItems: [{
-          id: result.metadata?.contentId || `news_${Date.now()}`,
-          type: 'news',
-          title: result.title,
-          content: result.content,
-          language: language,
-          imageUrl: result.imageUrl,
-          metadata: result.metadata
-        }],
-        processingInfo: {
-          data_source: 'News Generator',
-          ai_processing: true,
-          image_generation: !!result.imageUrl,
-          fallback_used: false
-        }
-      };
-    } catch (error) {
-      console.error('Error generating news content:', error);
-      console.log('❌ News generation failed - returning empty content');
-      return {
-        contentItems: [],
-        processingInfo: {
-          data_source: 'News Generator - Error',
-          ai_processing: false,
-          image_generation: false,
-          fallback_used: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      };
-    }
-  }
-
-  /**
-   * Generate polls content
-   */
-  private async generatePollsContent(language: Language, maxItems: number, channelId: string, customContent?: any, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`🗳️ Using polls generator for ${language}`);
-      
-      // בדיקה אם יש custom_content (לסקרים ישירים)
-      if (customContent && customContent.content_items) {
-        console.log('🗳️ Using custom poll content provided by simple-polls API');
-        return {
-          contentItems: customContent.content_items,
-          processingInfo: { 
-            data_source: 'Custom Poll Content', 
-            ai_processing: false, 
-            image_generation: ContentConfigUtils.shouldGenerateImage('polls'), 
-            fallback_used: false 
-          }
-        };
-      }
-      
-      const result = await pollsGenerator.generatePoll({
-        language: language as 'en' | 'am' | 'sw',
-        channelId,
-        pollType: 'match_prediction'
-      });
-      
-      return {
-        contentItems: result ? [{
-          id: result.metadata?.contentId || `poll_${Date.now()}`,
-          type: 'poll',
-          title: result.title,
           content: result.aiEditedContent || result.content,
-          language: language,
-          poll: {
-            question: result.pollContent.telegramPoll.question,
-            options: result.pollContent.telegramPoll.options.map(opt => opt.text),
-            isAnonymous: result.pollContent.telegramPoll.is_anonymous,
-            type: result.pollContent.telegramPoll.type,
-            allowsMultipleAnswers: result.pollContent.telegramPoll.allows_multiple_answers,
-            correctOptionId: result.pollContent.telegramPoll.correct_option_id,
-            explanation: result.pollContent.telegramPoll.explanation,
-            openPeriod: result.pollContent.telegramPoll.open_period,
-            closeDate: result.pollContent.telegramPoll.close_date
-          },
-          metadata: result.metadata
-        }] : [],
-        processingInfo: {
-          data_source: result ? 'Polls Generator' : 'No polls available',
-          ai_processing: true,
-          image_generation: ContentConfigUtils.shouldGenerateImage('polls'),
-          fallback_used: !result
-        }
-      };
-    } catch (error) {
-      console.error('Error generating polls content with new generator:', error);
-      return await this.generateFallbackContent('polls', language, maxItems);
-    }
-  }
-
-  /**
-   * Generate analysis content
-   */
-  private async generateAnalysisContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`📈 Using match analysis generator for ${language}`);
-      const result = await matchAnalysisGenerator.generateMatchAnalysis({
-        language: language as 'en' | 'am' | 'sw',
-        channelId
-      });
-      
-      if (!result) {
-        return {
-          contentItems: [],
-          processingInfo: {
-            data_source: 'Analysis Generator - No Result',
-            ai_processing: false,
-            image_generation: false,
-            fallback_used: true
-          }
+          image_url: result.imageUrl,
+          title: result.title,
+          type: 'betting',
+          metadata: result.metadata,
+          analysis: result.analysis
         };
-      }
-      
+
+      case 'news':
       return {
-        contentItems: [{
-          id: result.metadata?.contentId || `analysis_${Date.now()}`,
+          content: result.aiEditedContent || result.content,
+          image_url: result.imageUrl,
+          title: result.title,
+          type: 'news',
+          metadata: result.metadata,
+          source_url: result.sourceUrl,
+          category: result.category
+        };
+
+      case 'analysis':
+        return {
+          content: result.aiEditedContent || result.content,
+          image_url: result.imageUrl,
+          title: result.title,
           type: 'analysis',
-          title: result.title,
-          content: result.content,
-          language: language,
-          imageUrl: result.imageUrl,
-          metadata: result.metadata
-        }],
-        processingInfo: {
-          data_source: 'Analysis Generator',
-          ai_processing: true,
-          image_generation: !!result.imageUrl,
-          fallback_used: false
-        }
-      };
-    } catch (error) {
-      console.error('Error generating analysis content with enhanced generator:', error);
-      return {
-        contentItems: [],
-        processingInfo: {
-          data_source: 'Analysis content generation failed',
-          ai_processing: false,
-          image_generation: false,
-          fallback_used: true
-        }
-      };
-    }
-  }
-
-  /**
-   * Generate coupons content
-   */
-  private async generateCouponsContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`🎫 Using smart coupons generator for ${language}`);
-      
-      // Smart coupons work differently - they need context with channel settings
-      const context = {
-        contentType: 'betting_tip',
-        channelId: channelId,
-        language: language as 'en' | 'am' | 'sw',
-        timeContext: {
-          hour: new Date().getHours(),
-          dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-          isWeekend: [0, 6].includes(new Date().getDay())
-        },
-        // 🎯 Channel-specific settings for targeted coupons
-        channelSettings: {
-          affiliateCode: channelSettings?.affiliate_code,
-          selectedLeagues: channelSettings?.selected_leagues,
-          selectedTeams: channelSettings?.selected_teams,
-          channelName: channelSettings?.channel_name
-        }
-      };
-      
-      const coupon = await smartCouponsGenerator.getSmartCouponForContext(context);
-      
-      return {
-        contentItems: coupon ? [{
-          id: coupon.metadata.contentId,
-          type: 'coupon',
-          title: coupon.title,
-          content: coupon.content,
-          language: language,
-          imageUrl: coupon.imageUrl,
-          metadata: coupon.metadata
-        }] : [],
-        processingInfo: {
-          data_source: coupon ? 'Smart Coupons Generator' : 'No contextual coupons available',
-          ai_processing: true,
-          image_generation: !!coupon?.imageUrl,
-          fallback_used: !coupon
-        }
-      };
-    } catch (error) {
-      console.error('Error generating coupons content with new generator:', error);
-      return await this.generateFallbackContent('coupons', language, maxItems);
-    }
-  }
-
-  /**
-   * Generate memes content (placeholder)
-   */
-  private async generateMemesContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`😂 Generating memes content for ${language} (placeholder)`);
-      // Memes generator not implemented yet - using fallback
-      return await this.generateFallbackContent('memes', language, maxItems);
-    } catch (error) {
-      console.error('Error generating memes content with new generator:', error);
-      return await this.generateFallbackContent('memes', language, maxItems);
-    }
-  }
-
-  /**
-   * Generate daily summary content
-   */
-  private async generateDailySummaryContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`📋 Using daily summary generator for ${language}`);
-      
-      // 🗓️ IMPORTANT: Daily summary runs at 00:30 (after midnight)
-      // We need to get matches from the previous day, not current day
-      const now = new Date();
-      const currentHour = now.getHours();
-      
-      // If it's between 00:00 and 06:00, use previous day's matches
-      let targetDate: string | undefined;
-      if (currentHour >= 0 && currentHour < 6) {
-        const previousDay = new Date(now);
-        previousDay.setDate(previousDay.getDate() - 1);
-        targetDate = previousDay.toISOString().split('T')[0];
-        console.log(`🗓️ Early morning (${currentHour}:00): Using previous day's matches: ${targetDate}`);
-      }
-      
-      const result = await dailyWeeklySummaryGenerator.generateSummary({
-        type: 'daily',
-        language: language as 'en' | 'am' | 'sw',
-        channelId,
-        targetDate
-      });
-      
-      if (!result) {
-        return {
-          contentItems: [],
-          processingInfo: {
-            data_source: 'Daily Summary Generator - No Result',
-            ai_processing: false,
-            image_generation: false,
-            fallback_used: true
-          }
+          metadata: result.metadata,
+          analysis: result.analysis
         };
-      }
-      
+
+      case 'live_updates':
       return {
-        contentItems: [{
-          id: result.metadata?.contentId || `daily_${Date.now()}`,
-          type: 'daily_summary',
+          content: result.aiEditedContent || result.content,
           title: result.title,
-          content: result.content,
-          language: language,
-          imageUrl: result.imageUrl,
-          metadata: result.metadata
-        }],
-        processingInfo: {
-          data_source: 'Daily Summary Generator',
-          ai_processing: true,
-          image_generation: !!result.imageUrl,
-          fallback_used: false
-        }
-      };
-    } catch (error) {
-      console.error('Error generating daily summary content with new generator:', error);
-      return await this.generateFallbackContent('daily_summary', language, maxItems);
-    }
-  }
-
-  /**
-   * Generate weekly summary content
-   */
-  private async generateWeeklySummaryContent(language: Language, maxItems: number, channelId: string, channelSettings?: any): Promise<ContentGenerationResult> {
-    try {
-      console.log(`📊 Using weekly summary generator for ${language}`);
-      const result = await dailyWeeklySummaryGenerator.generateSummary({
-        type: 'weekly',
-        language: language as 'en' | 'am' | 'sw',
-        channelId
-      });
-
-      if (!result) {
-        return {
-          contentItems: [],
-          processingInfo: {
-            data_source: 'Weekly Summary Generator - No Result',
-            ai_processing: false,
-            image_generation: false,
-            fallback_used: true
-          }
+          type: 'live_updates',
+          metadata: result.metadata,
+          matchData: result.matchData,
+          updateType: result.updateType
         };
-      }
 
-      return {
-        contentItems: [{
-          id: result.metadata?.contentId || `weekly_${Date.now()}`,
-          type: 'weekly_summary',
+      case 'poll':
+      case 'polls':
+        return {
+          content: result.aiEditedContent || result.content,
           title: result.title,
-          content: result.content,
-          language: language,
-          imageUrl: result.imageUrl,
-          metadata: result.metadata
-        }],
-        processingInfo: {
-          data_source: 'Weekly Summary Generator',
-          ai_processing: true,
-          image_generation: !!result.imageUrl,
-          fallback_used: false
-        }
-      };
+          type: 'poll',
+          metadata: result.metadata,
+          poll: result.poll
+        };
 
-    } catch (error) {
-      console.error('Error generating weekly summary with generator:', error);
-      return await this.generateFallbackContent('weekly_summary', language, maxItems);
+      case 'daily_summary':
+      case 'weekly_summary':
+      return {
+          content: result.aiEditedContent || result.content,
+          image_url: result.imageUrl,
+          title: result.title,
+          type: contentType,
+          metadata: result.metadata,
+          summary: result.summary
+        };
+
+      default:
+        return {
+          content: result.content || result.aiEditedContent || 'Content generated',
+          title: result.title || `${contentType} content`,
+          type: contentType,
+          metadata: result.metadata || {}
+        };
     }
-  }
-
-  /**
-   * Generate fallback content when no real data is available
-   */
-  async generateFallbackContent(contentType: ContentType | string, language: Language, maxItems: number): Promise<ContentGenerationResult> {
-    console.log(`📰 Using fallback content for ${contentType} in ${language} (last month's news)`);
-    
-    // תוכן מותאם לשפה
-    const templates = {
-      en: {
-        title: `📰 ${contentType.toUpperCase()}: Recent Football Updates`,
-        content: `📰 RECENT FOOTBALL NEWS\n\n⚽ Latest updates from the football world\n🏆 Top stories from recent matches\n📅 ${new Date().toDateString()}\n\nStay tuned for more updates...\n\n#${contentType.toUpperCase()} #${language.toUpperCase()}`
-      },
-      am: {
-        title: `📰 ${contentType.toUpperCase()}: የእግር ኳስ ዝማኔ`,
-        content: this.getAmharicContent(contentType as ContentType)
-      },
-      sw: {
-        title: `📰 ${contentType.toUpperCase()}: Masasisho ya Hivi Karibuni ya Mpira wa Miguu`,
-        content: `📰 HABARI ZA HIVI KARIBUNI ZA MPIRA WA MIGUU\n\n⚽ Masasisho ya hivi karibuni kutoka ulimwenguni mwa mpira wa miguu\n🏆 Hadithi kuu kutoka mechi za hivi karibuni\n📅 ${new Date().toLocaleDateString('sw-KE')}\n\nEndelea kufuatilia kwa masasisho zaidi...\n\n#${contentType.toUpperCase()} #${language.toUpperCase()}`
-      }
-    };
-
-    const template = templates[language as 'en' | 'am' | 'sw'];
-    
-    const fallbackContent = [{
-      id: `fallback_${contentType}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      type: contentType,
-      title: template.title,
-      content: template.content,
-      language,
-      generated_at: new Date().toISOString(),
-      priority: 8,
-      note: 'Fallback content - based on recent news from last month',
-      metadata: {
-        fallback: true,
-        source: 'fallback_generator'
-      }
-    }];
-
-    return {
-      contentItems: fallbackContent.slice(0, maxItems),
-      processingInfo: { 
-        data_source: 'Fallback - Last month news', 
-        ai_processing: false, 
-        image_generation: false, 
-        fallback_used: true 
-      }
-    };
-  }
-
-  /**
-   * Generate content by type (legacy method for backward compatibility)
-   */
-  async generateContentByType(type: ContentType, language: Language, maxItems: number): Promise<ContentGenerationResult> {
-    return await this.generateContent({
-      type,
-      language,
-      maxItems
-    });
-  }
-
-  /**
-   * 🔤 Generate quality Amharic content based on content type
-   */
-  private getAmharicContent(contentType: ContentType): string {
-    const currentDate = new Date().toLocaleDateString('am-ET');
-    
-    const contentTemplates = {
-      live: `🔴 የቀጥታ የእግር ኳስ ዝማኔ\n\n⚽ የአሁኑ የእግር ኳስ ውጤቶች እና ዝማኔዎች\n🏟️ በቀጥታ ከመጫወቻ ሜዳ\n⏰ አሁኑኑ ውጤቶች እና የጨዋታ ሂደት\n\n📱 ለተጨማሪ ቀጥታ ዝማኔዎች ይከተሉን\n📅 ${currentDate}\n\n#እግርኳስ #ቀጥታዝማኔ #ውጤቶች`,
-      
-      betting: `🎯 የውርርድ ምክሮች እና ትንበያዎች\n\n💰 የዛሬ ምርጥ የውርርድ እድሎች\n📊 ባለሙያዎች ትንበያ እና ምክር\n🔍 ጠንካራ ምክሮች ከጥናት በኋላ\n⚡ ወቅታዊ የሊግ ጨዋታዎች ትንተና\n\n⚠️ በኃላፊነት ውርርድ ያድርጉ - 18+ ብቻ\n📅 ${currentDate}\n\n#ውርርድምክር #እግርኳስ #ትንበያ`,
-      
-      news: `📰 የእግር ኳስ ዜናዎች እና ዝማኔዎች\n\n🌍 ከአለም አቀፍ የእግር ኳስ ዓለም\n⚽ የወቅቱ ዋና ዋና ዜናዎች\n🏆 የሊግ ዝማኔዎች እና ውጤቶች\n📈 ተጫዋቾች ዝውውር እና ዜናዎች\n\nለተጨማሪ ዝማኔዎች ተከታተሉን\n📅 ${currentDate}\n\n#እግርኳስዜና #ዝማኔ #ስፖርት`,
-      
-      analysis: `🔍 የጨዋታ ትንተና እና ባለሙያ አስተያየት\n\n📊 ጥልቅ የጨዋታ ትንተና\n🎯 ባለሙያዎች የሁለቱም ቡድኖች ግምገማ\n📈 አፈፃፀም ትንተና እና መዝገብ\n⚡ ስትራቴጂ እና ውድድር ዝርዝር\n\nለሙያዊ ትንተና ይከታተሉን\n📅 ${currentDate}\n\n#ጨዋታትንተና #እግርኳስ #ባለሙያ`,
-      
-      polls: `📊 የእግር ኳስ ምርጫ እና አስተያየት\n\n🗳️ የወቅቱ የእግር ኳስ ምርጫዎች\n⚽ የወዳጆች አስተያየት እና ትንበያ\n🏆 ምርጥ ቡድን እና ተጫዋች ምርጫ\n📈 ማህበረሰብ ድምጽ እና ውይይት\n\nአስተያየትዎን ይስጡ እና ይሳተፉ\n📅 ${currentDate}\n\n#እግርኳስምርጫ #አስተያየት #ማህበረሰብ`,
-      
-      coupons: `🎫 ልዩ ቅናሾች እና ኩፖኖች\n\n💰 የእግር ኳስ ወዳዶች ልዩ ቅናሽ\n🎁 የወቅቱ ምርጥ ውድድሮች\n⚡ የውርርድ ቦነሶች እና ኩፖኖች\n🔥 ልዩ እና ውስን ጊዜ ቅናሾች\n\nቅናሾችን እንዳያመልጡ ይከተሉን\n📅 ${currentDate}\n\n#ቅናሾች #ኩፖን #ውርርድ`,
-      
-      memes: `😂 የእግር ኳስ መዝናኛ እና ቀልዶች\n\n🎭 የወቅቱ የእግር ኳስ ቀልዶች\n😄 መዝናኛ እና አስቂኝ ፎቶዎች\n⚽ የአፈፃፀም ቀልዶች እና ብልሃት\n🤣 የወቅቱ ተወዳጅ እግር ኳስ ቀልዶች\n\nለመዝናኛ እና ቀልድ ይከተሉን\n📅 ${currentDate}\n\n#እግርኳስቀልድ #መዝናኛ #አስቂኝ`,
-      
-      daily_summary: `📋 የዕለቱ የእግር ኳስ ማጠቃለያ\n\n⚽ የዛሬ ዋና ዋና ጨዋታዎች\n📊 ውጤቶች እና ድልድል ዝማኔዎች\n🏆 የሊግ ማዕረግ ሁኔታ ዝማኔ\n📈 ተጫዋቾች እና ቡድኖች አፈፃፀም\n\nየዕለት ማጠቃለያ ለወዳጆች\n📅 ${currentDate}\n\n#ዕለታዊማጠቃለያ #እግርኳስ #ዝማኔ`,
-      
-      weekly_summary: `📅 የሳምንቱ የእግር ኳስ ማጠቃለያ\n\n🗓️ የሳምንቱ ግምገማ እና ውጤቶች\n⚽ ዋና ዋና ጨዋታዎች እና ውጤቶች\n🏆 የሊግ ሁኔታ እና ውድድር\n📊 ስታቲስቲክስ እና አፈፃፀም ትንተና\n\nየሳምንት ማጠቃለያ ለሁሉም\n📅 ${currentDate}\n\n#ሳምንታዊማጠቃለያ #እግርኳስ #ሊግ`
-    };
-
-    return contentTemplates[contentType] || contentTemplates.news;
-  }
-
-  /**
-   * Check if content type is supported
-   */
-  isContentTypeSupported(type: string): boolean {
-    const supportedTypes: ContentType[] = [
-      'live', 'betting', 'news', 'polls', 'analysis', 'coupons', 'memes', 'daily_summary', 'weekly_summary'
-    ];
-    return supportedTypes.includes(type as ContentType);
-  }
-
-  /**
-   * Get content type priority (for scheduling)
-   */
-  getContentTypePriority(type: ContentType): number {
-    const priorities: Record<ContentType, number> = {
-      live: 1,
-      betting: 2,
-      news: 3,
-      polls: 4,
-      analysis: 5,
-      coupons: 6,
-      memes: 7,
-      daily_summary: 8,
-      weekly_summary: 9
-    };
-    return priorities[type] || 10;
-  }
-
-  /**
-   * Get supported content types
-   */
-  getSupportedContentTypes(): Array<{ type: ContentType; priority: number; description: string }> {
-    return [
-      { type: 'live', priority: 1, description: 'Real-time match updates' },
-      { type: 'betting', priority: 2, description: 'AI-powered betting tips' },
-      { type: 'news', priority: 3, description: 'RSS-based news summaries' },
-      { type: 'polls', priority: 4, description: 'Interactive fan polls' },
-      { type: 'analysis', priority: 5, description: 'Match analysis reports' },
-      { type: 'coupons', priority: 6, description: 'Affiliate promotions' },
-      { type: 'memes', priority: 7, description: 'Entertainment content' },
-      { type: 'daily_summary', priority: 8, description: 'Daily recap reports' },
-      { type: 'weekly_summary', priority: 9, description: 'Weekly summary reports' }
-    ];
   }
 }
 
+// Export singleton instance
 export const contentRouter = new ContentRouter(); 

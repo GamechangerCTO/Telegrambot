@@ -411,9 +411,12 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
   let executed = 0;
   const patterns = [];
   const optimizations = [];
-  const contentRouter = new ContentRouter();
-  const telegramDistributor = new TelegramDistributor();
   const now = Date.now();
+  
+  // 🚀 Import content systems dynamically
+  const { contentRouter } = await import('@/lib/content/api-modules/content-router');
+  const { TelegramDistributor } = await import('@/lib/content/api-modules/telegram-distributor');
+  const telegramDistributor = new TelegramDistributor();
 
   // 🚀 PERFORMANCE OPTIMIZATION: Check cooldown periods first
   const canExecuteContent = (contentType: string) => {
@@ -470,20 +473,23 @@ async function executeOptimizedContentPatterns(currentHour: number, currentMinut
           console.log(`📰 Generating news for ${languageChannels.length} channels in ${language}`);
           
           const newsResult = await contentRouter.generateContent({
-            type: 'news',
+            contentType: 'news',
             language: language as 'en' | 'am' | 'sw',
-            maxItems: 1,
-            channelId: 'optimized-scheduler',
-            targetChannels: languageChannels.map((ch: any) => ch.id)
+            channelIds: languageChannels.map((ch: any) => ch.id),
+            isAutomationExecution: true
           });
 
-          if (newsResult.contentItems && newsResult.contentItems.length > 0) {
+          if (newsResult.success && newsResult.content_items && newsResult.content_items.length > 0) {
             await telegramDistributor.sendContentToTelegram({
-              content: newsResult.contentItems[0],
+              content: {
+                content_type: 'news',
+                content_items: newsResult.content_items
+              },
               language: language as 'en' | 'am' | 'sw',
               mode: 'optimized_scheduler_news',
               targetChannels: languageChannels.map((ch: any) => ch.id),
-              includeImages: true
+              includeImages: true,
+              isAutomationExecution: true
             });
             executed++;
             patterns.push(`news_${currentHour}h_${language}_optimized`);

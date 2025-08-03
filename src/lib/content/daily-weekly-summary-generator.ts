@@ -1808,7 +1808,7 @@ export class DailyWeeklySummaryGenerator {
 
     const prompt = `You are a TELEGRAM VISUAL DESIGNER creating ultra-modern, visually stunning content. IGNORE the template - CREATE COMPLETELY NEW VISUAL FORMAT with maximum spacing, unique formatting, and perfect structure.
 
-    🚨 CRITICAL: The content you see users receiving is plain text with NO formatting! You MUST fix this by using EXTREME visual formatting.`
+    🚨 CRITICAL: The content you see users receiving is plain text with NO formatting! You MUST fix this by using EXTREME visual formatting.
 
     Original content template:
     ${content}

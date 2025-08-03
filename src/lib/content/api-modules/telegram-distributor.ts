@@ -345,6 +345,15 @@ export class TelegramDistributor {
           
           let sendResult;
           
+          // 🌍 LANGUAGE VALIDATION: Ensure content matches channel language
+          const isLanguageValid = this.validateContentLanguage(content, channel.language, channel.name);
+          if (!isLanguageValid) {
+            const handled = await this.handleLanguageMismatch(content, channel.language, channel.name);
+            if (!handled) {
+              throw new Error(`Language mismatch: Content not in ${channel.language} for ${channel.name}`);
+            }
+          }
+          
           // Determine content type and send with appropriate enhanced method
           const contentType = content.content_type || content.type || 'unknown';
           
@@ -421,6 +430,7 @@ export class TelegramDistributor {
     name: string;
     telegram_channel_id: string;
     bot_token: string;
+    language?: string;
   }>, pollData: any): Promise<Array<{
     channelName: string;
     success: boolean;
@@ -431,31 +441,27 @@ export class TelegramDistributor {
     
     for (const channel of channels) {
       try {
-        const result = await telegramSender.sendMessage({
-          botToken: channel.bot_token,
-          channelId: channel.telegram_channel_id,
-          content: '', // לא נדרש לסקר
-          poll: {
-            question: pollData.question,
-            options: pollData.options,
-            isAnonymous: pollData.isAnonymous !== false,
-            type: pollData.type === 'quiz' ? 'quiz' : 'regular',
-            allowsMultipleAnswers: pollData.allowsMultipleAnswers === true,
-            correctOptionId: pollData.correctOptionId,
-            explanation: pollData.explanation,
-            openPeriod: pollData.openPeriod,
-            closeDate: pollData.closeDate
-          }
+        // 🚀 Use Enhanced Telegram API for advanced poll features
+        const enhancedAPI = new EnhancedTelegramAPI(channel.bot_token);
+        
+        const result = await enhancedAPI.sendSportsPoll({
+          chat_id: channel.telegram_channel_id,
+          type: pollData.type === 'quiz' ? 'trivia' : 'prediction',
+          question: pollData.question,
+          options: pollData.options,
+          language: (channel.language || 'en') as 'en' | 'am' | 'sw' | 'fr' | 'ar', // 🌍 Use proper channel language
+          correct_answer: pollData.correctOptionId,
+          website_url: pollData.websiteUrl
         });
         
         pollResults.push({
           channelName: channel.name,
-          success: result.success,
-          error: result.success ? undefined : result.error,
-          messageId: result.messageId
+          success: !!result,
+          error: result ? undefined : 'Failed to send poll',
+          messageId: result?.message_id
         });
         
-        console.log(`✅ Poll sent to ${channel.name}: ${result.success ? 'Success' : 'Failed'}`);
+        console.log(`✅ Enhanced poll sent to ${channel.name}: ${result ? 'Success' : 'Failed'}`);
       } catch (error) {
         console.error(`❌ Failed to send poll to ${channel.name}:`, error);
         pollResults.push({
@@ -801,14 +807,220 @@ export class TelegramDistributor {
     };
   }
 
+  // ====== LANGUAGE MATCHING & VALIDATION ======
+
+  /**
+   * 🌍 Ensure content language matches channel language
+   */
+  private validateContentLanguage(content: any, targetLanguage: string, channelName: string): boolean {
+    console.log(`🌍 Validating content language for ${channelName} (target: ${targetLanguage})`);
+    
+    const contentText = content.content_items?.[0]?.content || content.content || '';
+    const detectedLanguage = this.detectContentLanguage(contentText);
+    
+    console.log(`🔍 Detected language: ${detectedLanguage}, Target: ${targetLanguage}`);
+    
+    if (detectedLanguage !== targetLanguage) {
+      console.log(`⚠️ LANGUAGE MISMATCH: Content is in ${detectedLanguage}, but channel ${channelName} expects ${targetLanguage}`);
+      return false;
+    }
+    
+    console.log(`✅ Language validation passed for ${channelName}`);
+    return true;
+  }
+
+  /**
+   * 🕵️ Detect content language based on text patterns
+   */
+  private detectContentLanguage(text: string): string {
+    if (!text) return 'en';
+    
+    // Hebrew detection - Hebrew characters
+    if (/[\u0590-\u05FF]/.test(text)) {
+      return 'he';
+    }
+    
+    // Amharic detection - Ethiopic script
+    if (/[\u1200-\u137F]/.test(text)) {
+      return 'am';
+    }
+    
+    // Swahili detection - common Swahili words
+    const swahiliWords = /\b(na|ya|wa|la|kwa|katika|kwa|hii|hizo|hile|habari|mchezo|timu|mechi|ufupi)\b/i;
+    if (swahiliWords.test(text)) {
+      return 'sw';
+    }
+    
+    // French detection - common French words
+    const frenchWords = /\b(le|la|les|de|du|des|et|est|dans|pour|avec|sur|par|un|une|ce|cette|qui|que|où|football|match|équipe)\b/i;
+    if (frenchWords.test(text)) {
+      return 'fr';
+    }
+    
+    // Arabic detection - Arabic characters
+    if (/[\u0600-\u06FF]/.test(text)) {
+      return 'ar';
+    }
+    
+    // Default to English
+    return 'en';
+  }
+
+  /**
+   * 🔄 Request content regeneration in correct language if needed
+   */
+  private async handleLanguageMismatch(content: any, targetLanguage: string, channelName: string): Promise<boolean> {
+    console.log(`🔄 Handling language mismatch for ${channelName} - need ${targetLanguage} content`);
+    
+    // Log the mismatch for monitoring
+    try {
+      await supabase
+        .from('content_quality_logs')
+        .insert({
+          channel_name: channelName,
+          target_language: targetLanguage,
+          detected_language: this.detectContentLanguage(content.content_items?.[0]?.content || ''),
+          content_type: content.content_type || 'unknown',
+          issue_type: 'language_mismatch',
+          created_at: new Date().toISOString()
+        });
+    } catch (error) {
+      console.error('❌ Failed to log language mismatch:', error);
+    }
+    
+    // For now, skip sending mismatched content
+    return false;
+  }
+
+  // ====== CONTENT FORMATTING ENHANCEMENT ======
+
+  /**
+   * 🎨 Apply advanced Telegram formatting to make content look amazing
+   */
+  private enhanceContentFormatting(content: string, contentType: string, language: string): string {
+    console.log(`🎨 Enhancing ${contentType} content formatting for ${language}...`);
+    
+    // Enhanced formatting patterns for different content types
+    let enhancedContent = content;
+    
+    // Add proper spacing and emojis based on content type
+    if (contentType === 'betting') {
+      enhancedContent = this.enhanceBettingFormat(enhancedContent, language);
+    } else if (contentType === 'news') {
+      enhancedContent = this.enhanceNewsFormat(enhancedContent, language);
+    } else if (contentType === 'analysis') {
+      enhancedContent = this.enhanceAnalysisFormat(enhancedContent, language);
+    } else if (contentType === 'live_updates') {
+      enhancedContent = this.enhanceLiveUpdatesFormat(enhancedContent, language);
+    }
+    
+    // Universal enhancements
+    enhancedContent = this.applyUniversalFormatting(enhancedContent);
+    
+    console.log(`✨ Content formatting enhanced! Length: ${enhancedContent.length} chars`);
+    return enhancedContent;
+  }
+
+  /**
+   * 🎯 Enhanced betting content formatting
+   */
+  private enhanceBettingFormat(content: string, language: string): string {
+    // Add proper spacing around betting odds
+    content = content.replace(/(\d+\.\d+)/g, ' <b>$1</b> ');
+    
+    // Enhance team names with bold formatting
+    content = content.replace(/(vs|נגד|በተቃወመ|dhidi ya)/gi, ' <b>$1</b> ');
+    
+    // Add betting emojis and better structure
+    content = content.replace(/🎯/g, '\n🎯 ');
+    content = content.replace(/💰/g, '\n💰 ');
+    content = content.replace(/⚠️/g, '\n\n⚠️ ');
+    
+    // Add more visual separation
+    content = content.replace(/([.!])\s*([🎯💰📊])/g, '$1\n\n$2');
+    
+    return content;
+  }
+
+  /**
+   * 📰 Enhanced news content formatting  
+   */
+  private enhanceNewsFormat(content: string, language: string): string {
+    // Better paragraph spacing
+    content = content.replace(/([.!?])\s+([A-Z])/g, '$1\n\n$2');
+    
+    // Enhance quotes and important statements
+    content = content.replace(/"([^"]+)"/g, '\n💬 <i>"$1"</i>\n');
+    
+    // Add news emojis
+    content = content.replace(/📰/g, '\n📰 ');
+    content = content.replace(/🚨/g, '\n🚨 ');
+    
+    return content;
+  }
+
+  /**
+   * 📊 Enhanced analysis content formatting
+   */
+  private enhanceAnalysisFormat(content: string, language: string): string {
+    // Enhance statistics with better formatting
+    content = content.replace(/(\d+%)/g, '<b>$1</b>');
+    content = content.replace(/(\d+-\d+)/g, '<b>$1</b>');
+    
+    // Better structure for analysis sections
+    content = content.replace(/📊/g, '\n\n📊 ');
+    content = content.replace(/🔍/g, '\n🔍 ');
+    content = content.replace(/⚽/g, '\n⚽ ');
+    
+    return content;
+  }
+
+  /**
+   * 🔴 Enhanced live updates formatting
+   */
+  private enhanceLiveUpdatesFormat(content: string, language: string): string {
+    // Enhance live events with proper spacing
+    content = content.replace(/(\d+')/, '\n⏱️ <b>$1</b>');
+    content = content.replace(/(GOAL|גול|ጎል|BAO)/gi, '\n⚽ <b>$1</b>');
+    content = content.replace(/(CARD|כרטיס|ካርድ|KADI)/gi, '\n🟨 <b>$1</b>');
+    
+    // Better live score formatting
+    content = content.replace(/(\d+-\d+)/, '<b>$1</b>');
+    
+    return content;
+  }
+
+  /**
+   * ✨ Apply universal formatting improvements
+   */
+  private applyUniversalFormatting(content: string): string {
+    // Better emoji spacing
+    content = content.replace(/([🎯💰📊⚽🏆🔥💎⭐🎪🌟])([A-Za-z])/g, '$1 $2');
+    
+    // Fix multiple spaces and line breaks
+    content = content.replace(/\s{3,}/g, '  ');
+    content = content.replace(/\n{4,}/g, '\n\n\n');
+    
+    // Ensure proper line breaks before emojis
+    content = content.replace(/([.!?])\s*([🎯💰📊⚽🏆🔥💎⭐🎪🌟])/g, '$1\n\n$2');
+    
+    // Clean up any trailing spaces
+    content = content.replace(/[ \t]+$/gm, '');
+    
+    return content.trim();
+  }
+
   // ====== ENHANCED CONTENT SENDING METHODS ======
 
   /**
    * 🎯 Send betting content with interactive features
    */
   private async sendBettingContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    // Use the pre-formatted HTML content from the generator instead of reformatting
+    // Get the original content and enhance formatting
     let bettingContent = content.content_items?.[0]?.content || content.content || 'Betting content not available';
+    
+    // 🎨 Apply enhanced formatting for amazing visual presentation
+    bettingContent = this.enhanceContentFormatting(bettingContent, 'betting', channel.language);
     
     // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
     const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
@@ -817,42 +1029,43 @@ export class TelegramDistributor {
       bettingContent = this.truncateHTMLContent(bettingContent, maxLength);
     }
     
-    console.log(`🎯 Sending betting content with preserved HTML formatting (${bettingContent.length} chars)`);
+    console.log(`🎯 Sending enhanced betting content (${bettingContent.length} chars) to ${channel.name}`);
     
-    // Create interactive buttons for betting
-    const keyboard = this.createBettingKeyboard(content, channel.language, buttonConfig);
-    
-    // FORCE HTML parsing by ensuring parse_mode is set correctly
-    const messageOptions = {
-      parse_mode: 'HTML' as const,
-      reply_markup: keyboard,
-      protect_content: true,
-      disable_web_page_preview: true
+    // 🚀 Use Enhanced Telegram API with advanced features
+    const matchInfo = {
+      home: content.analysis?.homeTeam || 'Team A',
+      away: content.analysis?.awayTeam || 'Team B', 
+      competition: content.analysis?.competition || 'Match'
     };
     
-    // Send the content with preserved HTML formatting
-    if (imageUrl) {
-      return await enhancedAPI.sendPhoto({
-        chat_id: channel.telegram_channel_id,
-        photo: imageUrl,
-        caption: bettingContent,
-        ...messageOptions
-      });
-    } else {
-      return await enhancedAPI.sendMessage({
-        chat_id: channel.telegram_channel_id,
-        text: bettingContent,
-        ...messageOptions
-      });
-    }
+    const tips = content.analysis?.predictions?.map((pred: any) => ({
+      type: pred.type,
+      prediction: pred.prediction,
+      odds: pred.odds_estimate || '2.00',
+      confidence: pred.confidence
+    })) || [];
+    
+    // Send using Enhanced API with interactive features
+    return await enhancedAPI.sendBettingTips({
+      chat_id: channel.telegram_channel_id,
+      match: matchInfo,
+      tips: tips,
+      language: channel.language,
+      image_url: imageUrl,
+      affiliate_code: buttonConfig?.affiliate_code,
+      website_url: buttonConfig?.website_url
+    });
   }
 
   /**
-   * 📰 Send news content with interactive features
+   * 📰 Send news content with enhanced formatting and interactive features
    */
   private async sendNewsContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    // Use the pre-formatted HTML content from the generator instead of reformatting
+    // Get the original content and enhance formatting
     let newsContent = content.content_items?.[0]?.content || content.content || 'News content not available';
+    
+    // 🎨 Apply enhanced formatting for amazing visual presentation
+    newsContent = this.enhanceContentFormatting(newsContent, 'news', channel.language);
     
     // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
     const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
@@ -861,34 +1074,24 @@ export class TelegramDistributor {
       newsContent = this.truncateHTMLContent(newsContent, maxLength);
     }
     
-    console.log(`📰 Sending news content with preserved HTML formatting (${newsContent.length} chars)`);
+    console.log(`📰 Sending enhanced news content (${newsContent.length} chars) to ${channel.name}`);
     
-    // Create interactive buttons for news
-    const keyboard = this.createNewsKeyboard(content, channel.language, buttonConfig);
+    // Extract news metadata for Enhanced API
+    const title = content.title || content.content_items?.[0]?.title || 'Football News';
+    const category = content.category || content.content_items?.[0]?.category || 'general';
+    const sourceUrl = content.source_url || content.content_items?.[0]?.source_url;
     
-    // FORCE HTML parsing by ensuring parse_mode is set correctly
-    const messageOptions = {
-      parse_mode: 'HTML' as const,
-      reply_markup: keyboard,
-      protect_content: true,
-      disable_web_page_preview: true
-    };
-    
-    // Send the content with preserved HTML formatting
-    if (imageUrl) {
-      return await enhancedAPI.sendPhoto({
-        chat_id: channel.telegram_channel_id,
-        photo: imageUrl,
-        caption: newsContent,
-        ...messageOptions
-      });
-    } else {
-      return await enhancedAPI.sendMessage({
-        chat_id: channel.telegram_channel_id,
-        text: newsContent,
-        ...messageOptions
-      });
-    }
+    // 🚀 Use Enhanced Telegram API for rich news experience
+    return await enhancedAPI.sendNews({
+      chat_id: channel.telegram_channel_id,
+      title: title,
+      content: newsContent,
+      language: channel.language,
+      images: imageUrl ? [imageUrl] : undefined,
+      source_url: sourceUrl,
+      category: category,
+      website_url: buttonConfig?.website_url
+    });
   }
 
   /**
@@ -940,59 +1143,56 @@ export class TelegramDistributor {
    * 📊 Send analysis content with interactive features
    */
   private async sendAnalysisContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    // Use the pre-formatted HTML content from the generator instead of reformatting
+    // Get the original content and enhance formatting
     let analysisContent = content.content_items?.[0]?.content || content.content || 'Analysis content not available';
+    
+    // 🎨 Apply enhanced formatting for amazing visual presentation
+    analysisContent = this.enhanceContentFormatting(analysisContent, 'analysis', channel.language);
     
     // CRITICAL: Ensure content fits Telegram's 4096 character limit for captions (1024) and messages (4096)
     const maxLength = imageUrl ? 1000 : 3800; // Leave room for buttons and formatting
     if (analysisContent.length > maxLength) {
-      console.log(`⚠️ Content too long (${analysisContent.length} chars), truncating to ${maxLength}`);
+      console.log(`⚠️ Analysis content too long (${analysisContent.length} chars), truncating to ${maxLength}`);
       analysisContent = this.truncateHTMLContent(analysisContent, maxLength);
     }
     
-    console.log(`📊 Sending analysis content with preserved HTML formatting (${analysisContent.length} chars)`);
+    console.log(`📊 Sending enhanced analysis content (${analysisContent.length} chars) to ${channel.name}`);
     
-    // Create interactive buttons for analysis
-    const keyboard = this.createAnalysisKeyboard(content, channel.language, buttonConfig);
-    
-    // FORCE HTML parsing by ensuring parse_mode is set correctly
-    const messageOptions = {
-      parse_mode: 'HTML' as const,
-      reply_markup: keyboard,
+    // For analysis, we'll use the standard enhanced message with special formatting
+    return await enhancedAPI.sendMessage({
+      chat_id: channel.telegram_channel_id,
+      text: analysisContent,
+      parse_mode: 'HTML',
+      reply_markup: this.createAnalysisKeyboard(content, channel.language, buttonConfig),
       protect_content: true,
-      disable_web_page_preview: true
-    };
-    
-    // Send the content with preserved HTML formatting
-    if (imageUrl) {
-      return await enhancedAPI.sendPhoto({
-        chat_id: channel.telegram_channel_id,
-        photo: imageUrl,
-        caption: analysisContent,
-        ...messageOptions
-      });
-    } else {
-      return await enhancedAPI.sendMessage({
-        chat_id: channel.telegram_channel_id,
-        text: analysisContent,
-        ...messageOptions
-      });
-    }
+      link_preview_options: { is_disabled: true },
+      message_effect_id: '5046589136895476101' // Special effect for analysis content
+    });
   }
 
   /**
-   * 🔴 Send live updates content with interactive features
+   * 🔴 Send live updates content with enhanced formatting and interactive features
    */
   private async sendLiveUpdatesContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
+    // Get the original content and enhance formatting
+    let liveContent = content.content_items?.[0]?.content || content.content || 'Live update not available';
+    
+    // 🎨 Apply enhanced formatting for amazing visual presentation
+    liveContent = this.enhanceContentFormatting(liveContent, 'live_updates', channel.language);
+    
+    console.log(`🔴 Sending enhanced live updates (${liveContent.length} chars) to ${channel.name}`);
+    
+    // Extract live data for Enhanced API
     const liveData = this.extractLiveData(content);
     
+    // 🚀 Use Enhanced Telegram API for rich live experience with special effects
     return await enhancedAPI.sendLiveUpdate({
       chat_id: channel.telegram_channel_id,
       match: liveData.match,
       score: liveData.score,
       events: liveData.events,
       language: channel.language,
-      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
+      website_url: buttonConfig?.website_url || process.env.NEXT_PUBLIC_WEBSITE_URL
     });
   }
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { POST as unifiedContentAPI } from '@/app/api/unified-content/route';
 
 export async function POST(request: NextRequest) {
   try {
@@ -443,31 +442,46 @@ async function triggerRealContentGeneration(contentType: string, channels: any[]
         
         console.log(`🔍 DEBUG: Request body:`, requestBody);
         
-        // Create a mock request object for the unified-content API
-        const mockRequest = new NextRequest('http://localhost:3000/api/unified-content', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-internal-automation': 'true'
-          },
-          body: JSON.stringify(requestBody)
-        });
+        // 🚀 Use direct content generation instead of HTTP requests
+        console.log(`🔍 DEBUG: Using direct content generation for ${contentType} in ${language}`);
         
-        // Call the unified-content API directly (no HTTP request needed)
-        const response = await unifiedContentAPI(mockRequest);
+        const { contentRouter } = await import('@/lib/content/api-modules/content-router');
+        
+        const contentResult = await contentRouter.generateContent({
+          contentType: contentType,
+          language: language,
+          channelIds: languageChannels.map(c => c.id),
+          isAutomationExecution: true
+        });
 
-        console.log(`🔍 DEBUG: API Response status: ${response.status}`);
-
-        if (response.status !== 200) {
-          const errorText = await response.text();
-          console.error(`❌ Failed to generate ${contentType} content in ${language}:`, errorText);
+        if (!contentResult.success) {
+          console.error(`❌ Failed to generate ${contentType} content in ${language}:`, contentResult.error);
           totalSuccess = false;
           continue;
         }
 
-        const result = await response.json();
-        console.log(`✅ Successfully generated ${contentType} content in ${language}:`, result.message || 'Success');
-        console.log(`🔍 DEBUG: API Response:`, result);
+        console.log(`✅ Successfully generated ${contentType} content in ${language}:`, contentResult.message || 'Success');
+        
+        // If content was generated, distribute it to channels
+        if (contentResult.content_items && contentResult.content_items.length > 0) {
+          const { TelegramDistributor } = await import('@/lib/content/api-modules/telegram-distributor');
+          const telegramDistributor = new TelegramDistributor();
+          
+          const distributionResult = await telegramDistributor.sendContentToTelegram({
+            content: {
+              content_type: contentType,
+              content_items: contentResult.content_items
+            },
+            language: language as any,
+            mode: 'automation',
+            targetChannels: languageChannels.map(c => c.telegram_channel_id),
+            includeImages: true,
+            manualExecution: false,
+            isAutomationExecution: true
+          });
+          
+          console.log(`📤 Distribution result: ${distributionResult.success ? 'Success' : 'Failed'} for ${distributionResult.channels} channels`);
+        }
 
       } catch (error) {
         console.error(`❌ Error generating ${contentType} content in ${language}:`, error);

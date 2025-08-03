@@ -127,34 +127,28 @@ export class SimpleContentGenerator {
     console.log(`🎯 יוצר תוכן ${contentType} בשפה ${language}`);
 
     try {
-      // קריאה ל unified-content API הקיים
-      const response = await fetch('/api/unified-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'generate',
-          type: contentType,
-          language: language,
-          maxItems: 1
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('שגיאה בקריאה ל API');
-      }
-
-      const apiResult = await response.json();
+      // 🚀 קריאה ישירה לגנרטורים במקום HTTP request
+      console.log(`🎯 Using direct content generation for ${contentType} in ${language}`);
       
-      if (apiResult.success && apiResult.content_items && apiResult.content_items.length > 0) {
+      // Import the content generators directly
+      const { contentRouter } = await import('./api-modules/content-router');
+      
+      // Generate content directly using the content router
+      const contentResult = await contentRouter.generateContent({
+        contentType: contentType,
+        language: language,
+        channelIds: channels.map(c => c.id),
+        isAutomationExecution: true
+      });
+      
+      if (contentResult && contentResult.content_items && contentResult.content_items.length > 0) {
         return {
-          content: apiResult.content_items[0].content || apiResult.content_items[0],
-          image: apiResult.content_items[0].image
+          content: contentResult.content_items[0].content || contentResult.content_items[0],
+          image: contentResult.content_items[0].image_url || contentResult.content_items[0].image
         };
       }
 
-      throw new Error('לא התקבל תוכן מה API');
+      throw new Error('לא התקבל תוכן מהגנרטור');
 
     } catch (error) {
       console.error(`❌ שגיאה ביצירת תוכן עבור ${contentType} בשפה ${language}:`, error);
