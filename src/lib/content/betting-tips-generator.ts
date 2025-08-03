@@ -971,9 +971,8 @@ export class BettingTipsGenerator {
         return this.enhanceBettingContent(content, analysis, request.language);
       }
 
-      // TEMPORARY FIX: Disable AI editing to prevent timeouts
-      console.log('⚠️ AI editing temporarily disabled to prevent timeouts');
-      return this.enhanceBettingContent(content, analysis, request.language);
+      // AI editing is now enabled with increased max_tokens to prevent timeouts
+      console.log('🤖 AI editing enabled with optimized token limits');
 
       const systemPrompts = {
         'en': `You are a friendly football betting expert. Create betting tips using HTML tags (<b>, <i>, <code>) and these symbols: ━ ┏ ┓ ┗ ┛ ┃. Keep it short and professional. Include odds and confidence levels.`,
@@ -1204,6 +1203,11 @@ DOIT utiliser les caractères de boîte Unicode: ━ ┏ ┓ ┗ ┛ ┃`,
         return this.enhanceBettingContent(content, analysis, safeLanguage);
       }
 
+      if (!openai) {
+        console.error(`❌ OpenAI client is null, falling back to template`);
+        return this.enhanceBettingContent(content, analysis, safeLanguage);
+      }
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -1235,7 +1239,7 @@ Create betting tips that are specific to this exact match with the provided data
 
       const enhancedContent = response.choices[0]?.message?.content?.trim();
       
-      if (enhancedContent) {
+      if (enhancedContent && enhancedContent.length > 0) {
         console.log(`✅ AI enhanced betting content in ${request.language}: "${enhancedContent.substring(0, 100)}..."`);
         console.log(`📏 Enhanced content length: ${enhancedContent.length} characters`);
         return enhancedContent;
@@ -1262,8 +1266,8 @@ Create betting tips that are specific to this exact match with the provided data
 <b>💰 Top Predictions</b>
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 🏆 <b>Match Result:</b> ${analysis.predictions[0]?.prediction || 'Home Win'}
-┃ 💰 <code>Odds: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>Confidence: ${analysis.predictions[0]?.confidence || 80}%</i>
-┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'Strong home form and advantage'}
+┃ 💰 <code>Odds: ${analysis.predictions[0]?.odds_estimate || analysis.predictions[0]?.expectedOdds || '1.85'}</code> | <i>Confidence: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.predictions[0]?.reasoning || 'Strong home form and advantage'}
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 🔥 <b>Don't miss this ${analysis.matchAssessment.predictability.toLowerCase()}-confidence betting opportunity!</b>
@@ -1280,8 +1284,8 @@ Create betting tips that are specific to this exact match with the provided data
 <b>💰 ተመራጭ ትንበያዎች</b>
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 🏆 <b>የጨዋታ ውጤት:</b> ${analysis.predictions[0]?.prediction || 'የቤት ድል'}
-┃ 💰 <code>ዕድል: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>እምነት: ${analysis.predictions[0]?.confidence || 80}%</i>
-┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'ጠንካራ የቤት ቅርፀት እና ጥቅም'}
+┃ 💰 <code>ዕድል: ${analysis.predictions[0]?.odds_estimate || analysis.predictions[0]?.expectedOdds || '1.85'}</code> | <i>እምነት: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.predictions[0]?.reasoning || 'ጠንካራ የቤት ቅርፀት እና ጥቅም'}
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 🔥 <b>ይህን የ${analysis.matchAssessment.predictability.toLowerCase()}-እምነት የውርርድ እድል አታመልጡት!</b>
@@ -1298,8 +1302,8 @@ Create betting tips that are specific to this exact match with the provided data
 <b>💰 Utabiri Bora</b>
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 🏆 <b>Matokeo ya Mchezo:</b> ${analysis.predictions[0]?.prediction || 'Ushindi wa Nyumbani'}
-┃ 💰 <code>Uwezekano: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>Uhakika: ${analysis.predictions[0]?.confidence || 80}%</i>
-┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'Umbo bora la nyumbani na faida'}
+┃ 💰 <code>Uwezekano: ${analysis.predictions[0]?.odds_estimate || analysis.predictions[0]?.expectedOdds || '1.85'}</code> | <i>Uhakika: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.predictions[0]?.reasoning || 'Umbo bora la nyumbani na faida'}
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 🔥 <b>Usikose fursa hii ya kamari ya ${analysis.matchAssessment.predictability.toLowerCase()}-uongozi!</b>
@@ -1316,8 +1320,8 @@ Create betting tips that are specific to this exact match with the provided data
 <b>💰 Prédictions Principales</b>
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 🏆 <b>Résultat du Match:</b> ${analysis.predictions[0]?.prediction || 'Victoire Domicile'}
-┃ 💰 <code>Cotes: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>Confiance: ${analysis.predictions[0]?.confidence || 80}%</i>
-┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'Forme solide à domicile et avantage'}
+┃ 💰 <code>Cotes: ${analysis.predictions[0]?.odds_estimate || analysis.predictions[0]?.expectedOdds || '1.85'}</code> | <i>Confiance: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.predictions[0]?.reasoning || 'Forme solide à domicile et avantage'}
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 🔥 <b>Ne manquez pas cette opportunité de pari avec ${analysis.matchAssessment.predictability.toLowerCase()}-confiance!</b>
@@ -1334,8 +1338,8 @@ Create betting tips that are specific to this exact match with the provided data
 <b>💰 التوقعات الرئيسية</b>
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 🏆 <b>نتيجة المباراة:</b> ${analysis.predictions[0]?.prediction || 'فوز الفريق المضيف'}
-┃ 💰 <code>الاحتمالات: ${analysis.predictions[0]?.odds || '1.85'}</code> | <i>الثقة: ${analysis.predictions[0]?.confidence || 80}%</i>
-┃ 📝 ${analysis.matchAssessment.keyFactors[0] || 'شكل قوي في الملعب والميزة'}
+┃ 💰 <code>الاحتمالات: ${analysis.predictions[0]?.odds_estimate || analysis.predictions[0]?.expectedOdds || '1.85'}</code> | <i>الثقة: ${analysis.predictions[0]?.confidence || 80}%</i>
+┃ 📝 ${analysis.predictions[0]?.reasoning || 'شكل قوي في الملعب والميزة'}
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 🔥 <b>لا تفوت هذه الفرصة للرهان بثقة ${analysis.matchAssessment.predictability.toLowerCase()}!</b>
