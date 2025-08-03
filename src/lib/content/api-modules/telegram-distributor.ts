@@ -807,51 +807,99 @@ export class TelegramDistributor {
    * 🎯 Send betting content with interactive features
    */
   private async sendBettingContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    const bettingData = this.extractBettingData(content);
+    // Use the pre-formatted HTML content from the generator instead of reformatting
+    const bettingContent = content.content_items?.[0]?.content || content.content || 'Betting content not available';
     
-    return await enhancedAPI.sendBettingTips({
-      chat_id: channel.telegram_channel_id,
-      match: bettingData.match,
-      tips: bettingData.tips,
-      language: channel.language,
-      image_url: imageUrl,
-      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
-    });
+    console.log(`🎯 Sending betting content with preserved HTML formatting (${bettingContent.length} chars)`);
+    
+    // Create interactive buttons for betting
+    const keyboard = this.createBettingKeyboard(content, channel.language, buttonConfig);
+    
+    // Send the content with preserved HTML formatting
+    if (imageUrl) {
+      return await enhancedAPI.sendPhoto({
+        chat_id: channel.telegram_channel_id,
+        photo: imageUrl,
+        caption: bettingContent,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+        protect_content: true
+      });
+    } else {
+      return await enhancedAPI.sendMessage({
+        chat_id: channel.telegram_channel_id,
+        text: bettingContent,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+        protect_content: true
+      });
+    }
   }
 
   /**
    * 📰 Send news content with interactive features
    */
   private async sendNewsContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    const newsData = this.extractNewsData(content);
+    // Use the pre-formatted HTML content from the generator instead of reformatting
+    const newsContent = content.content_items?.[0]?.content || content.content || 'News content not available';
     
-    return await enhancedAPI.sendNews({
-      chat_id: channel.telegram_channel_id,
-      title: newsData.title,
-      content: newsData.content,
-      language: channel.language,
-      images: imageUrl ? [imageUrl] : undefined,
-      source_url: newsData.sourceUrl,
-      category: newsData.category || 'general',
-      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
-    });
+    console.log(`📰 Sending news content with preserved HTML formatting (${newsContent.length} chars)`);
+    
+    // Create interactive buttons for news
+    const keyboard = this.createNewsKeyboard(content, channel.language, buttonConfig);
+    
+    // Send the content with preserved HTML formatting
+    if (imageUrl) {
+      return await enhancedAPI.sendPhoto({
+        chat_id: channel.telegram_channel_id,
+        photo: imageUrl,
+        caption: newsContent,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+        protect_content: true
+      });
+    } else {
+      return await enhancedAPI.sendMessage({
+        chat_id: channel.telegram_channel_id,
+        text: newsContent,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+        protect_content: true
+      });
+    }
   }
 
   /**
    * 📊 Send analysis content with interactive features
    */
   private async sendAnalysisContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
-    const analysisData = this.extractAnalysisData(content);
+    // Use the pre-formatted HTML content from the generator instead of reformatting
+    const analysisContent = content.content_items?.[0]?.content || content.content || 'Analysis content not available';
     
-    // For analysis, we'll use the betting tips format with analysis-specific data
-    return await enhancedAPI.sendBettingTips({
-      chat_id: channel.telegram_channel_id,
-      match: analysisData.match,
-      tips: analysisData.insights,
-      language: channel.language,
-      image_url: imageUrl,
-      website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
-    });
+    console.log(`📊 Sending analysis content with preserved HTML formatting (${analysisContent.length} chars)`);
+    
+    // Create interactive buttons for analysis
+    const keyboard = this.createAnalysisKeyboard(content, channel.language, buttonConfig);
+    
+    // Send the content with preserved HTML formatting
+    if (imageUrl) {
+      return await enhancedAPI.sendPhoto({
+        chat_id: channel.telegram_channel_id,
+        photo: imageUrl,
+        caption: analysisContent,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+        protect_content: true
+      });
+    } else {
+      return await enhancedAPI.sendMessage({
+        chat_id: channel.telegram_channel_id,
+        text: analysisContent,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+        protect_content: true
+      });
+    }
   }
 
   /**
@@ -911,6 +959,141 @@ export class TelegramDistributor {
       category: 'general',
       website_url: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://your-sports-site.com'
     });
+  }
+
+  /**
+   * 🎯 Create interactive keyboard for betting content
+   */
+  private createBettingKeyboard(content: any, language: string, buttonConfig?: any) {
+    const keyboard = [];
+    
+    // Betting-specific buttons
+    const bettingButtons = {
+      en: [
+        { text: '💰 Place Bet', callback_data: 'place_bet' },
+        { text: '📊 Live Odds', callback_data: 'live_odds' },
+        { text: '⚽ Match Stats', callback_data: 'match_stats' }
+      ],
+      am: [
+        { text: '💰 ውርርድ ያድርጉ', callback_data: 'place_bet' },
+        { text: '📊 የቀጥታ ዕድሎች', callback_data: 'live_odds' },
+        { text: '⚽ የጨዋታ ስታትስቲክስ', callback_data: 'match_stats' }
+      ],
+      sw: [
+        { text: '💰 Weka Kamari', callback_data: 'place_bet' },
+        { text: '📊 Uwezekano wa Moja kwa Moja', callback_data: 'live_odds' },
+        { text: '⚽ Takwimu za Mechi', callback_data: 'match_stats' }
+      ]
+    };
+
+    // Add betting buttons
+    const langButtons = bettingButtons[language as keyof typeof bettingButtons] || bettingButtons.en;
+    keyboard.push(langButtons);
+
+    // Add channel-specific buttons if available
+    if (buttonConfig?.betting_platform) {
+      const bettingPlatformButtons = {
+        en: '🎯 Betting Site',
+        am: '🎯 የውርርድ ድህረ ገጽ',
+        sw: '🎯 Tovuti ya Kamari'
+      };
+      keyboard.push([{
+        text: bettingPlatformButtons[language as keyof typeof bettingPlatformButtons] || bettingPlatformButtons.en,
+        url: buttonConfig.betting_platform
+      }]);
+    }
+
+    return { inline_keyboard: keyboard };
+  }
+
+  /**
+   * 📰 Create interactive keyboard for news content
+   */
+  private createNewsKeyboard(content: any, language: string, buttonConfig?: any) {
+    const keyboard = [];
+    
+    // News-specific buttons
+    const newsButtons = {
+      en: [
+        { text: '📖 Read More', callback_data: 'read_more' },
+        { text: '🔄 Share News', callback_data: 'share_news' },
+        { text: '💬 Discuss', callback_data: 'discuss' }
+      ],
+      am: [
+        { text: '📖 ተጨማሪ ያንብቡ', callback_data: 'read_more' },
+        { text: '🔄 ዜና ያጋሩ', callback_data: 'share_news' },
+        { text: '💬 ይወያዩ', callback_data: 'discuss' }
+      ],
+      sw: [
+        { text: '📖 Soma Zaidi', callback_data: 'read_more' },
+        { text: '🔄 Shiriki Habari', callback_data: 'share_news' },
+        { text: '💬 Jadili', callback_data: 'discuss' }
+      ]
+    };
+
+    // Add news buttons
+    const langButtons = newsButtons[language as keyof typeof newsButtons] || newsButtons.en;
+    keyboard.push(langButtons);
+
+    // Add channel-specific buttons if available
+    if (buttonConfig?.news_source) {
+      const newsSourceButtons = {
+        en: '📰 News Source',
+        am: '📰 የዜና ምንጭ',
+        sw: '📰 Chanzo cha Habari'
+      };
+      keyboard.push([{
+        text: newsSourceButtons[language as keyof typeof newsSourceButtons] || newsSourceButtons.en,
+        url: buttonConfig.news_source
+      }]);
+    }
+
+    return { inline_keyboard: keyboard };
+  }
+
+  /**
+   * 📊 Create interactive keyboard for analysis content
+   */
+  private createAnalysisKeyboard(content: any, language: string, buttonConfig?: any) {
+    const keyboard = [];
+    
+    // Analysis-specific buttons
+    const analysisButtons = {
+      en: [
+        { text: '📊 Full Statistics', callback_data: 'analysis_stats' },
+        { text: '⚽ Match Preview', callback_data: 'match_preview' },
+        { text: '📈 Team Form', callback_data: 'team_form' }
+      ],
+      am: [
+        { text: '📊 ሙሉ ስታትስቲክስ', callback_data: 'analysis_stats' },
+        { text: '⚽ የጨዋታ ቅድመ እይታ', callback_data: 'match_preview' },
+        { text: '📈 የቡድን ፎርም', callback_data: 'team_form' }
+      ],
+      sw: [
+        { text: '📊 Takwimu Kamili', callback_data: 'analysis_stats' },
+        { text: '⚽ Muhtasari wa Mechi', callback_data: 'match_preview' },
+        { text: '📈 Hali ya Timu', callback_data: 'team_form' }
+      ]
+    };
+
+    // Add analysis buttons
+    const langButtons = analysisButtons[language as keyof typeof analysisButtons] || analysisButtons.en;
+    keyboard.push(langButtons);
+
+    // Add channel-specific buttons if available
+    if (buttonConfig?.main_website) {
+      const websiteButtons = {
+        en: '🌐 Visit Website',
+        am: '🌐 ድህረ ገጽ ይጎብኙ',
+        sw: '🌐 Tembelea Tovuti'
+      };
+      keyboard.push([{
+        text: websiteButtons[language as keyof typeof websiteButtons] || websiteButtons.en,
+        url: buttonConfig.main_website
+      }]);
+    }
+
+    return { inline_keyboard: keyboard };
   }
 
   // ====== DATA EXTRACTION HELPERS ======
