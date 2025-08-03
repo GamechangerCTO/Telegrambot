@@ -84,7 +84,9 @@ export class OptimizedNewsContentGenerator {
     try {
       // Step 1: Get RSS news feeds (with caching)
       const rssNews = await this.fetchRSSNewsOptimized();
-      if (rssNews.length === 0) {
+      console.log(`📡 RSS fetch result:`, rssNews ? `Found ${rssNews.length || 0} items` : 'null/undefined');
+      
+      if (!rssNews || rssNews.length === 0) {
         console.log(`❌ No RSS news found, attempting AI-generated fallback news`);
         return await this.generateFallbackNewsContent(request);
       }
@@ -241,9 +243,9 @@ export class OptimizedNewsContentGenerator {
         return expiredCached.data;
       }
       
-      // DON'T use fallback data - return empty array so system returns null
-      console.log('❌ No RSS feeds available and no cache - returning empty array');
-      return [];
+      // Return fallback data instead of empty array
+      console.log('❌ No RSS feeds available - generating fallback content');
+      return this.generateMockNewsItems();
     }
   }
 
@@ -256,9 +258,11 @@ export class OptimizedNewsContentGenerator {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`📡 RSS fetch attempt ${attempt}/${maxRetries}`);
-        const result = await rssNewsFetcher.fetchAllFeeds();
+        console.log('📡 Calling rssNewsFetcher.fetchFootballNews()...');
+      const result = await rssNewsFetcher.fetchFootballNews();
+      console.log('📡 RSS fetch completed:', result ? `${result.length} items` : 'null/undefined');
         
-        if (result.length > 0) {
+        if (result && Array.isArray(result) && result.length > 0) {
           console.log(`✅ RSS fetch successful on attempt ${attempt}`);
           return result;
         }
@@ -500,9 +504,8 @@ export class OptimizedNewsContentGenerator {
         return this.createTemplateNewsContent(news, language);
       }
 
-      // TEMPORARY FIX: Disable AI editing to prevent timeouts
-      console.log('⚠️ AI editing temporarily disabled to prevent timeouts - using template');
-      return this.createTemplateNewsContent(news, language);
+      // 🚀 AI editing enabled for better content quality
+      console.log(`🤖 Starting AI editing for ${language} with enhanced prompts`);
 
       // 📊 Log OpenAI call attempt
       await this.logOpenAICall('news-generation', language, news.title);

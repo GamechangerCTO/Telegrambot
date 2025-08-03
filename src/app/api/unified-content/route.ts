@@ -140,19 +140,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate content using the content router with channel-specific settings
+    console.log(`🎯 Calling ContentRouter for type: ${type}, language: ${language}`);
     const contentResult = await contentRouter.generateContent({
-      type,
+      contentType: type,  // Fix: was 'type' should be 'contentType'
       language,
-      maxItems,
-      channelId: 'unified-content',
-      customContent: body.custom_content,
-      channelSettings,  // 🎯 Pass channel settings for targeted content
-      useChannelButtons,  // 🔗 Enable channel-specific buttons
-      targetChannels: channelResolution.resolvedChannels  // 📡 Channel info for button customization
+      channelIds: ['unified-content'],  // Fix: was 'channelId' should be 'channelIds'
+      isAutomationExecution: false
     });
+    console.log(`🎯 ContentRouter result:`, contentResult ? 'Success' : 'Failed');
+    console.log(`🎯 Content items:`, contentResult?.content_items?.length || 0);
 
     // Check if content generation failed
-    if (contentResult.contentItems.length === 0) {
+    console.log('🔍 ContentResult:', {
+      hasContentResult: !!contentResult,
+      hasContentItems: !!contentResult?.content_items,
+      contentItemsLength: contentResult?.content_items?.length || 0
+    });
+    
+    if (!contentResult || !contentResult.content_items || contentResult.content_items.length === 0) {
       return NextResponse.json({
         success: false,
         timestamp: new Date().toISOString(),
@@ -161,12 +166,12 @@ export async function POST(request: NextRequest) {
         mode: mode,
         error: 'No content available',
         message: `⚠️ No ${type} content could be generated at this time.`,
-        processing_info: contentResult.processingInfo,
+        processing_info: contentResult?.processingInfo || {},
         statistics: {
           channels_processed: 0,
           total_content_sent: 0,
           images_generated: 0,
-          fallback_used: contentResult.processingInfo.fallback_used || false
+          fallback_used: contentResult?.processingInfo?.fallback_used || false
         }
       });
     }
@@ -180,17 +185,17 @@ export async function POST(request: NextRequest) {
       mode: mode,
       statistics: {
         channels_processed: targetChannels.length,
-        total_content_sent: contentResult.contentItems.length,
-        images_generated: contentResult.processingInfo.image_generation ? contentResult.contentItems.length : 0,
+        total_content_sent: contentResult?.content_items?.length || 0,
+        images_generated: contentResult?.processingInfo?.image_generation ? (contentResult?.content_items?.length || 0) : 0,
         average_ai_score: mode === 'ai_enhanced' ? 85 : 65,
         processing_time_seconds: Math.floor(Math.random() * 30) + 15,
         fallback_used: contentResult.processingInfo.fallback_used
       },
-      processing_info: contentResult.processingInfo,
-      content_items: contentResult.contentItems,
-      message: contentResult.processingInfo.betting_fallback_to_news ? 
-        `✅ Generated ${contentResult.contentItems.length} news content items in ${language} (betting matches unavailable)!` :
-        `✅ Generated ${contentResult.contentItems.length} ${type} content items in ${language}!`
+      processing_info: contentResult?.processingInfo || {},
+      content_items: contentResult?.content_items || [],
+      message: contentResult?.processingInfo?.betting_fallback_to_news ? 
+        `✅ Generated ${contentResult?.content_items?.length || 0} news content items in ${language} (betting matches unavailable)!` :
+        `✅ Generated ${contentResult?.content_items?.length || 0} ${type} content items in ${language}!`
     };
 
     // Handle different actions
