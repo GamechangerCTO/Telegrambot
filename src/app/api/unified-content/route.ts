@@ -196,9 +196,10 @@ export async function POST(request: NextRequest) {
     // Handle different actions
     switch (action) {
       case 'send_now':
-        // Send to Telegram using the distributor
+        // Send to Telegram using the distributor - create a clean copy to avoid body conflicts
+        const cleanContent = JSON.parse(JSON.stringify(content)); // Deep clone to avoid mutations
         const telegramResult = await telegramDistributor.sendContentToTelegram({
-          content,
+          content: cleanContent,
           language,
           mode,
           targetChannels: targetChannels.length > 0 ? targetChannels : undefined,

@@ -647,29 +647,9 @@ Terminez toujours les phrases complètement. Terminez par des hashtags.`,
     const shortContent = this.shortenContent(news.content, 400); // Increased from 200 to 400
     
     const templates = {
-      en: `<b>📰 FOOTBALL NEWS</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>⚽ ${news.title}</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📝 <i>${shortContent}</i>
-┃ 
-┃ 🔗 <b>Source:</b> ${news.source}
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>#FootballNews #Breaking</i>`,
+      en: `<b><strong>📋 📰 BREAKING FOOTBALL NEWS</strong></b>\n<i><em>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</em></i>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n<b><strong>⚽ ${news.title}</strong></b>\n╔═══════════════════════════════════════╗\n║                                       ║\n║  📝 <b><u>STORY DETAILS:</u></b>                 ║\n║     <i><em>${shortContent}</em></i>  ║\n║                                       ║\n║  🔗 <b><u>VERIFIED SOURCE:</u></b>              ║\n║     <code>${news.source}</code>  ║\n║                                       ║\n║  📅 <b><u>PUBLISHED:</u></b>                    ║\n║     <code>${new Date().toLocaleTimeString()}</code>  ║\n║                                       ║\n╚═══════════════════════════════════════╝\n\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n<span class="tg-spoiler">📱 <u><i>Stay tuned for more football updates!</i></u></span>\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n\n<i><em>#FootballNews #Breaking #SportsUpdate</em></i>`,
       am: this.createAmharicNewsContent(news, shortContent),
-      sw: `<b>📰 HABARI ZA MPIRA</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>⚽ ${news.title}</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📝 <i>${shortContent}</i>
-┃ 
-┃ 🔗 <b>Chanzo:</b> ${news.source}
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>#HabariMpira #FootballNews</i>`,
+      sw: `<b><strong>📋 📰 HABARI ZA HARAKA ZA MPIRA</strong></b>\n<i><em>${new Date().toLocaleDateString('sw-TZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</em></i>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n<b><strong>⚽ ${news.title}</strong></b>\n╔═══════════════════════════════════════╗\n║                                       ║\n║  📝 <b><u>MAELEZO YA HABARI:</u></b>            ║\n║     <i><em>${shortContent}</em></i>  ║\n║                                       ║\n║  🔗 <b><u>CHANZO HALALI:</u></b>               ║\n║     <code>${news.source}</code>  ║\n║                                       ║\n║  📅 <b><u>ILIYOCHAPISHWA:</u></b>              ║\n║     <code>${new Date().toLocaleTimeString()}</code>  ║\n║                                       ║\n╚═══════════════════════════════════════╝\n\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n<span class="tg-spoiler">📱 <u><i>Endelea kufuatilia masasisho ya mpira!</i></u></span>\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n\n<i><em>#HabariMpira #FootballNews #MpirawaMiguu</em></i>`,
       fr: this.createFrenchNewsContent(news, shortContent),
       ar: this.createArabicNewsContent(news, shortContent)
     };

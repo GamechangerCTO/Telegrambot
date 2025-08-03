@@ -1832,30 +1832,7 @@ export class MatchAnalysisGenerator {
     const { homeTeam, awayTeam, teamAnalysis, headToHead, prediction } = analysis;
     
     const languageTemplates = {
-      'en': `<b>📈 ⚽ MATCH ANALYSIS</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>🏟️ ${homeTeam} vs ${awayTeam}</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>${analysis.competition}</b>
-┃ 
-┃ 📊 <b>Team Performance</b>
-┃ 🏠 ${homeTeam}: <i>${teamAnalysis.home.statistics.winPercentage}% win rate, ${teamAnalysis.home.statistics.goalsPerGame} goals/game</i>
-┃ ✈️ ${awayTeam}: <i>${teamAnalysis.away.statistics.winPercentage}% win rate, ${teamAnalysis.away.statistics.goalsPerGame} goals/game</i>
-┃ 
-┃ 📈 <b>Current Form</b>
-┃ 🏠 ${homeTeam}: <code>${teamAnalysis.home.form}</code>
-┃ ✈️ ${awayTeam}: <code>${teamAnalysis.away.form}</code>
-┃ 
-┃ 🔍 <b>Head-to-Head</b>
-┃ 📝 Previous meetings: <b>${headToHead.totalMeetings}</b>
-┃ 
-┃ 🎯 <b>Prediction</b>
-┃ 📊 <i>${prediction.predictedResult}</i>
-┃ 🎲 Confidence: <b>${prediction.confidence}%</b>
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>#MatchAnalysis #Football #${homeTeam.replace(/\s+/g, '')} #${awayTeam.replace(/\s+/g, '')}</i>`,
+      'en': `<b><strong>📋 📈 TACTICAL MATCH BREAKDOWN</strong></b>\n<i><em>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</em></i>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n<b><strong>🏟️ ${homeTeam} 🆚 ${awayTeam}</strong></b>\n<u><code>🏆 ${analysis.competition}</code></u>\n\n╔═══════════════════════════════════════╗\n║                                       ║\n║  📊 <b><u>PERFORMANCE METRICS:</u></b>           ║\n║                                       ║\n║    🏠 <b><strong>${homeTeam} (HOME):</strong></b>         ║\n║       🏆 Win Rate: <code><b>${teamAnalysis.home.statistics.winPercentage}%</b></code>  ║\n║       ⚽ Goals/Game: <code><b>${teamAnalysis.home.statistics.goalsPerGame}</b></code>  ║\n║       📈 Form: <u><code>${teamAnalysis.home.form}</code></u>  ║\n║                                       ║\n║    ✈️ <b><strong>${awayTeam} (AWAY):</strong></b>          ║\n║       🏆 Win Rate: <code><b>${teamAnalysis.away.statistics.winPercentage}%</b></code>  ║\n║       ⚽ Goals/Game: <code><b>${teamAnalysis.away.statistics.goalsPerGame}</b></code>  ║\n║       📈 Form: <u><code>${teamAnalysis.away.form}</code></u>  ║\n║                                       ║\n╚═══════════════════════════════════════╝\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ 🔍 <b><u>HEAD-TO-HEAD RECORD:</u></b>            ┃\n┃    📝 Previous meetings: <code><b>${headToHead.totalMeetings}</b></code>  ┃\n┃    📉 Historical advantage analysis     ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\n<b><strong>🎯 EXPERT PREDICTION</strong></b>\n\n    📈 <u><b>Outcome:</b></u> <i><em>${prediction.predictedResult}</em></i>\n    🎲 <u><b>Confidence Level:</b></u> <code><b>${prediction.confidence}%</b></code>\n    📊 <u><b>Analysis Depth:</b></u> <span class="tg-spoiler">COMPREHENSIVE</span>\n▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\n<i><em>#MatchAnalysis #TacticalBreakdown #${homeTeam.replace(/\s+/g, '')} #${awayTeam.replace(/\s+/g, '')}</em></i>`,
       
       'am': `<b>📈 ⚽ የጨዋታ ትንተና</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -793,12 +793,13 @@ export class DailyWeeklySummaryGenerator {
     const date = new Date(summaryData.date).toLocaleDateString();
     
     if (language === 'am') {
-      // BUILD ENHANCED AMHARIC CONTENT WITH MODERN TELEGRAM FEATURES
-      let content = `<b>⚽ የዕለት እግርኳስ ማጠቃለያ</b> 📅 ${date}\n`;
+      // BUILD ULTRA-ENHANCED AMHARIC CONTENT WITH MODERN VISUAL TELEGRAM FEATURES
+      let content = `<b>📋 ⚽ የዕለት እግርኳስ ማጠቃለያ</b> 📅 ${date}\n`;
       content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
       
       if (summaryData.interestingMatches.length > 0) {
-        content += `<b>🏆 ዛሬ የተከናወኑ ጉልህ ጨዋታዎች</b>\n\n`;
+        content += `<b>🏆 ዛሬ የተከናወኑ ጉልህ ጨዋታዎች</b>\n`;
+        content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
         
         summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
           const match = interestingMatch.match;
@@ -806,73 +807,101 @@ export class DailyWeeklySummaryGenerator {
           const isHighScoring = totalGoals >= 5;
           const isUpset = Math.abs(match.homeScore - match.awayScore) >= 3;
           
-          content += `<b>${index + 1}. ${match.homeTeam}</b> <code>${match.homeScore}-${match.awayScore}</code> <b>${match.awayTeam}</b>\n`;
-          content += `   🏟️ <i>${match.competition}</i>\n`;
-          content += `   ${isHighScoring ? '🔥' : '⚽'} ${interestingMatch.highlightReason}\n`;
+          // Enhanced visual hierarchy with progressive indentation
+          content += `┃ <b><strong>${index + 1}.</strong></b> <u><b>${match.homeTeam}</b></u> <code><b>${match.homeScore}-${match.awayScore}</b></code> <u><b>${match.awayTeam}</b></u>\n`;
+          content += `┃    🏟️ <i><em>${match.competition}</em></i>\n`;
+          content += `┃    ${isHighScoring ? '🔥' : '⚽'} <i>${interestingMatch.highlightReason}</i>\n`;
           
           if (isHighScoring) {
-            content += `   ✨ <i>ከፍተኛ ጎል የተሰማርበት ጨዋታ (${totalGoals} ጎሎች)</i>\n`;
+            content += `┃    ✨ <span class="tg-spoiler"><i>ከፍተኛ ጎል የተሰማርበት ጨዋታ (${totalGoals} ጎሎች)</i></span>\n`;
           }
           if (isUpset) {
-            content += `   😱 <i>የሚያስደንቅ ውጤት!</i>\n`;
+            content += `┃    😱 <u><i>የሚያስደንቅ ውጤት!</i></u>\n`;
           }
-          content += `\n`;
+          if (index < 2) content += `┃\n`; // Spacing between matches
         });
+        content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
       }
 
-      // ENHANCED STATISTICS WITH VISUAL ELEMENTS
-      content += `<b>📊 የዛሬ የእግርኳስ ዓለም በቁጥሮች</b>\n`;
+      // ULTRA-ENHANCED STATISTICS WITH VISUAL HIERARCHY
+      content += `\n<b><strong>📊 የዛሬ የእግርኳስ ዓለም በቁጥሮች</strong></b>\n`;
       content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-      content += `┃ 🎯 ጨዋታዎች: <b>${summaryData.statistics.totalMatches}</b> ድምር ጨዋታዎች\n`;
-      content += `┃ ⚽ ጎሎች: <b>${summaryData.statistics.totalGoals}</b> ጠቅላላ ጎሎች\n`;
-      content += `┃ 📈 አማካይ: <b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b> ጎሎች በጨዋታ\n`;
+      content += `┃                                        ┃\n`;
+      content += `┃  🎯 <u>ጨዋታዎች:</u> <code><b>${summaryData.statistics.totalMatches}</b></code> <i>ድምር ጨዋታዎች</i>      ┃\n`;
+      content += `┃                                        ┃\n`;
+      content += `┃  ⚽ <u>ጎሎች:</u> <code><b>${summaryData.statistics.totalGoals}</b></code> <i>ጠቅላላ ጎሎች</i>        ┃\n`;
+      content += `┃                                        ┃\n`;
+      content += `┃  📈 <u>አማካይ:</u> <code><b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b></code> <i>ጎሎች በጨዋታ</i>  ┃\n`;
       
       if (summaryData.statistics.biggestWin.teams) {
-        content += `┃ 🏆 ከፍተኛ ድል: <i>${summaryData.statistics.biggestWin.teams}</i>\n`;
+        content += `┃                                        ┃\n`;
+        content += `┃  🏆 <u>ከፍተኛ ድል:</u> <i><em>${summaryData.statistics.biggestWin.teams}</em></i> ┃\n`;
       }
       
       if (summaryData.statistics.surpriseResults.length > 0) {
-        content += `┃ 😱 ያልተጠበቁ ውጤቶች: <b>${summaryData.statistics.surpriseResults.length}</b>\n`;
+        content += `┃                                        ┃\n`;
+        content += `┃  😱 <u>ያልተጠበቁ ውጤቶች:</u> <code><b>${summaryData.statistics.surpriseResults.length}</b></code>    ┃\n`;
       }
+      content += `┃                                        ┃\n`;
       content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
 
-      // STANDOUT PERFORMANCES WITH EMOJIS
+      // ULTRA-ENHANCED STANDOUT PERFORMANCES WITH VISUAL DEPTH
       if (Object.values(summaryData.standoutPerformances).some(v => v)) {
-        content += `<b>⭐ የዛሬ ምርጥ አፈጻጸሞች</b>\n`;
+        content += `<b><strong>⭐ የዛሬ ምርጥ አፈጻጸሞች</strong></b>\n`;
+        content += `╔═══════════════════════════════════════╗\n`;
+        
         if (summaryData.standoutPerformances.goalOfDay) {
-          content += `🥅 <b>የቀኑ ጎል:</b> <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
+          content += `║  🥅 <b><u>የቀኑ ጎል:</u></b>                     ║\n`;
+          content += `║     <i><em>${summaryData.standoutPerformances.goalOfDay}</em></i>  ║\n`;
+          content += `║                                       ║\n`;
         }
         if (summaryData.standoutPerformances.playerOfDay) {
-          content += `👑 <b>የቀኑ ተጫዋች:</b> <i>${summaryData.standoutPerformances.playerOfDay}</i>\n`;
+          content += `║  👑 <b><u>የቀኑ ተጫዋች:</u></b>                   ║\n`;
+          content += `║     <i><em>${summaryData.standoutPerformances.playerOfDay}</em></i>  ║\n`;
+          content += `║                                       ║\n`;
         }
         if (summaryData.standoutPerformances.saveOfDay) {
-          content += `🧤 <b>የቀኑ ማዳን:</b> <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
+          content += `║  🧤 <b><u>የቀኑ ማዳን:</u></b>                    ║\n`;
+          content += `║     <i><em>${summaryData.standoutPerformances.saveOfDay}</em></i>  ║\n`;
+          content += `║                                       ║\n`;
         }
         if (summaryData.standoutPerformances.upsetOfDay) {
-          content += `🎭 <b>የቀኑ አስደናቂ:</b> <i>${summaryData.standoutPerformances.upsetOfDay}</i>\n`;
+          content += `║  🎭 <b><u>የቀኑ አስደናቂ:</u></b>                 ║\n`;
+          content += `║     <span class="tg-spoiler"><i><em>${summaryData.standoutPerformances.upsetOfDay}</em></i></span>  ║\n`;
         }
-        content += `\n`;
+        content += `╚═══════════════════════════════════════╝\n\n`;
       }
       
-      // TOMORROW'S FIXTURES WITH ENHANCED PREVIEW
+      // ULTRA-ENHANCED TOMORROW'S FIXTURES WITH PROGRESSIVE FORMATTING
       if (summaryData.tomorrowsFixtures.length > 0) {
-        content += `<b>🔮 የነገ ዋና ዋና ጨዋታዎች</b>\n`;
-        content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        content += `<b><strong>🔮 የነገ ዋና ዋና ጨዋታዎች</strong></b>\n`;
+        content += `▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\n`;
+        
         summaryData.tomorrowsFixtures.slice(0, 5).forEach((fixture, index) => {
           const importance = this.determineMatchImportance(fixture);
           const importanceEmoji = importance === 'HIGH' ? '🔥' : importance === 'MEDIUM' ? '⚡' : '⚽';
-          content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b>\n`;
-          content += `   📍 <i>${fixture.competition}</i>\n`;
-          if (index < summaryData.tomorrowsFixtures.length - 1) content += `\n`;
+          
+          // Progressive indentation and enhanced visual structure
+          const indent = '    '.repeat(index % 3 + 1);
+          content += `${indent}${importanceEmoji} <b><strong>${fixture.homeTeam}</strong></b> <u>🆚</u> <b><strong>${fixture.awayTeam}</strong></b>\n`;
+          content += `${indent}   📍 <i><em>${fixture.competition}</em></i>\n`;
+          
+          if (index < summaryData.tomorrowsFixtures.length - 1) {
+            content += `${indent}   ┆\n`;
+            content += `${indent}   ┆\n`;
+          }
         });
-        content += `\n`;
+        content += `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\n`;
       }
 
-      // CALL TO ACTION WITH ENHANCED FORMATTING
-      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      content += `<b>📱 ከታች ያሉትን ቁልፎች ተጠቅመው የበለጠ ይከታተሉ!</b>\n`;
-      content += `💫 <i>ዝርዝር ስታትስቲክስ | ጎል ሰብሳቢዎች | ሊግ ጠረጴዛዎች</i>\n\n`;
-      content += `<i>🌟 በየቀኑ የእግርኳስ ዓለም ከእኛ ጋር ይከታተሉ!</i>`;
+      // ULTRA-ENHANCED CALL TO ACTION WITH VISUAL BRANDING
+      content += `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n`;
+      content += `<b><strong>📱 ከታች ያሉትን ቁልፎች ተጠቅመው የበለጠ ይከታተሉ!</strong></b>\n`;
+      content += `\n`;
+      content += `    💫 <i><em>ዝርዝር ስታትስቲክስ</em></i> ┃ <i><em>ጎል ሰብሳቢዎች</em></i> ┃ <i><em>ሊግ ጠረጴዛዎች</em></i>\n`;
+      content += `\n`;
+      content += `        <span class="tg-spoiler">🌟 <u><i>በየቀኑ የእግርኳስ ዓለም ከእኛ ጋር ይከታተሉ!</i></u></span>\n`;
+      content += `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`;
       
       return content;
     }
@@ -962,70 +991,90 @@ export class DailyWeeklySummaryGenerator {
       return content;
     }
 
-    // BUILD ENHANCED ENGLISH CONTENT WITH MODERN TELEGRAM FEATURES
-    let content = `<b>⚽ DAILY FOOTBALL ROUNDUP</b> 📅\n`;
-    content += `<i>${new Date(summaryData.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</i>\n`;
+    // BUILD ULTRA-ENHANCED ENGLISH CONTENT WITH MODERN TELEGRAM FEATURES
+    let content = `<b><strong>📋 ⚽ DAILY FOOTBALL ROUNDUP</strong></b> 📅\n`;
+    content += `<i><em>${new Date(summaryData.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</em></i>\n`;
     content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    // Interesting matches section
+    // ULTRA-ENHANCED INTERESTING MATCHES WITH VISUAL HIERARCHY
     if (summaryData.interestingMatches.length > 0) {
-      content += `<b>🏆 TODAY'S STANDOUT MATCHES</b>\n\n`;
+      content += `<b><strong>🏆 TODAY'S STANDOUT MATCHES</strong></b>\n`;
+      content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+      
       summaryData.interestingMatches.slice(0, 3).forEach((interestingMatch, index) => {
         const match = interestingMatch.match;
         const totalGoals = match.homeScore + match.awayScore;
         const isHighScoring = totalGoals >= 5;
         const isUpset = Math.abs(match.homeScore - match.awayScore) >= 3;
         
-        content += `<b>${index + 1}. ${match.homeTeam}</b> <code>${match.homeScore}-${match.awayScore}</code> <b>${match.awayTeam}</b>\n`;
-        content += `   🏟️ <i>${match.competition}</i>\n`;
-        content += `   ${isHighScoring ? '🔥' : '⚽'} ${interestingMatch.highlightReason}\n`;
+        // Enhanced visual hierarchy with progressive indentation
+        content += `┃ <b><strong>${index + 1}.</strong></b> <u><b>${match.homeTeam}</b></u> <code><b>${match.homeScore}-${match.awayScore}</b></code> <u><b>${match.awayTeam}</b></u>\n`;
+        content += `┃    🏟️ <i><em>${match.competition}</em></i>\n`;
+        content += `┃    ${isHighScoring ? '🔥' : '⚽'} <i>${interestingMatch.highlightReason}</i>\n`;
         
         if (isHighScoring) {
-          content += `   ✨ <i>High-scoring thriller (${totalGoals} goals)</i>\n`;
+          content += `┃    ✨ <span class="tg-spoiler"><i>High-scoring thriller (${totalGoals} goals)</i></span>\n`;
         }
         if (isUpset) {
-          content += `   😱 <i>Stunning upset result!</i>\n`;
+          content += `┃    😱 <u><i>Stunning upset result!</i></u>\n`;
         }
         if (interestingMatch.interestFactors.length > 0) {
-          content += `   💫 <i>${interestingMatch.interestFactors.slice(0, 2).join(', ')}</i>\n`;
+          content += `┃    💫 <i><em>${interestingMatch.interestFactors.slice(0, 2).join(', ')}</em></i>\n`;
         }
-        content += `\n`;
+        if (index < 2) content += `┃\n`; // Spacing between matches
       });
+      content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
     }
 
-    // Standout performances with enhanced formatting
+    // ULTRA-ENHANCED STANDOUT PERFORMANCES WITH VISUAL DEPTH
     if (Object.values(summaryData.standoutPerformances).some(v => v)) {
-      content += `<b>⭐ TODAY'S STANDOUT PERFORMANCES</b>\n`;
+      content += `<b><strong>⭐ TODAY'S STANDOUT PERFORMANCES</strong></b>\n`;
+      content += `╔═══════════════════════════════════════╗\n`;
+      
       if (summaryData.standoutPerformances.goalOfDay) {
-        content += `🥅 <b>Goal of the Day:</b> <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
+        content += `║  🥅 <b><u>Goal of the Day:</u></b>                   ║\n`;
+        content += `║     <i><em>${summaryData.standoutPerformances.goalOfDay}</em></i>  ║\n`;
+        content += `║                                       ║\n`;
       }
       if (summaryData.standoutPerformances.playerOfDay) {
-        content += `👑 <b>Player of the Day:</b> <i>${summaryData.standoutPerformances.playerOfDay}</i>\n`;
+        content += `║  👑 <b><u>Player of the Day:</u></b>                 ║\n`;
+        content += `║     <i><em>${summaryData.standoutPerformances.playerOfDay}</em></i>  ║\n`;
+        content += `║                                       ║\n`;
       }
       if (summaryData.standoutPerformances.saveOfDay) {
-        content += `🧤 <b>Save of the Day:</b> <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
+        content += `║  🧤 <b><u>Save of the Day:</u></b>                  ║\n`;
+        content += `║     <i><em>${summaryData.standoutPerformances.saveOfDay}</em></i>  ║\n`;
+        content += `║                                       ║\n`;
       }
       if (summaryData.standoutPerformances.upsetOfDay) {
-        content += `🎭 <b>Upset of the Day:</b> <i>${summaryData.standoutPerformances.upsetOfDay}</i>\n`;
+        content += `║  🎭 <b><u>Upset of the Day:</u></b>                 ║\n`;
+        content += `║     <span class="tg-spoiler"><i><em>${summaryData.standoutPerformances.upsetOfDay}</em></i></span>  ║\n`;
       }
-      content += `\n`;
+      content += `╚═══════════════════════════════════════╝\n\n`;
     }
 
-    // Enhanced statistics section with visual elements
-    content += `<b>📊 TODAY'S FOOTBALL WORLD BY THE NUMBERS</b>\n`;
+    // ULTRA-ENHANCED STATISTICS WITH VISUAL HIERARCHY
+    content += `\n<b><strong>📊 TODAY'S FOOTBALL WORLD BY THE NUMBERS</strong></b>\n`;
     content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-    content += `┃ 🎯 Matches: <b>${summaryData.statistics.totalMatches}</b> total matches\n`;
-    content += `┃ ⚽ Goals: <b>${summaryData.statistics.totalGoals}</b> total goals\n`;
-    content += `┃ 📈 Average: <b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b> goals per match\n`;
+    content += `┃                                        ┃\n`;
+    content += `┃  🎯 <u>Matches:</u> <code><b>${summaryData.statistics.totalMatches}</b></code> <i>total matches</i>      ┃\n`;
+    content += `┃                                        ┃\n`;
+    content += `┃  ⚽ <u>Goals:</u> <code><b>${summaryData.statistics.totalGoals}</b></code> <i>total goals</i>        ┃\n`;
+    content += `┃                                        ┃\n`;
+    content += `┃  📈 <u>Average:</u> <code><b>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</b></code> <i>goals per match</i>  ┃\n`;
     
     if (summaryData.statistics.biggestWin.teams) {
-      content += `┃ 🏆 Biggest win: <i>${summaryData.statistics.biggestWin.teams} (${summaryData.statistics.biggestWin.score})</i>\n`;
+      content += `┃                                        ┃\n`;
+      content += `┃  🏆 <u>Biggest win:</u> <i><em>${summaryData.statistics.biggestWin.teams} (${summaryData.statistics.biggestWin.score})</em></i> ┃\n`;
     }
     
     if (summaryData.statistics.surpriseResults.length > 0) {
-      content += `┃ 😱 Surprise results: <b>${summaryData.statistics.surpriseResults.length}</b>\n`;
+      content += `┃                                        ┃\n`;
+      content += `┃  😱 <u>Surprise results:</u> <code><b>${summaryData.statistics.surpriseResults.length}</b></code>    ┃\n`;
     }
-    content += `┃ 🟨 Disciplinary: ${summaryData.statistics.disciplinaryActions.redCards} red, ${summaryData.statistics.disciplinaryActions.yellowCards} yellow cards\n`;
+    content += `┃                                        ┃\n`;
+    content += `┃  🟨 <u>Disciplinary:</u> <code>${summaryData.statistics.disciplinaryActions.redCards} red</code>, <code>${summaryData.statistics.disciplinaryActions.yellowCards} yellow</code> ┃\n`;
+    content += `┃                                        ┃\n`;
     content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
 
     // Key storylines with better formatting
@@ -1040,18 +1089,26 @@ export class DailyWeeklySummaryGenerator {
       content += `\n`;
     }
 
-    // Tomorrow's fixtures with enhanced preview
+    // ULTRA-ENHANCED TOMORROW'S FIXTURES WITH PROGRESSIVE FORMATTING
     if (summaryData.tomorrowsFixtures.length > 0) {
-      content += `<b>🔮 TOMORROW'S KEY FIXTURES</b>\n`;
-      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      content += `<b><strong>🔮 TOMORROW'S KEY FIXTURES</strong></b>\n`;
+      content += `▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀\n`;
+      
       summaryData.tomorrowsFixtures.slice(0, 5).forEach((fixture, index) => {
         const importance = this.determineMatchImportance(fixture);
         const importanceEmoji = importance === 'HIGH' ? '🔥' : importance === 'MEDIUM' ? '⚡' : '⚽';
-        content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b>\n`;
-        content += `   📍 <i>${fixture.competition}</i>\n`;
-        if (index < summaryData.tomorrowsFixtures.length - 1) content += `\n`;
+        
+        // Progressive indentation and enhanced visual structure
+        const indent = '    '.repeat(index % 3 + 1);
+        content += `${indent}${importanceEmoji} <b><strong>${fixture.homeTeam}</strong></b> <u>🆚</u> <b><strong>${fixture.awayTeam}</strong></b>\n`;
+        content += `${indent}   📍 <i><em>${fixture.competition}</em></i>\n`;
+        
+        if (index < summaryData.tomorrowsFixtures.length - 1) {
+          content += `${indent}   ║\n`;
+          content += `${indent}   ║\n`;
+        }
       });
-      content += `\n`;
+      content += `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄\n\n`;
     }
 
     // Weekend preview (if Friday)
@@ -1060,11 +1117,14 @@ export class DailyWeeklySummaryGenerator {
       content += `${summaryData.weekendPreview}\n\n`;
     }
 
-    // Call to action with enhanced formatting
-    content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    content += `<b>📱 Use the buttons below to explore more!</b>\n`;
-    content += `💫 <i>Detailed stats | Goal highlights | League tables</i>\n\n`;
-    content += `<i>🌟 Stay tuned for daily football action!</i>`;
+    // ULTRA-ENHANCED CALL TO ACTION WITH VISUAL BRANDING
+    content += `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n`;
+    content += `<b><strong>📱 Use the buttons below to explore more!</strong></b>\n`;
+    content += `\n`;
+    content += `    💫 <i><em>Detailed stats</em></i> │ <i><em>Goal highlights</em></i> │ <i><em>League tables</em></i>\n`;
+    content += `\n`;
+    content += `        <span class="tg-spoiler">🌟 <u><i>Stay tuned for daily football action!</i></u></span>\n`;
+    content += `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`;
 
     return content;
   }
@@ -1746,7 +1806,9 @@ export class DailyWeeklySummaryGenerator {
 • Safu nyingi za uundaji: <b><i>NZITO + ITALIKI</i></b>, <u><code>MSTARI CHINI + NAMBARI</code></u>`
     };
 
-    const prompt = `You are a professional football journalist creating content for MODERN TELEGRAM with enhanced formatting. Create a comprehensive daily football summary based on the following data:
+    const prompt = `You are a TELEGRAM VISUAL DESIGNER creating ultra-modern, visually stunning content. IGNORE the template - CREATE COMPLETELY NEW VISUAL FORMAT with maximum spacing, unique formatting, and perfect structure.
+
+    🚨 CRITICAL: The content you see users receiving is plain text with NO formatting! You MUST fix this by using EXTREME visual formatting.`
 
     Original content template:
     ${content}
@@ -1766,24 +1828,40 @@ export class DailyWeeklySummaryGenerator {
     FORMATTING REQUIREMENTS:
     ${formatInstructions[language]}
     
-    STRICT CONTENT INSTRUCTIONS - FOLLOW EXACTLY:
+    ULTRA-STRICT VISUAL FORMATTING INSTRUCTIONS - FOLLOW EXACTLY:
     1. ${languageInstructions[language]}
-    2. MANDATORY: Use EVERY AVAILABLE HTML tag that is relevant to each piece of content
-    3. Team names: ALWAYS <b><strong>TEAM NAME</strong></b> or <b><i>TEAM NAME</i></b>
-    4. Scores: ALWAYS <code>X-X</code> format with monospace
-    5. Competitions: ALWAYS <i><em>Competition Name</em></i> with italic emphasis  
-    6. Key statistics: ALWAYS <u><code>NUMBER</code></u> with underline + monospace
-    7. Record-breaking performances: <u><ins>UNDERLINED EMPHASIS</ins></u>
-    8. Surprising results/upsets: <s><del>Expected result CROSSED OUT</del></s> → Actual result
-    9. Dramatic reveals: Use <span class="tg-spoiler">HIDDEN SPOILER TEXT</span> for suspense
-    10. League tables/structured data: Use <pre>PREFORMATTED BLOCKS</pre> when appropriate
-    11. High-scoring games (5+ goals): 🔥 <b><u>FIRE + BOLD + UNDERLINE</u></b>
-    12. Major upsets (3+ goal difference): 😱 <s><del>favorite team</del></s> → <b><strong>UPSET WINNER</strong></b>
-    13. Tomorrow's fixtures: <b>🔥 <u>HIGH PRIORITY</u></b>, <i>⚡ MEDIUM</i>, ⚽ <em>standard</em>
-    14. Multiple formatting layers: <b><i><u>BOLD + ITALIC + UNDERLINE</u></i></b> for ultra-important content
-    15. Box characters: Use ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋ for ALL visual borders and dividers
-    16. NO plain text allowed - EVERY word must have appropriate HTML formatting
-    17. END with call-to-action using <b><i>BOLD ITALIC COMBINATION</i></b>
+    
+    🎨 VISUAL STRUCTURE REQUIREMENTS:
+    2. EVERY section must be separated by 2-3 empty lines for breathing room
+    3. Use progressive indentation: Main items flush left, sub-items indented with spaces
+    4. Create visual hierarchy with different box characters and spacing patterns
+    5. Group related information in visually distinct blocks
+    6. Use consistent spacing: 4 spaces for sub-items, 8 spaces for details
+    
+    🔥 MANDATORY HTML COMBINATIONS - USE ALL RELEVANT:
+    7. Team names: <b><strong>🏠 HOME TEAM</strong></b> vs <b><strong>✈️ AWAY TEAM</strong></b>
+    8. Scores: <u><code>🎯 X-X</code></u> with visual score brackets
+    9. Competitions: <i><em>🏆 Competition Name</em></i> with trophy emoji
+    10. Statistics: <u><code>📊 NUMBER</code></u> with chart emoji + underline + monospace
+    11. Upsets: <s><del>❌ Expected</del></s> ➜ <b><strong>✅ ACTUAL WINNER</strong></b>
+    12. Spoilers: <span class="tg-spoiler">🎭 DRAMATIC REVEAL</span> for suspense
+    13. High-scoring: 🔥 <b><u>EXPLOSIVE MATCH</u></b> with fire emphasis
+    14. Record-breaking: 🏆 <u><ins><b>HISTORIC PERFORMANCE</b></ins></u> triple formatting
+    
+    📐 SPACING AND LAYOUT RULES:
+    15. Main title: Followed by 2 empty lines
+    16. Section headers: 1 empty line before, 1 empty line after
+    17. Match listings: Each match separated by 1 empty line
+    18. Statistics box: Surrounded by 2 empty lines above and below
+    19. Future fixtures: Each fixture on separate line with proper indentation
+    20. Final call-to-action: Preceded by 3 empty lines for emphasis
+    
+    🎯 UNIQUE VISUAL ELEMENTS:
+    21. Use different box drawing patterns for different sections
+    22. Add visual separators between major sections: ▬▬▬▬▬▬▬▬▬▬
+    23. Use progressive emoji sizing: 📋➜📊➜🏆➜⭐
+    24. Create visual flow with arrows and connectors: ↘️ ⬇️ ↙️
+    25. NO repetitive formatting - each section should have unique visual style
     
     CRITICAL: Return content in the EXACT SAME HTML format as the template, maintaining the visual structure with borders, sections, and enhanced formatting.`;
 

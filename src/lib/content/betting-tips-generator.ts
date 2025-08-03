@@ -884,7 +884,7 @@ export class BettingTipsGenerator {
       
       // 🎯 ADD CHANNEL AFFILIATE CODE if available
       if (request.affiliateCode) {
-        content += `\n\n🔗 Use code: ${request.affiliateCode} for exclusive offers`;
+        content += `\n\n        <u><code>🔗 CODE: ${request.affiliateCode}</code></u> <i>for exclusive offers</i>`;
       }
       
       return content;

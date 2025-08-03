@@ -997,7 +997,7 @@ export class TelegramDistributor {
   }
 
   /**
-   * 📋 Send daily summary content with interactive features
+   * 📋 Send daily summary content with interactive features - DIRECT TELEGRAM API
    */
   private async sendDailySummaryContent(enhancedAPI: EnhancedTelegramAPI, channel: any, content: any, imageUrl?: string, buttonConfig?: any) {
     // Use the pre-formatted HTML content directly from the generator - NO double formatting
@@ -1010,33 +1010,49 @@ export class TelegramDistributor {
       summaryContent = this.truncateHTMLContent(summaryContent, maxLength);
     }
     
-    console.log(`📋 Sending daily summary with preserved HTML formatting (${summaryContent.length} chars)`);
+    console.log(`📋 DIRECT API: Sending daily summary with HTML formatting (${summaryContent.length} chars)`);
+    console.log(`📋 SAMPLE HTML: ${summaryContent.substring(0, 200)}...`);
     
     // Create interactive buttons for summary
     const keyboard = this.createNewsKeyboard(content, channel.language, buttonConfig);
     
-    // FORCE HTML parsing by ensuring parse_mode is set correctly - NO double formatting
-    const messageOptions = {
-      parse_mode: 'HTML' as const,
+    // BYPASS ENHANCED API ENTIRELY - Use direct fetch to Telegram API
+    const botToken = channel.bot_token;
+    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    
+    const payload = {
+      chat_id: channel.telegram_channel_id,
+      text: summaryContent,
+      parse_mode: 'HTML',
       reply_markup: keyboard,
       protect_content: true,
       disable_web_page_preview: true
     };
     
-    // Send the content with preserved HTML formatting directly - bypass sendNews formatting
-    if (imageUrl) {
-      return await enhancedAPI.sendPhoto({
-        chat_id: channel.telegram_channel_id,
-        photo: imageUrl,
-        caption: summaryContent,
-        ...messageOptions
+    console.log(`🚀 DIRECT TELEGRAM API CALL: parse_mode=HTML, content has HTML tags: ${summaryContent.includes('<b>')}`);
+    
+    try {
+      const response = await fetch(telegramUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
       });
-    } else {
-      return await enhancedAPI.sendMessage({
-        chat_id: channel.telegram_channel_id,
-        text: summaryContent,
-        ...messageOptions
-      });
+      
+      const result = await response.json();
+      
+      if (!result.ok) {
+        console.error(`❌ Direct Telegram API Error:`, result);
+        throw new Error(`Telegram API Error: ${result.description}`);
+      }
+      
+      console.log(`✅ SUCCESS: Direct Telegram API call worked, HTML should be preserved!`);
+      return { result: result.result };
+      
+    } catch (error) {
+      console.error(`❌ Direct Telegram API call failed:`, error);
+      throw error;
     }
   }
 
