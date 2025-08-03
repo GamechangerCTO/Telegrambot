@@ -1832,11 +1832,80 @@ export class MatchAnalysisGenerator {
     const { homeTeam, awayTeam, teamAnalysis, headToHead, prediction } = analysis;
     
     const languageTemplates = {
-      'en': `${homeTeam} vs ${awayTeam} - ${analysis.competition}\n\nComprehensive Match Analysis:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% win rate, ${teamAnalysis.home.statistics.goalsPerGame} goals/game) faces ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% win rate, ${teamAnalysis.away.statistics.goalsPerGame} goals/game). Current forms: ${teamAnalysis.home.form} vs ${teamAnalysis.away.form}. H2H: ${headToHead.totalMeetings} meetings. Prediction: ${prediction.predictedResult} (${prediction.confidence}% confidence).\n\n#MatchAnalysis #Football #${homeTeam.replace(/\s+/g, '')} #${awayTeam.replace(/\s+/g, '')}`,
+      'en': `<b>📈 ⚽ MATCH ANALYSIS</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🏟️ ${homeTeam} vs ${awayTeam}</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>${analysis.competition}</b>
+┃ 
+┃ 📊 <b>Team Performance</b>
+┃ 🏠 ${homeTeam}: <i>${teamAnalysis.home.statistics.winPercentage}% win rate, ${teamAnalysis.home.statistics.goalsPerGame} goals/game</i>
+┃ ✈️ ${awayTeam}: <i>${teamAnalysis.away.statistics.winPercentage}% win rate, ${teamAnalysis.away.statistics.goalsPerGame} goals/game</i>
+┃ 
+┃ 📈 <b>Current Form</b>
+┃ 🏠 ${homeTeam}: <code>${teamAnalysis.home.form}</code>
+┃ ✈️ ${awayTeam}: <code>${teamAnalysis.away.form}</code>
+┃ 
+┃ 🔍 <b>Head-to-Head</b>
+┃ 📝 Previous meetings: <b>${headToHead.totalMeetings}</b>
+┃ 
+┃ 🎯 <b>Prediction</b>
+┃ 📊 <i>${prediction.predictedResult}</i>
+┃ 🎲 Confidence: <b>${prediction.confidence}%</b>
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#MatchAnalysis #Football #${homeTeam.replace(/\s+/g, '')} #${awayTeam.replace(/\s+/g, '')}</i>`,
       
-      'am': `${homeTeam} በተቃወመ ${awayTeam} - ${analysis.competition}\n\nሰፊ የጨዋታ ትንተና:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% ድል መጠን፣ ${teamAnalysis.home.statistics.goalsPerGame} ጎሎች/ጨዋታ) ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% ድል መጠን፣ ${teamAnalysis.away.statistics.goalsPerGame} ጎሎች/ጨዋታ) ይገናኛል። የቅርብ ጊዜ ፎርም: ${teamAnalysis.home.form} በተቃወመ ${teamAnalysis.away.form}። ቀጥተኛ ውድድር: ${headToHead.totalMeetings} ስብሰባዎች። ትንበያ: ${prediction.predictedResult} (${prediction.confidence}% እርግጠኝነት)።\n\n#የጨዋታትንተና #እግርኳስ #MatchAnalysis #Football`,
+      'am': `<b>📈 ⚽ የጨዋታ ትንተና</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🏟️ ${homeTeam} በተቃወመ ${awayTeam}</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>${analysis.competition}</b>
+┃ 
+┃ 📊 <b>የቡድን አፈፃፀም</b>
+┃ 🏠 ${homeTeam}: <i>${teamAnalysis.home.statistics.winPercentage}% ድል መጠን፣ ${teamAnalysis.home.statistics.goalsPerGame} ጎሎች/ጨዋታ</i>
+┃ ✈️ ${awayTeam}: <i>${teamAnalysis.away.statistics.winPercentage}% ድል መጠን፣ ${teamAnalysis.away.statistics.goalsPerGame} ጎሎች/ጨዋታ</i>
+┃ 
+┃ 📈 <b>የአሁኑ ፎርም</b>
+┃ 🏠 ${homeTeam}: <code>${teamAnalysis.home.form}</code>
+┃ ✈️ ${awayTeam}: <code>${teamAnalysis.away.form}</code>
+┃ 
+┃ 🔍 <b>ቀጥተኛ ውድድር</b>
+┃ 📝 ቀደም ያሉ ስብሰባዎች: <b>${headToHead.totalMeetings}</b>
+┃ 
+┃ 🎯 <b>ትንበያ</b>
+┃ 📊 <i>${prediction.predictedResult}</i>
+┃ 🎲 እርግጠኝነት: <b>${prediction.confidence}%</b>
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#የጨዋታትንተና #እግርኳስ #MatchAnalysis #Football</i>`,
       
-      'sw': `${homeTeam} dhidi ya ${awayTeam} - ${analysis.competition}\n\nUchambuzi Mkamilifu wa Mechi:\n${homeTeam} (${teamAnalysis.home.statistics.winPercentage}% kiwango cha ushindi, ${teamAnalysis.home.statistics.goalsPerGame} magoli/mchezo) anakutana na ${awayTeam} (${teamAnalysis.away.statistics.winPercentage}% kiwango cha ushindi, ${teamAnalysis.away.statistics.goalsPerGame} magoli/mchezo). Hali ya sasa: ${teamAnalysis.home.form} dhidi ya ${teamAnalysis.away.form}. Moja kwa moja: mikutano ${headToHead.totalMeetings}. Utabiri: ${prediction.predictedResult} (${prediction.confidence}% uhakika).\n\n#UchambuziMechi #MpiraMiguu #MatchAnalysis #Football`
+      'sw': `<b>📈 ⚽ UCHAMBUZI WA MECHI</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<b>🏟️ ${homeTeam} dhidi ya ${awayTeam}</b>
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🏆 <b>${analysis.competition}</b>
+┃ 
+┃ 📊 <b>Utendaji wa Timu</b>
+┃ 🏠 ${homeTeam}: <i>${teamAnalysis.home.statistics.winPercentage}% kiwango cha ushindi, ${teamAnalysis.home.statistics.goalsPerGame} magoli/mchezo</i>
+┃ ✈️ ${awayTeam}: <i>${teamAnalysis.away.statistics.winPercentage}% kiwango cha ushindi, ${teamAnalysis.away.statistics.goalsPerGame} magoli/mchezo</i>
+┃ 
+┃ 📈 <b>Hali ya Sasa</b>
+┃ 🏠 ${homeTeam}: <code>${teamAnalysis.home.form}</code>
+┃ ✈️ ${awayTeam}: <code>${teamAnalysis.away.form}</code>
+┃ 
+┃ 🔍 <b>Moja kwa Moja</b>
+┃ 📝 Mikutano ya awali: <b>${headToHead.totalMeetings}</b>
+┃ 
+┃ 🎯 <b>Utabiri</b>
+┃ 📊 <i>${prediction.predictedResult}</i>
+┃ 🎲 Uhakika: <b>${prediction.confidence}%</b>
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+<i>#UchambuziMechi #MpiraMiguu #MatchAnalysis #Football</i>`
     };
     
     return languageTemplates[language] || languageTemplates.en;
