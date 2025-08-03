@@ -306,7 +306,7 @@ interface CardHeaderProps {
   className?: string;
 }
 
-export const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
+const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
   return (
     <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
       {children}
@@ -320,7 +320,7 @@ interface CardTitleProps {
   className?: string;
 }
 
-export const CardTitle: React.FC<CardTitleProps> = ({ children, className = '' }) => {
+const CardTitle: React.FC<CardTitleProps> = ({ children, className = '' }) => {
   return (
     <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>
       {children}
@@ -334,7 +334,7 @@ interface CardContentProps {
   className?: string;
 }
 
-export const CardContent: React.FC<CardContentProps> = ({ children, className = '' }) => {
+const CardContent: React.FC<CardContentProps> = ({ children, className = '' }) => {
   return (
     <div className={`px-6 py-4 ${className}`}>
       {children}
@@ -342,7 +342,7 @@ export const CardContent: React.FC<CardContentProps> = ({ children, className = 
   );
 };
 
-// Export Card as named export for use in other components
-export { Card };
+// Export all Card components for use in other components
+export { Card, CardHeader, CardTitle, CardContent };
 
 export default Card;
