@@ -1614,41 +1614,16 @@ export class DailyWeeklySummaryGenerator {
     return 'Big weekend of football ahead with key Premier League clashes and European action!';
   }
 
-  // Static daily summary image URL (saves tokens by reusing the same image)
-  private static readonly DAILY_SUMMARY_IMAGE_URL = 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/daily_summary_static.png';
-  
   // Image and visual generation methods
   private async generateDailySummaryImage(summaryData: DailySummaryData): Promise<string | undefined> {
     console.log(`🎨 Using static daily summary image for ${summaryData.date} (saves tokens)`);
     
-    // Check if static image exists, if not - generate once and save
-    if (!DailyWeeklySummaryGenerator.DAILY_SUMMARY_IMAGE_URL) {
-      console.log('🔄 Generating static daily summary image (one-time only)...');
-      
-      const prompt = `Simple and clean football-themed infographic showing only the title "Daily Summary" in elegant text.
-      Professional football background with stadium atmosphere, modern typography, minimalist design, 
-      clean layout, no detailed statistics or match results, just the title text.`;
-
-      try {
-        const generatedImage = await aiImageGenerator.generateImage({
-          prompt,
-          quality: 'standard', // Better quality since it's reused
-          size: '1024x1024' // Standard size
-        });
-        
-        if (generatedImage && generatedImage.url) {
-          console.log(`✅ Static daily summary image generated: ${generatedImage.url}`);
-          // Note: In production, save this URL to database or config for reuse
-          return generatedImage.url;
-        }
-      } catch (error) {
-        console.error(`❌ Error generating static daily summary image:`, error);
-      }
-    }
-
-    // Return the static image URL (reused every time)
-    console.log(`♻️ Reusing static daily summary image (token-efficient)`);
-    return DailyWeeklySummaryGenerator.DAILY_SUMMARY_IMAGE_URL;
+    // Always use static image (saves tokens)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const staticImageUrl = `${baseUrl}/generated-images/daily_summery.jpg`;
+    
+    console.log(`♻️ Using static daily summary image: ${staticImageUrl}`);
+    return staticImageUrl;
   }
 
   private async generateWeeklySummaryImage(summaryData: WeeklySummaryData): Promise<string | undefined> {

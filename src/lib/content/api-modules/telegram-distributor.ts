@@ -258,21 +258,41 @@ export class TelegramDistributor {
         const teamsFromContent = contentFormatter.extractTeamsFromContent(combinedText);
         const competition = contentFormatter.extractCompetitionFromContent(combinedText);
         
-        // Use intelligent image generation
-        const generatedImage = await aiImageGenerator.generateImageFromContent({
-          content: combinedText,
-          title: titleText || undefined,
-          contentType: content.content_type as 'news' | 'betting' | 'analysis' | 'live' | 'poll' | 'daily_summary' | 'weekly_summary',
-          language: language,
-          teams: teamsFromContent.length > 0 ? teamsFromContent : undefined,
-          competition: competition || undefined
-        });
+        // Smart image generation with fallback strategy
+        const contentType = content.content_type as 'news' | 'betting' | 'analysis' | 'live' | 'poll' | 'daily_summary' | 'weekly_summary';
         
-        if (generatedImage) {
-          imageUrl = generatedImage.url;
-          content._generatedImage = generatedImage;
-          console.log('🎨 AI Image generated successfully');
+        // Always use static images for these types (save tokens)
+        if (contentType === 'daily_summary' || contentType === 'live') {
+          imageUrl = this.getStaticImageUrl(contentType);
+          console.log(`🖼️ Using static image for ${contentType}: ${imageUrl}`);
         } else {
+          // Try dynamic generation first, fallback to static
+          console.log(`🎨 Attempting dynamic image generation for ${contentType}...`);
+          
+          try {
+            const generatedImage = await aiImageGenerator.generateImageFromContent({
+              content: combinedText,
+              title: titleText || undefined,
+              contentType: contentType,
+              language: language,
+              teams: teamsFromContent.length > 0 ? teamsFromContent : undefined,
+              competition: competition || undefined
+            });
+            
+            if (generatedImage) {
+              imageUrl = generatedImage.url;
+              content._generatedImage = generatedImage;
+              console.log('✅ Dynamic image generated successfully');
+            } else {
+              throw new Error('No image generated');
+            }
+          } catch (error) {
+            console.log(`⚠️ Dynamic image generation failed for ${contentType}, using static fallback`);
+            imageUrl = this.getStaticImageUrl(contentType);
+          }
+        }
+        
+        if (!imageUrl) {
           // Fallback to stock image
           imageUrl = aiImageGenerator.getFallbackImage(content.content_type);
           console.log('📷 Using fallback image');
@@ -890,6 +910,36 @@ export class TelegramDistributor {
     
     // For now, skip sending mismatched content
     return false;
+  }
+
+  // ====== STATIC IMAGE MANAGEMENT ======
+
+  /**
+   * 🖼️ Get static image URL for content types
+   */
+  private getStaticImageUrl(contentType: string): string | undefined {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    
+    const staticImages: Record<string, string> = {
+      'daily_summary': '/generated-images/daily_summery.jpg',
+      'weekly_summary': '/generated-images/daily_summery.jpg', // reuse for now
+      'live': '/generated-images/live.jpeg',
+      'news': '/generated-images/news.png',
+      'analysis': '/generated-images/analsys.png',
+      'betting': '/generated-images/news.png', // fallback to news for now
+      'poll': '/generated-images/live.jpeg', // fallback to live for now
+      'coupons': '/generated-images/news.png' // fallback to news for now
+    };
+    
+    const imagePath = staticImages[contentType];
+    if (imagePath) {
+      const fullUrl = `${baseUrl}${imagePath}`;
+      console.log(`📁 Static image mapped: ${contentType} → ${fullUrl}`);
+      return fullUrl;
+    }
+    
+    console.log(`⚠️ No static image found for content type: ${contentType}`);
+    return undefined;
   }
 
   // ====== CONTENT FORMATTING ENHANCEMENT ======
