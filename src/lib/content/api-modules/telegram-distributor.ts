@@ -850,23 +850,38 @@ export class TelegramDistributor {
   }
 
   /**
-   * 🕵️ Detect content language based on text patterns
+   * 🕵️ Detect content language based on text patterns (enhanced for mixed content)
    */
   private detectContentLanguage(text: string): string {
     if (!text) return 'en';
     
+    // Count characters by script to handle mixed content better
+    const amharicChars = (text.match(/[\u1200-\u137F]/g) || []).length;
+    const hebrewChars = (text.match(/[\u0590-\u05FF]/g) || []).length;
+    const arabicChars = (text.match(/[\u0600-\u06FF]/g) || []).length;
+    
+    // If significant amount of Amharic script, consider it Amharic even with English proper nouns
+    if (amharicChars > 10) {
+      return 'am';
+    }
+    
     // Hebrew detection - Hebrew characters
-    if (/[\u0590-\u05FF]/.test(text)) {
+    if (hebrewChars > 10) {
       return 'he';
     }
     
-    // Amharic detection - Ethiopic script
-    if (/[\u1200-\u137F]/.test(text)) {
+    // Arabic detection - Arabic characters
+    if (arabicChars > 10) {
+      return 'ar';
+    }
+    
+    // Amharic detection - even small amounts if present
+    if (amharicChars > 0) {
       return 'am';
     }
     
     // Swahili detection - common Swahili words
-    const swahiliWords = /\b(na|ya|wa|la|kwa|katika|kwa|hii|hizo|hile|habari|mchezo|timu|mechi|ufupi)\b/i;
+    const swahiliWords = /\b(na|ya|wa|la|kwa|katika|kwa|hii|hizo|hile|habari|mchezo|timu|mechi|ufupi|mpira|michezo|uwanja)\b/i;
     if (swahiliWords.test(text)) {
       return 'sw';
     }
@@ -875,11 +890,6 @@ export class TelegramDistributor {
     const frenchWords = /\b(le|la|les|de|du|des|et|est|dans|pour|avec|sur|par|un|une|ce|cette|qui|que|où|football|match|équipe)\b/i;
     if (frenchWords.test(text)) {
       return 'fr';
-    }
-    
-    // Arabic detection - Arabic characters
-    if (/[\u0600-\u06FF]/.test(text)) {
-      return 'ar';
     }
     
     // Default to English

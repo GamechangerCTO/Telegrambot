@@ -564,19 +564,22 @@ export class OptimizedNewsContentGenerator {
             { role: "system", content: formattingInstructions },
             { 
               role: "user", 
-              content: `Create a complete, professional news summary with proper Telegram formatting for this article:
+              content: `Create a complete, professional news summary with proper Telegram formatting for this article.
+
+CRITICAL: Write ENTIRE response in ${language.toUpperCase()} language only ${language === 'am' ? '(አማርኛ)' : language === 'sw' ? '(Kiswahili)' : ''}. DO NOT use English words.
 
 TITLE: ${news.title}
 CONTENT: ${news.content.substring(0, 800)}
 SOURCE: ${news.source || 'Unknown'}
 
 REQUIREMENTS:
-1. Follow the formatting guidelines strictly
+1. Follow the formatting guidelines strictly 
 2. Include proper HTML tags and emojis
-3. Translate ALL information to the target language
+3. Translate ALL information to ${language === 'am' ? 'AMHARIC (አማርኛ)' : language === 'sw' ? 'SWAHILI' : 'ENGLISH'}
 4. Make content engaging and professional
 5. Include source attribution
-6. End with complete sentences` 
+6. End with complete sentences
+7. CRITICAL: Write the entire response in the target language only` 
             }
           ],
           max_tokens: 1800,

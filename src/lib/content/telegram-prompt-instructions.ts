@@ -96,7 +96,19 @@ Use: 🔮 Prediction, 💭 Opinion, 🧠 Trivia
     const contentFormat = TELEGRAM_FORMATTING_INSTRUCTIONS.CONTENT_TYPES[contentType as keyof typeof TELEGRAM_FORMATTING_INSTRUCTIONS.CONTENT_TYPES] || '';
     const emojis = TELEGRAM_FORMATTING_INSTRUCTIONS.EMOJIS[contentType as keyof typeof TELEGRAM_FORMATTING_INSTRUCTIONS.EMOJIS] || TELEGRAM_FORMATTING_INSTRUCTIONS.EMOJIS.general;
     
+    // 🌍 Critical language instructions
+    const languageInstructions = {
+      en: 'CRITICAL: Write ENTIRE response in ENGLISH only. Use proper English grammar and vocabulary. Do not use words from other languages.',
+      am: 'CRITICAL: Write ENTIRE response in AMHARIC (አማርኛ) only. Use native Amharic script and football terminology. DO NOT use any English words. Every single word must be in Amharic script.',
+      sw: 'CRITICAL: Write ENTIRE response in SWAHILI only. Use proper Swahili grammar and native football terminology. DO NOT use any English words. Every single word must be in Swahili.'
+    };
+
+    const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
+    
     return `${baseInstruction}
+
+🌍 CRITICAL LANGUAGE REQUIREMENT:
+${languageInstruction}
 
 CONTENT FORMAT for ${contentType.toUpperCase()}:
 ${contentFormat}
