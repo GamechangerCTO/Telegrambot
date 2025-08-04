@@ -18,6 +18,7 @@ import { unifiedFootballService } from './unified-football-service';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
 import { getOpenAIClient } from '../api-keys';
+import { getTelegramPromptInstructions } from './telegram-prompt-instructions';
 
 export type PollType = 
   | 'match_prediction'     // Who will win?
@@ -808,25 +809,21 @@ export class PollsGenerator {
         return this.enhanceNonMatchPollContentManually(content, language);
       }
 
-      const languagePrompts = {
-        'en': `Enhance this football community poll to be more engaging and viral. Keep it conversational and fun. Add relevant emojis naturally. Make it feel like a genuine community discussion. Include hashtags at the end:`,
-        'am': `ይህን የእግር ኳስ ማህበረሰብ ጥያቄ የበለጠ አሳታፊ እና ተወዳጅ እንዲሆን ያሻሽሉት። እንደ እውነተኛ ማህበረሰብ ውይይት ያድርጉት። በመጨረሻ የሃሽታግ ይጨምሩ። IMPORTANT: Write entire response in AMHARIC only:`,
-        'sw': `Boresha uchaguzi huu wa jamii ya mpira wa miguu uwe wa kuvutia zaidi. Ufanye uwe kama mazungumzo halisi ya jamii. Ongeza hashtags mwishoni. IMPORTANT: Write entire response in SWAHILI only:`
-      };
+      const formattingInstructions = getTelegramPromptInstructions('polls', language);
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: `You are a social media expert specializing in football community content. Make polls engaging, conversational, and community-focused.`
+            content: formattingInstructions
           },
           { 
             role: "user", 
-            content: `${languagePrompts[language]}\n\n${content}` 
+            content: `Enhance this football community poll to be more engaging and viral. Keep it conversational and fun. Add relevant emojis naturally. Make it feel like a genuine community discussion. Include hashtags at the end:\n\n${content}` 
           }
         ],
-        max_tokens: 1600, // Increased for complete HTML content without cutting
+        max_tokens: 1600,
         temperature: 0.8
       });
 
@@ -1804,92 +1801,27 @@ export class PollsGenerator {
         return this.enhancePollContentManually(content, analysis, language);
       }
 
-      // TEMPORARY FIX: Disable AI editing to prevent timeouts
-      console.log('⚠️ AI editing temporarily disabled to prevent timeouts');
-      return this.enhancePollContentManually(content, analysis, language);
-
-      const languagePrompts = {
-        'en': `Enhance this football poll content to be more engaging and viral. Keep it concise but exciting. Add relevant emojis naturally. Make it feel interactive and fun. Include strategic hashtags at the end:`,
-        'am': `ይህን የእግር ኳስ የሕዝብ አስተያየት ይዘት የበለጠ አሳታፊ እና ተወዳጅ እንዲሆን ያሻሽሉት። አጭር ነገር ግን አስደሳች ያድርጉት። ተፈጥሯዊ ስሜቶችን ያክሉ። በመጨረሻ የሃሽታግ ይጨምሩ። IMPORTANT: Write entire response in AMHARIC only:`,
-        'sw': `Boresha maudhui haya ya uchaguzi wa mpira wa miguu yawe ya kuvutia zaidi na yenye kuenea haraka. Yafupishe lakini yawe ya kusisimua. Ongeza emoji kwa kawaida. Yaonyeshe mwingiliano na furaha. Jumuisha hashtags mwishoni. IMPORTANT: Write entire response in SWAHILI only:`
-      };
-
-      const systemPrompts = {
-        'en': `You are a social media expert creating modern Telegram polls with HTML formatting. Use HTML tags (<b>, <i>, <code>) and Unicode box drawing characters for visual structure. Format like this:
-
-<b>🗳️ FOOTBALL POLL</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>📊 WHAT'S YOUR PREDICTION?</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ⚽ <b>[Poll Question]</b>
-┃ 
-┃ 🔘 <i>Option 1</i>
-┃ 🔘 <i>Option 2</i>
-┃ 🔘 <i>Option 3</i>
-┃ 🔘 <i>Option 4</i>
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>📈 Vote and share your opinion!</i>
-
-Make polls engaging, shareable, and exciting while keeping them concise and clear.`,
-        'am': `እርስዎ የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚጠቀሙ የማህበራዊ ሚዲያ ባለሙያ ናቸው። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
-
-<b>🗳️ የእግር ኳስ አስተያየት</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>📊 ትንበያዎ ምንድን ነው?</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ⚽ <b>[የአስተያየት ጥያቄ]</b>
-┃ 
-┃ 🔘 <i>አማራጭ 1</i>
-┃ 🔘 <i>አማራጭ 2</i>
-┃ 🔘 <i>አማራጭ 3</i>
-┃ 🔘 <i>አማራጭ 4</i>
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>📈 ድምፅ ይስጡ እና አስተያየትዎን ያካፍሉ!</i>
-
-አስተያየቶችን አሳታፊ፣ የሚካፈሉ እና አስደሳች ያድርጉ። ሙሉ ምላሽ በአማርኛ ፊደል ብቻ ይፃፉ።`,
-        'sw': `Wewe ni mtaalamu wa mitandao ya kijamii unayetengeneza kura za kisasa za Telegram kwa kutumia muundo wa HTML. Tumia lebo za HTML (<b>, <i>, <code>) na alama za mstari wa kisanduku. Tengeneza kama hivi:
-
-<b>🗳️ KURA YA MPIRA</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>📊 UTABIRI WAKO NI NINI?</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ⚽ <b>[Swali la Kura]</b>
-┃ 
-┃ 🔘 <i>Chaguo 1</i>
-┃ 🔘 <i>Chaguo 2</i>
-┃ 🔘 <i>Chaguo 3</i>
-┃ 🔘 <i>Chaguo 4</i>
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>📈 Piga kura na shiriki maoni yako!</i>
-
-Fanya kura ziwe za kuvutia, za kushirikiwa na za kusisimua. Andika jibu lote kwa Kiswahili tu.`
-      };
+      const formattingInstructions = getTelegramPromptInstructions('polls', language);
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: systemPrompts[language]
+            content: formattingInstructions
           },
           { 
             role: "user", 
-            content: `${languagePrompts[language]}\n\n${content}` 
+            content: `Enhance this football poll content to be more engaging and viral. Keep it concise but exciting. Add relevant emojis naturally. Make it feel interactive and fun. Include strategic hashtags at the end:\n\n${content}` 
           }
         ],
-        max_tokens: 1600, // Increased for complete HTML content without cutting
-        temperature: 0.8 // Higher creativity for polls
+        max_tokens: 1600,
+        temperature: 0.8
       });
 
-      const enhancedContent = response.choices[0]?.message?.content?.trim();
+      const enhancedContent = response.choices[0]?.message?.content?.trim() || content;
       
-      if (enhancedContent) {
+      if (enhancedContent !== content) {
         console.log(`✅ AI enhanced poll content in ${language}`);
         return enhancedContent;
       }

@@ -18,6 +18,7 @@ import { unifiedFootballService } from './unified-football-service';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
 import { getOpenAIClient } from '../api-keys';
+import { getTelegramPromptInstructions } from './telegram-prompt-instructions';
 
 export interface AdvancedTeamStatistics {
   // Basic Attack Stats
@@ -1896,94 +1897,33 @@ export class MatchAnalysisGenerator {
         return content;
       }
 
-      const languagePrompts = {
-        'en': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. Write professionally in English. END with hashtags in both English and the content language:`,
-        'am': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. IMPORTANT: Write the entire response in AMHARIC language only. Use clear, natural Amharic football terminology. END with relevant hashtags in Amharic:`,
-        'sw': `Expand this comprehensive football match analysis into a detailed, engaging article of 6-8 paragraphs. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. IMPORTANT: Write the entire response in SWAHILI language only. END with hashtags in both Swahili and English:`
-      };
-
-      const systemPrompts = {
-        'en': `You are a professional football analyst creating modern Telegram match analysis with HTML formatting. Use HTML tags (<b>, <i>, <code>) and Unicode box drawing characters for visual structure. Format like this:
-
-<b>⚽ MATCH ANALYSIS</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>🏟️ [Team A] vs [Team B]</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📊 <b>Key Statistics</b>
-┃ 🏠 Home: <i>[Team stats]</i>
-┃ ✈️ Away: <i>[Team stats]</i>
-┃ 
-┃ 🎯 <b>Tactical Preview</b>
-┃ 📝 [Tactical analysis]
-┃ 
-┃ 💥 <b>Key Battles</b>
-┃ ⚔️ [Player matchups]
-┃ 
-┃ 🔮 <b>Prediction</b>
-┃ 📈 [Match prediction with reasoning]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-Write comprehensive, detailed analysis showcasing expert tactical knowledge. Make it authoritative and informative.`,
-        'am': `እርስዎ የዘመናዊ ቴሌግራም የHTML ፎርማቲንግ የሚጠቀሙ ፕሮፌሽናል የእግር ኳስ ተንታኝ ናቸው። የHTML መለያዎችን (<b>, <i>, <code>) እና የዩኒኮድ ሳጥን መስመሮችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
-
-<b>⚽ የጨዋታ ትንታኔ</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>🏟️ [ቡድን ሀ] በተቃ [ቡድን ለ]</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📊 <b>ዋና ስታትስቲክስ</b>
-┃ 🏠 ቤት: <i>[የቡድን ስታትስ]</i>
-┃ ✈️ እንግዳ: <i>[የቡድን ስታትስ]</i>
-┃ 
-┃ 🎯 <b>የዘዴ ትንተና</b>
-┃ 📝 [የዘዴ ትንተና]
-┃ 
-┃ 💥 <b>ዋና ውድድሮች</b>
-┃ ⚔️ [የተጫዋቾች ውድድር]
-┃ 
-┃ 🔮 <b>ትንበያ</b>
-┃ 📈 [የጨዋታ ትንበያ ከምክንያት ጋር]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-ሙሉ ምላሽ በአማርኛ ፊደል ብቻ ይፃፉ። ዝርዝር፣ አሳታፊ የጨዋታ ትንበያ ይፍጠሩ። ባለሙያ ደረጃ ያለው ዘዴዊ እውቀት ያሳዩ።`,
-        'sw': `Wewe ni mtaalamu wa kuchanganua mechi za kisasa za Telegram kwa kutumia muundo wa HTML. Tumia lebo za HTML (<b>, <i>, <code>) na alama za mstari wa kisanduku. Tengeneza kama hivi:
-
-<b>⚽ UCHAMBUZI WA MECHI</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>🏟️ [Timu A] dhidi ya [Timu B]</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📊 <b>Takwimu Muhimu</b>
-┃ 🏠 Nyumbani: <i>[Takwimu za timu]</i>
-┃ ✈️ Ugenini: <i>[Takwimu za timu]</i>
-┃ 
-┃ 🎯 <b>Mapitio ya Kimkakati</b>
-┃ 📝 [Uchambuzi wa kimkakati]
-┃ 
-┃ 💥 <b>Mapigano Muhimu</b>
-┃ ⚔️ [Mapambano ya wachezaji]
-┃ 
-┃ 🔮 <b>Utabiri</b>
-┃ 📈 [Utabiri wa mechi na sababu]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-Andika jibu lote kwa Kiswahili tu. Unda uchambuzi mkuu wa mechi wenye undani. Onyesha ujuzi wa kimkakati wa kitaalamu.`
-      };
+      // Get standardized Telegram formatting instructions for analysis content
+      const formattingInstructions = getTelegramPromptInstructions('analysis', language);
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: systemPrompts[language]
+            content: formattingInstructions
           },
           { 
             role: "user", 
-            content: `${languagePrompts[language]}\n\n${content}` 
+            content: `Expand this comprehensive football match analysis into a detailed, engaging article. Include tactical insights, statistical comparisons, key player battles, head-to-head analysis, and detailed predictions. Follow the formatting guidelines strictly:
+
+${content}
+
+REQUIREMENTS:
+1. Write 6-8 paragraphs with professional analysis
+2. Include tactical and statistical insights
+3. Add key player battles and matchups
+4. Provide detailed predictions with reasoning
+5. Follow Telegram formatting guidelines
+6. End with relevant hashtags
+7. Make it authoritative and informative` 
           }
         ],
-        max_tokens: 2000, // Increased for complete HTML content without cutting
+        max_tokens: 2000,
         temperature: 0.7
       });
 

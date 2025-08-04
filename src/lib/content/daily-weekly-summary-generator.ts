@@ -18,6 +18,7 @@ import { rssNewsFetcher } from './rss-news-fetcher';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
 import { getOpenAIClient } from '../api-keys';
+import { getTelegramPromptInstructions } from './telegram-prompt-instructions';
 
 export interface MatchResult {
   id: string;
@@ -793,64 +794,25 @@ export class DailyWeeklySummaryGenerator {
     const date = new Date(summaryData.date).toLocaleDateString();
     
     if (language === 'am') {
-      // BUILD ULTRA-ENHANCED AMHARIC CONTENT WITH MODERN VISUAL TELEGRAM FEATURES
-      let content = `<b>📋 ⚽ የዕለት እግርኳስ ማጠቃለያ</b> 📅 ${date}\n`;
-      content += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      // SUPER COMPACT AMHARIC CONTENT - NO HTML SYMBOLS
+      let content = `📋 ⚽ የቀኑ ስፖርት\n\n`;
       
       if (summaryData.interestingMatches.length > 0) {
-        content += `<b>🏆 ዛሬ የተከናወኑ ጉልህ ጨዋታዎች</b>\n`;
-        content += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-        
-        summaryData.interestingMatches.slice(0, 2).forEach((interestingMatch, index) => {
-          const match = interestingMatch.match;
-          const totalGoals = match.homeScore + match.awayScore;
-          const isHighScoring = totalGoals >= 5;
-          const isUpset = Math.abs(match.homeScore - match.awayScore) >= 3;
-          
-          // Enhanced visual hierarchy with progressive indentation
-          content += `┃ <b><strong>${index + 1}.</strong></b> <u><b>${match.homeTeam}</b></u> <code><b>${match.homeScore}-${match.awayScore}</b></code> <u><b>${match.awayTeam}</b></u>\n`;
-          content += `┃    🏟️ <i><em>${match.competition}</em></i>\n`;
-          content += `┃    ${isHighScoring ? '🔥' : '⚽'} <i>${interestingMatch.highlightReason}</i>\n`;
-          
-          if (isHighScoring) {
-            content += `┃    ✨ <span class="tg-spoiler"><i>ከፍተኛ ጎል የተሰማርበት ጨዋታ (${totalGoals} ጎሎች)</i></span>\n`;
-          }
-          if (isUpset) {
-            content += `┃    😱 <u><i>የሚያስደንቅ ውጤት!</i></u>\n`;
-          }
-          if (index < 1) content += `┃\n`; // Spacing between matches
-        });
-        content += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+        const match = summaryData.interestingMatches[0].match;
+        content += `🏆 ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}\n\n`;
       }
 
-      // COMPACT STATISTICS
-      content += `<b>📊 በቁጥሮች:</b> <code>${summaryData.statistics.totalMatches}</code> ጨዋታዎች | <code>${summaryData.statistics.totalGoals}</code> ጎሎች | አማካይ <code>${(summaryData.statistics.totalGoals / summaryData.statistics.totalMatches).toFixed(1)}</code>\n\n`;
+      // SUPER MINIMAL STATS  
+      content += `📊 ጠቅላላ: ${summaryData.statistics.totalMatches} ጨዋታዎች\n\n`;
 
-      // COMPACT HIGHLIGHTS
-      if (summaryData.standoutPerformances.goalOfDay || summaryData.standoutPerformances.saveOfDay) {
-        content += `<b>⭐ ምርጥ ጊዜዎች:</b>\n`;
-        if (summaryData.standoutPerformances.goalOfDay) {
-          content += `🥅 <i>${summaryData.standoutPerformances.goalOfDay}</i>\n`;
-        }
-        if (summaryData.standoutPerformances.saveOfDay) {
-          content += `🧤 <i>${summaryData.standoutPerformances.saveOfDay}</i>\n`;
-        }
-        content += `\n`;
-      }
-      
-      // COMPACT TOMORROW'S FIXTURES
+      // TOMORROW'S FIXTURES
       if (summaryData.tomorrowsFixtures.length > 0) {
-        content += `<b>🔮 ነገ:</b>\n`;
-        summaryData.tomorrowsFixtures.slice(0, 2).forEach((fixture, index) => {
-          const importance = this.determineMatchImportance(fixture);
-          const importanceEmoji = importance === 'HIGH' ? '🔥' : '⚡';
-          content += `${importanceEmoji} <b>${fixture.homeTeam}</b> 🆚 <b>${fixture.awayTeam}</b> (<i>${fixture.competition}</i>)\n`;
-        });
-        content += `\n`;
+        const fixture = summaryData.tomorrowsFixtures[0];
+        content += `🔮 ነገ: ${fixture.homeTeam} vs ${fixture.awayTeam}\n\n`;
       }
 
       // SIMPLE FOOTER
-      content += `<i>🌟 ከእኛ ጋር ይከታተሉ!</i>`;
+      content += `🌟 ከእኛ ጋር ይከታተሉ!`;
       
       return content;
     }
@@ -1619,8 +1581,7 @@ export class DailyWeeklySummaryGenerator {
     console.log(`🎨 Using static daily summary image for ${summaryData.date} (saves tokens)`);
     
     // Always use static image (saves tokens)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const staticImageUrl = `${baseUrl}/generated-images/daily_summery.jpg`;
+    const staticImageUrl = 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/daily_summery.jpg';
     
     console.log(`♻️ Using static daily summary image: ${staticImageUrl}`);
     return staticImageUrl;
@@ -1676,65 +1637,7 @@ export class DailyWeeklySummaryGenerator {
       return content;
     }
     
-    const languageInstructions = {
-      en: "Write ONLY in English with engaging style and football terminology",
-      am: "Write ONLY in Amharic (አማርኛ) with native football terminology and engaging style",
-      sw: "Write ONLY in Swahili with native football terminology and engaging style"
-    };
-    
-    const formatInstructions = {
-      en: `MANDATORY: Use ALL AVAILABLE Telegram HTML formatting features - BE EXTREMELY STRICT:
-      
-🔥 REQUIRED HTML TAGS - USE EVERY ONE THAT IS RELEVANT:
-• <b>BOLD</b> and <strong>STRONG</strong> - Main titles, team names, scores, important stats
-• <i>ITALIC</i> and <em>EMPHASIS</em> - Competition names, match descriptions, analysis insights
-• <u>UNDERLINE</u> and <ins>UNDERLINE</ins> - Highlight key statistics, record-breaking performances
-• <s>STRIKETHROUGH</s> and <del>STRIKETHROUGH</del> - Show upsets, surprising results
-• <code>MONOSPACE</code> - All scores, numbers, percentages, time stamps
-• <pre>PREFORMATTED CODE BLOCK</pre> - For structured data like league tables
-• <a href="URL">CLICKABLE LINKS</a> - Reference links (when relevant)
-• <span class="tg-spoiler">SPOILER TEXT</span> - Hidden content for dramatic reveals
-
-🎯 VISUAL STRUCTURE REQUIREMENTS:
-• Unicode box characters for ALL borders: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
-• Strategic emoji placement for visual hierarchy
-• Multiple formatting layers: <b><i>BOLD + ITALIC</i></b>, <u><code>UNDERLINE + CODE</code></u>
-• Clear section dividers and spacing`,
-      
-      am: `አስገዳጅ: ሁሉንም የሚገኙ ቴሌግራም HTML ቅርጸት ባህሪያት ይጠቀሙ - በጣም ጥብቅ ይሁኑ:
-
-🔥 ያስፈልጋሉ HTML ታጎች - ተዛማጅ የሆነውን እያንዳንዱን ይጠቀሙ:
-• <b>ደማቅ</b> እና <strong>ጠንካራ</strong> - ዋና ርዕሶች፣ የቡድን ስሞች፣ ውጤቶች፣ አስፈላጊ ስታትስ
-• <i>ዘንበል</i> እና <em>አጽንኦት</em> - የውድድር ስሞች፣ የጨዋታ መግለጫዎች፣ የትንታኔ ግንዛቤዎች
-• <u>ስር መስመር</u> እና <ins>ስር መስመር</ins> - ዋና ስታትስቲክስ፣ ሪከርድ-አሰባሪ አፈጻጸሞች ማጉላት
-• <s>መሰረዝ</s> እና <del>መሰረዝ</del> - የሚያስደንቁ ውጤቶች ማሳየት
-• <code>ሞኖስፔስ</code> - ሁሉም ውጤቶች፣ ቁጥሮች፣ ፐርሰንቴጅ፣ ጊዜ ማህተሞች
-• <pre>ቅድመ-ቅርጸት የኮድ ብሎክ</pre> - ለተዋቀረ ውሂብ እንደ ሊግ ሠንጠረዥ
-• <a href="URL">የሚጫን አገናኞች</a> - ማጣቀሻ አገናኞች (ተዛማጅ በሚሆንበት ጊዜ)
-• <span class="tg-spoiler">ስፖይለር ፅሁፍ</span> - ለድራማዊ መከፋፈቻዎች የተደበቀ ይዘት
-
-🎯 የእይታ መዋቅር መስፈርቶች:
-• ለሁሉም ድንበሮች የዩኒኮድ ሳጥን ቁምፊዎች: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
-• ለእይታ ሹመና ስልታዊ emoji አቀማመጥ
-• በርካታ የቅርጸት ንብርብሮች: <b><i>ደማቅ + ዘንበል</i></b>, <u><code>ስር መስመር + ኮድ</code></u>`,
-      
-      sw: `LAZIMA: Tumia VIPENGELE VYOTE vya uundaji wa Telegram HTML - KUWA MKALI SANA:
-
-🔥 HTML TAGS ZINAZOHITAJIKA - TUMIA KILA MOJA INAYOHUSIANA:
-• <b>NZITO</b> na <strong>IMARA</strong> - Vichwa vikuu, majina ya timu, alama, takwimu muhimu
-• <i>ITALIKI</i> na <em>MSISITIZO</em> - Majina ya mashindano, maelezo ya mechi, maarifa ya uchambuzi
-• <u>MSTARI CHINI</u> na <ins>MSTARI CHINI</ins> - Oanisha takwimu muhimu, utendaji wa kuvunja rekodi
-• <s>KUFUTA</s> na <del>KUFUTA</del> - Onyesha matokeo ya kushangaza
-• <code>MONOSPACE</code> - Alama zote, namba, asilimia, stempu za wakati
-• <pre>BLOCK YA NAMBARI ILIYOPANGWA MAPEMA</pre> - Kwa data iliyopangwa kama jedwali la ligi
-• <a href="URL">VIUNGO VINAVYOBONYWA</a> - Viungo vya marejeleo (vinapohusiana)
-• <span class="tg-spoiler">MAANDISHI YA SPOILER</span> - Maudhui yaliyofichwa kwa mafunuo ya kielezi
-
-🎯 MAHITAJI YA MUUNDO WA KUONA:
-• Herufi za kisanduku cha Unicode kwa mipaka yote: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
-• Uwekaji wa emoji wa kimkakati kwa utaratibu wa kuona
-• Safu nyingi za uundaji: <b><i>NZITO + ITALIKI</i></b>, <u><code>MSTARI CHINI + NAMBARI</code></u>`
-    };
+    const formattingInstructions = getTelegramPromptInstructions('summary', language);
 
     const prompt = `You are a TELEGRAM VISUAL DESIGNER creating ultra-modern, visually stunning content. IGNORE the template - CREATE COMPLETELY NEW VISUAL FORMAT with maximum spacing, unique formatting, and perfect structure.
 
@@ -1756,10 +1659,7 @@ export class DailyWeeklySummaryGenerator {
     ).join('\n')}
     
     FORMATTING REQUIREMENTS:
-    ${formatInstructions[language]}
-    
-    ULTRA-STRICT VISUAL FORMATTING INSTRUCTIONS - FOLLOW EXACTLY:
-    1. ${languageInstructions[language]}
+    Use modern Telegram HTML formatting with visual structure.
     
     🎨 VISUAL STRUCTURE REQUIREMENTS:
     2. EVERY section must be separated by 2-3 empty lines for breathing room
@@ -1798,7 +1698,10 @@ export class DailyWeeklySummaryGenerator {
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "system", content: formattingInstructions },
+          { role: "user", content: `Create ultra-modern daily football summary. IGNORE the template - CREATE COMPLETELY NEW VISUAL FORMAT with maximum spacing and perfect structure.\n\n${content}` }
+        ],
         temperature: 0.7,
         max_tokens: 1500,
         top_p: 1,
@@ -1819,33 +1722,15 @@ export class DailyWeeklySummaryGenerator {
       return content;
     }
     
-    const prompt = `Edit the following weekly football summary content to make it more engaging and relevant to ${language} readers.
-    Original content:
-    ${content}
-    
-    Summary data:
-    Week start: ${summaryData.weekStart}
-    Week end: ${summaryData.weekEnd}
-    Weekly results: ${summaryData.weeklyResults.topMatches.length} top matches, ${summaryData.weeklyResults.leagueHighlights.length} league highlights
-    Weekly statistics: ${summaryData.weeklyStats.totalMatches} matches, ${summaryData.weeklyStats.totalGoals} goals
-    Trends: ${summaryData.trends.teamOfTheWeek} team of the week, ${summaryData.trends.playerOfTheWeek} player of the week
-    Next week preview: ${summaryData.nextWeekPreview.keyFixtures.length} key fixtures, ${summaryData.nextWeekPreview.matchesToWatch.length} matches to watch
-    
-    Edit the content to:
-    1. Add more context and background about the week's events and trends.
-    2. Highlight key moments and standout performances.
-    3. Include more specific statistics and details.
-    4. Make the language more engaging and local to ${language}.
-    5. Add relevant hashtags and calls to action.
-    6. Ensure the content is concise and informative.
-    7. Maintain the original structure and flow.
-    
-    Edit the content and return ONLY the edited version.`;
+    const formattingInstructions = getTelegramPromptInstructions('summary', language);
 
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "system", content: formattingInstructions },
+          { role: "user", content: `Edit this weekly football summary to be more engaging and relevant. Add context, highlight key moments, include specific statistics, and make the language engaging with relevant hashtags.\n\nOriginal content:\n${content}\n\nWeek: ${summaryData.weekStart} to ${summaryData.weekEnd}\nMatches: ${summaryData.weeklyStats.totalMatches}, Goals: ${summaryData.weeklyStats.totalGoals}\nTeam of week: ${summaryData.trends.teamOfTheWeek}` }
+        ],
         temperature: 0.7,
         max_tokens: 2000,
         top_p: 1,

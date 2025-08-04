@@ -18,6 +18,7 @@ import { unifiedFootballService } from './unified-football-service';
 import { FootballMatchScorer } from './football-match-scorer';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
+import { getTelegramPromptInstructions } from './telegram-prompt-instructions';
 
 // Real API event types from API-Football
 export type RealMatchEventType = 

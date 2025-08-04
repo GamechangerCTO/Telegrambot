@@ -921,21 +921,20 @@ export class TelegramDistributor {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
     const staticImages: Record<string, string> = {
-      'daily_summary': '/generated-images/daily_summery.jpg',
-      'weekly_summary': '/generated-images/daily_summery.jpg', // reuse for now
-      'live': '/generated-images/live.jpeg',
-      'news': '/generated-images/news.png',
-      'analysis': '/generated-images/analsys.png',
-      'betting': '/generated-images/news.png', // fallback to news for now
-      'poll': '/generated-images/live.jpeg', // fallback to live for now
-      'coupons': '/generated-images/news.png' // fallback to news for now
+      'daily_summary': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/daily_summery.jpg',
+      'weekly_summary': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/daily_summery.jpg',
+      'live': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/live.jpeg',
+      'news': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/news.png',
+      'analysis': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/analsys.png',
+      'betting': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/news.png',
+      'poll': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/live.jpeg',
+      'coupons': 'https://ythsmnqclosoxiccchhh.supabase.co/storage/v1/object/public/generated-images/news.png'
     };
     
-    const imagePath = staticImages[contentType];
-    if (imagePath) {
-      const fullUrl = `${baseUrl}${imagePath}`;
-      console.log(`📁 Static image mapped: ${contentType} → ${fullUrl}`);
-      return fullUrl;
+    const imageUrl = staticImages[contentType];
+    if (imageUrl) {
+      console.log(`📁 Static image mapped: ${contentType} → ${imageUrl}`);
+      return imageUrl;
     }
     
     console.log(`⚠️ No static image found for content type: ${contentType}`);
@@ -1083,9 +1082,9 @@ export class TelegramDistributor {
     
     // 🚀 Use Enhanced Telegram API with advanced features
     const matchInfo = {
-      home: content.analysis?.homeTeam || 'Team A',
-      away: content.analysis?.awayTeam || 'Team B', 
-      competition: content.analysis?.competition || 'Match'
+      home: content.analysis?.homeTeam || content.homeTeam || content.title?.split(' vs ')[0] || content.title?.split(' v ')[0] || 'Home Team',
+      away: content.analysis?.awayTeam || content.awayTeam || content.title?.split(' vs ')[1] || content.title?.split(' v ')[1] || 'Away Team', 
+      competition: content.analysis?.competition || content.competition || content.league || 'Match'
     };
     
     const tips = content.analysis?.predictions?.map((pred: any) => ({

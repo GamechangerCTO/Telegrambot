@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { rssNewsFetcher, RSSItem } from './rss-news-fetcher';
 import { getOpenAIClient } from '../api-keys';
 import { contentSpamPreventer } from '../utils/content-spam-preventer';
+import { getTelegramPromptInstructions } from './telegram-prompt-instructions';
 
 // Cache for RSS feeds
 const RSS_CACHE = new Map<string, { data: NewsItem[], timestamp: number }>();
@@ -250,6 +251,49 @@ export class OptimizedNewsContentGenerator {
   }
 
   /**
+   * 🎭 Generate mock news items as fallback
+   */
+  private generateMockNewsItems(): NewsItem[] {
+    const currentDate = new Date().toISOString();
+    
+    return [
+      {
+        id: 'mock-news-1',
+        title: 'Latest Football Transfer Updates',
+        description: 'Stay updated with the latest football transfer news and rumors from around the world.',
+        content: 'Transfer window activity continues across major leagues. Keep following for the latest updates.',
+        sourceUrl: '#',
+        publishedAt: currentDate,
+        source: 'Football News',
+        category: 'Transfers',
+        relevanceScore: 80
+      },
+      {
+        id: 'mock-news-2', 
+        title: 'League Standings Update',
+        description: 'Check out the current standings and form of teams across major competitions.',
+        content: 'Teams continue to battle for top positions in their respective leagues.',
+        sourceUrl: '#',
+        publishedAt: currentDate,
+        source: 'Sports Central',
+        category: 'League News',
+        relevanceScore: 75
+      },
+      {
+        id: 'mock-news-3',
+        title: 'Match Previews and Predictions',
+        description: 'Get ready for upcoming matches with detailed previews and expert predictions.',
+        content: 'Exciting matches are coming up this week. Stay tuned for detailed analysis.',
+        sourceUrl: '#',
+        publishedAt: currentDate,
+        source: 'Match Analysis',
+        category: 'Previews',
+        relevanceScore: 70
+      }
+    ];
+  }
+
+  /**
    * 🔄 Fetch with retry logic
    */
   private async fetchWithRetry(maxRetries: number = 2): Promise<RSSItem[]> {
@@ -258,8 +302,8 @@ export class OptimizedNewsContentGenerator {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`📡 RSS fetch attempt ${attempt}/${maxRetries}`);
-        console.log('📡 Calling rssNewsFetcher.fetchFootballNews()...');
-      const result = await rssNewsFetcher.fetchFootballNews();
+        console.log('📡 Calling rssNewsFetcher.fetchAllFeeds()...');
+      const result = await rssNewsFetcher.fetchAllFeeds();
       console.log('📡 RSS fetch completed:', result ? `${result.length} items` : 'null/undefined');
         
         if (result && Array.isArray(result) && result.length > 0) {
@@ -504,123 +548,38 @@ export class OptimizedNewsContentGenerator {
         return this.createTemplateNewsContent(news, language);
       }
 
-      // 🚀 AI editing enabled for better content quality
-      console.log(`🤖 Starting AI editing for ${language} with enhanced prompts`);
+      // Use standardized Telegram formatting instructions
+      console.log(`🤖 Starting AI editing for ${language} with standardized formatting`);
 
       // 📊 Log OpenAI call attempt
       await this.logOpenAICall('news-generation', language, news.title);
 
-      const systemPrompts = {
-        'en': `You are a professional football journalist creating ULTRA-MODERN Telegram content. MANDATORY: Use ALL available HTML formatting features - BE EXTREMELY STRICT:
-
-🔥 REQUIRED HTML TAGS - USE EVERY RELEVANT ONE:
-• <b>BOLD</b> + <strong>STRONG</strong> - Headlines, team names, breaking news
-• <i>ITALIC</i> + <em>EMPHASIS</em> - Sources, quotes, match details, timing
-• <u>UNDERLINE</u> + <ins>UNDERLINE</ins> - Key facts, record-breaking news, transfer fees
-• <s>STRIKETHROUGH</s> + <del>STRIKETHROUGH</del> - Rumors debunked, old information
-• <code>MONOSPACE</code> - Statistics, scores, dates, transfer amounts, ages
-• <pre>PREFORMATTED</pre> - League tables, detailed statistics when relevant
-• <span class="tg-spoiler">SPOILER</span> - Hide dramatic reveals, surprise transfers
-
-🎯 STRICT FORMATTING RULES:
-• Headlines: <b><strong>HEADLINE</strong></b>
-• Team names: <b><strong>TEAM NAME</strong></b>  
-• Player names: <b><i>PLAYER NAME</i></b>
-• Transfer fees: <u><code>€XX MILLION</code></u>
-• Ages/Statistics: <code>XX years old</code>, <code>XX goals</code>
-• Quotes: <i><em>"Quote text"</em></i>
-• Sources: <i>📰 Source Name</i>
-• Dramatic reveals: <span class="tg-spoiler">SURPRISE INFO</span>
-• Debunked rumors: <s><del>FALSE RUMOR</del></s>
-• Box characters for ALL structure: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
-
-CRITICAL: NO plain text - EVERY element needs HTML formatting!`,
-        'am': `እርስዎ የእግር ኳስ ዜና ጸሐፊ ናቸው። አስገዳጅ: ሁሉንም HTML ባህሪያት ይጠቀሙ - በጣም ጥብቅ ይሁኑ:
-
-🔥 ያስፈልጋሉ HTML ታጎች:
-• <b>ደማቅ</b> + <strong>ጠንካራ</strong> - ርዕሶች፣ የቡድን ስሞች
-• <i>ዘንበል</i> + <em>አጽንኦት</em> - ምንጮች፣ ጥቅሶች
-• <u>ስር መስመር</u> + <ins>ማጉላት</ins> - ዋና እውነታዎች፣ የዝውውር ክፍያዎች
-• <s>መሰረዝ</s> + <del>መሰረዝ</del> - የተሳሳቱ ወሬዎች
-• <code>ሞኖስፔስ</code> - ስታትስቲክስ፣ ክፍያዎች፣ ዕድሜዎች
-• <span class="tg-spoiler">ስፖይለር</span> - የሚገርሙ ዝውውሮች መደበቅ
-
-🎯 ጥብቅ ደንቦች: ርዕሶች <b><strong>ርዕስ</strong></b>፣ ቡድኖች <b><strong>ቡድን</strong></b>፣ ተጫዋቾች <b><i>ስም</i></b>
-ወሳኝ: ሁሉም ይዘት HTML ቅርጸት ያስፈልጋል!`,
-        'sw': `Wewe ni mwandishi wa habari za mpira. LAZIMA: Tumia HTML VYOTE - kuwa mkali sana:
-
-🔥 HTML TAGS ZINAZOHITAJIKA:
-• <b>NZITO</b> + <strong>IMARA</strong> - vichwa, majina ya timu
-• <i>ITALIKI</i> + <em>MSISITIZO</em> - vyanzo, nukuu
-• <u>MSTARI CHINI</u> + <ins>JAA</ins> - ukweli muhimu, ada za uhamisho
-• <s>FUTA</s> + <del>FUTA</del> - uvumi ulio batili
-• <code>MONOSPACE</code> - takwimu, ada, umri
-• <span class="tg-spoiler">SPOILER</span> - uhamisho wa kushangaza kufiche
-
-🎯 Sheria kali: vichwa <b><strong>KICHWA</strong></b>, timu <b><strong>TIMU</strong></b>, wachezaji <b><i>JINA</i></b>
-MUHIMU: Maudhui yote yanahitaji HTML formatting!
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>📰 Chanzo: [Chanzo cha Habari]</i>
-
-Maliziza sentensi kila wakati. Malizia na hashtags.`,
-        'fr': `Vous êtes un journaliste de football qui crée du contenu Telegram moderne avec formatage HTML. Rédigez des nouvelles en utilisant les balises HTML (<b>, <i>, <code>) et les caractères de dessin de boîte Unicode. Formatez comme ceci:
-
-<b>📰 ACTUALITÉS FOOTBALL</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>🔥 MISE À JOUR URGENT</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ⚽ <b>[Titre de l'actualité]</b>
-┃ 📅 <i>[Date/Heure]</i>
-┃ 
-┃ 📝 [Contenu des nouvelles avec détails]
-┃ 🏟️ [Informations match/équipe]
-┃ 💰 [Détails transfert/financiers si applicable]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>📰 Source: [Source des Nouvelles]</i>
-
-Terminez toujours les phrases complètement. Terminez par des hashtags.`,
-        'ar': `أنت صحفي كرة قدم تقوم بإنشاء محتوى تيليجرام حديث بتنسيق HTML. اكتب الأخبار باستخدام علامات HTML (<b>, <i>, <code>) وأحرف رسم الصندوق Unicode. قم بالتنسيق كما يلي:
-
-<b>📰 أخبار كرة القدم</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>🔥 تحديث عاجل</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ⚽ <b>[عنوان الخبر]</b>
-┃ 📅 <i>[التاريخ/الوقت]</i>
-┃ 
-┃ 📝 [محتوى الخبر مع التفاصيل]
-┃ 🏟️ [معلومات المباراة/الفريق]
-┃ 💰 [تفاصيل الانتقال/المالية إن وجدت]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-<i>📰 المصدر: [مصدر الأخبار]</i>
-
-اكمل الجمل دائماً. انته بالهاشتاغات.`
-      };
-
-      const languageNames = {
-        'en': 'English',
-        'am': 'Amharic',
-        'sw': 'Swahili', 
-        'fr': 'français',
-        'ar': 'العربية'
-      };
+      // Get standardized prompt instructions for news content
+      const formattingInstructions = getTelegramPromptInstructions('news', language);
 
       const response = await Promise.race([
         openai.chat.completions.create({
-          model: "gpt-4o-mini", // Fastest model for translations
+          model: "gpt-4o-mini",
           messages: [
-            { role: "system", content: systemPrompts[language] },
+            { role: "system", content: formattingInstructions },
             { 
               role: "user", 
-              content: `Create a complete news summary in ${languageNames[language]}. Translate ALL the information. Make sure to end with complete sentences:\n\nTitle: ${news.title}\nContent: ${news.content.substring(0, 800)}` 
+              content: `Create a complete, professional news summary with proper Telegram formatting for this article:
+
+TITLE: ${news.title}
+CONTENT: ${news.content.substring(0, 800)}
+SOURCE: ${news.source || 'Unknown'}
+
+REQUIREMENTS:
+1. Follow the formatting guidelines strictly
+2. Include proper HTML tags and emojis
+3. Translate ALL information to the target language
+4. Make content engaging and professional
+5. Include source attribution
+6. End with complete sentences` 
             }
           ],
-          max_tokens: 1800, // Increased for complete HTML content without cutting
+          max_tokens: 1800,
           temperature: 0.7
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('AI_TIMEOUT_30_SECONDS')), 30000))

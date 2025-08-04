@@ -17,6 +17,7 @@ import { unifiedFootballService } from './unified-football-service';
 import { aiImageGenerator } from './ai-image-generator';
 import { supabase } from '@/lib/supabase';
 import { getOpenAIClient } from '../api-keys';
+import { getTelegramPromptInstructions } from './telegram-prompt-instructions';
 
 export interface BettingPrediction {
   type: 'match_result' | 'both_teams_score' | 'over_under' | 'first_half' | 'corners' | 'cards';
@@ -971,87 +972,8 @@ export class BettingTipsGenerator {
         return this.enhanceBettingContent(content, analysis, request.language);
       }
 
-      // AI editing is now enabled with increased max_tokens to prevent timeouts
-      console.log('🤖 AI editing enabled with optimized token limits');
-
-      const systemPrompts = {
-        'en': `You are a professional football betting expert creating ULTRA-MODERN Telegram content. MANDATORY: Use ALL available HTML formatting features - BE EXTREMELY STRICT:
-
-🔥 REQUIRED HTML TAGS - USE EVERY RELEVANT ONE:
-• <b>BOLD</b> + <strong>STRONG</strong> - Team names, match results, key predictions
-• <i>ITALIC</i> + <em>EMPHASIS</em> - League names, match descriptions, reasoning
-• <u>UNDERLINE</u> + <ins>UNDERLINE</ins> - Highlight best odds, high confidence tips
-• <s>STRIKETHROUGH</s> + <del>STRIKETHROUGH</del> - Show unlikely outcomes crossed out
-• <code>MONOSPACE</code> - ALL odds, percentages, scores, confidence levels
-• <pre>PREFORMATTED</pre> - Structured odds tables when multiple predictions
-• <span class="tg-spoiler">SPOILER</span> - Hide surprise predictions for dramatic effect
-
-🎯 STRICT FORMATTING RULES:
-• Team names: <b><strong>TEAM NAME</strong></b>
-• Odds: <u><code>X.XX</code></u> (underlined monospace)
-• Confidence: <u><code>XX%</code></u> (underlined monospace)
-• High confidence (80%+): <b><u><code>XX%</code></u></b>
-• League: <i><em>League Name</em></i>
-• Best tips: <b><i><u>TRIPLE FORMATTING</u></i></b>
-• Surprise predictions: <span class="tg-spoiler">HIDDEN TIP</span>
-• Box characters for ALL borders: ━ ┏ ┓ ┗ ┛ ┃ ┣ ┫ ┳ ┻ ╋
-
-CRITICAL: NO plain text allowed - EVERY element must use appropriate HTML formatting!`,
-        
-        'am': `እርስዎ በአማርኛ የእግር ኳስ ውርርድ ባለሙያ ነዎት። አስገዳጅ: ሁሉንም የሚገኙ HTML ባህሪያት ይጠቀሙ - በጣም ጥብቅ ይሁኑ:
-
-🔥 ያስፈልጋሉ HTML ታጎች - ሁሉንም ተዛማጅ ይጠቀሙ:
-• <b>ደማቅ</b> + <strong>ጠንካራ</strong> - የቡድን ስሞች፣ ዋና ትንበያዎች
-• <i>ዘንበል</i> + <em>አጽንኦት</em> - የሊግ ስሞች፣ መግለጫዎች  
-• <u>ስር መስመር</u> + <ins>ማጉላት</ins> - ምርጥ ዕድሎች፣ ከፍተኛ እምነት
-• <s>መሰረዝ</s> + <del>መሰረዝ</del> - አመቻች የማይሆኑ ውጤቶች
-• <code>ሞኖስፔስ</code> - ሁሉም ዕድሎች፣ ፐርሰንቴጅ፣ ውጤቶች
-• <span class="tg-spoiler">ስፖይለር</span> - የሚገርሙ ትንበያዎች መደበቅ
-
-🎯 ጥብቅ ደንቦች: የቡድን ስሞች <b><strong>ስም</strong></b>፣ ዕድሎች <u><code>X.XX</code></u>፣ እምነት <u><code>XX%</code></u>
-ወሳኝ: ግላዊ ጽሑፍ አይፈቀድም - ሁሉም ንጥል HTML ቅርጸት ይጠቀም!`,
-        
-        'sw': `Wewe ni mtaalamu wa kamari za mpira wa miguu. LAZIMA: Tumia VIPENGELE VYOTE vya HTML - kuwa mkali sana:
-
-🔥 HTML TAGS ZINAZOHITAJIKA - tumia kila moja inayohusiana:
-• <b>NZITO</b> + <strong>IMARA</strong> - majina ya timu, mapendekezo makuu
-• <i>ITALIKI</i> + <em>MSISITIZO</em> - majina ya ligi, maelezo
-• <u>MSTARI CHINI</u> + <ins>JAA</ins> - uwezekano bora, ujasiri mkuu
-• <s>FUTA</s> + <del>FUTA</del> - matokeo yasiyo na uwezekano
-• <code>MONOSPACE</code> - uwezekano wote, asilimia, matokeo  
-• <span class="tg-spoiler">SPOILER</span> - mapendekezo ya kushangaza yafiче
-
-🎯 Sheria kali: majina ya timu <b><strong>JINA</strong></b>, uwezekano <u><code>X.XX</code></u>, ujasiri <u><code>XX%</code></u>
-MUHIMU: Hakuna maandishi ya uchi - kila kitu lazima kitumie HTML!`,
-
-        'fr': `Vous êtes un expert amical en paris de football qui crée du contenu Telegram moderne avec formatage HTML. Rédigez des conseils de paris en utilisant les balises HTML (<b>, <i>, <code>) et les caractères Unicode de dessin de boîte. Formatez comme ceci:
-
-<b>🎯 CONSEILS DE PARIS: Équipe A vs Équipe B</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 PRÉDICTIONS PRINCIPALES</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>Résultat du Match:</b> Victoire Domicile
-┃ 💰 <code>Cotes: 1.85</code> | <i>Confiance: 80%</i>
-┃ 📝 Forte forme à domicile et avantage
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-Terminez par un rappel de jeu responsable.`,
-
-        'ar': `أنت خبير ودود في رهانات كرة القدم تقوم بإنشاء محتوى تيليجرام حديث بتنسيق HTML. اكتب نصائح الرهان باستخدام علامات HTML (<b>, <i>, <code>) وأحرف رسم الصندوق Unicode. قم بالتنسيق كما يلي:
-
-<b>🎯 نصائح الرهان: الفريق أ ضد الفريق ب</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 التوقعات الرئيسية</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>نتيجة المباراة:</b> فوز الفريق المضيف
-┃ 💰 <code>الاحتمالات: 1.85</code> | <i>الثقة: 80%</i>
-┃ 📝 قوة في الملعب والأفضلية
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-انته بتذكير بالمقامرة المسؤولة.`
-      };
+      // Use the new standardized prompt system
+      console.log('🤖 AI editing with standardized Telegram formatting instructions');
 
       // Build detailed analysis data for AI
       const analysisData = {
@@ -1105,123 +1027,10 @@ Terminez par un rappel de jeu responsable.`,
         }))
       };
 
-      const languageInstructions = {
-        'en': `Write modern Telegram betting tips using HTML formatting and Unicode box drawing characters. Format like this:
-
-<b>🎯 BETTING TIPS: [Team A] vs [Team B]</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 TOP PREDICTIONS</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>Tip 1:</b> [Prediction]
-┃ 💰 <code>Odds: [X.XX]</code> | <i>Confidence: XX%</i>
-┃ 📝 [Short reasoning]
-┃
-┃ ⚽ <b>Tip 2:</b> [Prediction]  
-┃ 💰 <code>Odds: [X.XX]</code> | <i>Confidence: XX%</i>
-┃ 📝 [Short reasoning]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-⚠️ <i>Bet responsibly. 18+ only.</i>
-
-MUST use HTML tags: <b> for bold, <i> for italic, <code> for odds.
-MUST use Unicode box characters: ━ ┏ ┓ ┗ ┛ ┃`,
-      
-        'am': `የዘመናዊ ቴሌግራም የውርርድ ምክሮችን የHTML ፎርማቲንግ እና የዩኒኮድ ሳጥን ቅርጾችን ተጠቅመው ይፃፉ። እንደዚህ ይቅረጹ:
-
-<b>🎯 የውርርድ ምክሮች: [ቡድን ሀ] በተቃ [ቡድን ለ]</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 ተመራጭ ትንበያዎች</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>ምክር 1:</b> [ትንበያ]
-┃ 💰 <code>ዕድል: [X.XX]</code> | <i>እምነት: XX%</i>
-┃ 📝 [አጭር ምክንያት]
-┃
-┃ ⚽ <b>ምክር 2:</b> [ትንበያ]
-┃ 💰 <code>ዕድል: [X.XX]</code> | <i>እምነት: XX%</i>
-┃ 📝 [አጭር ምክንያት]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-⚠️ <i>በኃላፊነት ውርርድ ያድርጉ። 18+ ብቻ።</i>
-
-HTML መለያዎችን መጠቀም አለብዎት: <b> ለቦልድ, <i> ለኢታሊክ, <code> ለዕድል።
-የዩኒኮድ ሳጥን ቁምፊዎችን መጠቀም አለብዎት: ━ ┏ ┓ ┗ ┛ ┃`,
-      
-        'sw': `Andika mapendekezo ya kisasa ya Telegram ya kamari ukitumia muundo wa HTML na alama za kisanduku za Unicode. Tengeneza kama hivi:
-
-<b>🎯 MAPENDEKEZO YA KAMARI: [Timu A] dhidi ya [Timu B]</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 UTABIRI WA KILELE</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>Pendekezo 1:</b> [Utabiri]
-┃ 💰 <code>Uwezekano: [X.XX]</code> | <i>Ujasiri: XX%</i>
-┃ 📝 [Sababu fupi]
-┃
-┃ ⚽ <b>Pendekezo 2:</b> [Utabiri]
-┃ 💰 <code>Uwezekano: [X.XX]</code> | <i>Ujasiri: XX%</i>
-┃ 📝 [Sababu fupi]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-⚠️ <i>Kamari kwa busara. Miaka 18+ tu.</i>
-
-LAZIMA utumie lebo za HTML: <b> kwa bold, <i> kwa italic, <code> kwa uwezekano.
-LAZIMA utumie alama za kisanduku za Unicode: ━ ┏ ┓ ┗ ┛ ┃`,
-
-        'fr': `Rédigez des conseils de paris Telegram modernes en utilisant le formatage HTML et les caractères de dessin de boîte Unicode. Formatez comme ceci:
-
-<b>🎯 CONSEILS DE PARIS: [Équipe A] vs [Équipe B]</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 PRÉDICTIONS PRINCIPALES</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>Conseil 1:</b> [Prédiction]
-┃ 💰 <code>Cotes: [X.XX]</code> | <i>Confiance: XX%</i>
-┃ 📝 [Raison courte]
-┃
-┃ ⚽ <b>Conseil 2:</b> [Prédiction]
-┃ 💰 <code>Cotes: [X.XX]</code> | <i>Confiance: XX%</i>
-┃ 📝 [Raison courte]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-⚠️ <i>Pariez de manière responsable. 18+ seulement.</i>
-
-DOIT utiliser les balises HTML: <b> pour gras, <i> pour italique, <code> pour cotes.
-DOIT utiliser les caractères de boîte Unicode: ━ ┏ ┓ ┗ ┛ ┃`,
-
-        'ar': `اكتب نصائح رهان تيليجرام حديثة باستخدام تنسيق HTML وأحرف رسم الصندوق Unicode. قم بالتنسيق كما يلي:
-
-<b>🎯 نصائح الرهان: [الفريق أ] ضد [الفريق ب]</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-<b>💰 التوقعات الرئيسية</b>
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 🏆 <b>نصيحة 1:</b> [التوقع]
-┃ 💰 <code>الاحتمالات: [X.XX]</code> | <i>الثقة: XX%</i>
-┃ 📝 [سبب مختصر]
-┃
-┃ ⚽ <b>نصيحة 2:</b> [التوقع]
-┃ 💰 <code>الاحتمالات: [X.XX]</code> | <i>الثقة: XX%</i>
-┃ 📝 [سبب مختصر]
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-⚠️ <i>راهن بمسؤولية. +18 فقط.</i>
-
-يجب استخدام علامات HTML: <b> للعريض، <i> للمائل، <code> للاحتمالات.
-يجب استخدام أحرف الصندوق Unicode: ━ ┏ ┓ ┗ ┛ ┃`
-      };
-
-      // Fix undefined language by defaulting to English
+      // Get standardized Telegram formatting instructions
       const safeLanguage = request.language || 'en';
-      const systemPrompt = systemPrompts[safeLanguage] || systemPrompts['en'];
-      const languageInstruction = languageInstructions[safeLanguage] || languageInstructions['en'];
+      const formattingInstructions = getTelegramPromptInstructions('betting', safeLanguage);
       
-      if (!systemPrompt || !languageInstruction) {
-        console.error(`❌ Missing prompts for language: ${safeLanguage}, falling back to template`);
-        return this.enhanceBettingContent(content, analysis, safeLanguage);
-      }
-
       if (!openai) {
         console.error(`❌ OpenAI client is null, falling back to template`);
         return this.enhanceBettingContent(content, analysis, safeLanguage);
@@ -1232,28 +1041,29 @@ DOIT utiliser les caractères de boîte Unicode: ━ ┏ ┓ ┗ ┛ ┃`,
         messages: [
           { 
             role: "system", 
-            content: systemPrompt
+            content: formattingInstructions
           },
           { 
             role: "user", 
-            content: `${languageInstruction}
+            content: `Create professional betting tips for this exact match using the analysis data below:
 
 MATCH ANALYSIS DATA:
 ${JSON.stringify(analysisData, null, 2)}
 
-INSTRUCTIONS:
+REQUIREMENTS:
 1. Use the EXACT predictions from the data above
 2. Include the SPECIFIC odds and confidence levels provided
 3. Reference the actual team statistics and head-to-head data
 4. Make each betting tip specific and actionable
 5. Use the team names, competition, and venue information
 6. Include risk levels and value ratings where available
+7. Follow the Telegram formatting guidelines strictly
 
-Create betting tips that are specific to this exact match with the provided data.` 
+Generate content that matches the professional standards outlined in the system instructions.` 
           }
         ],
-        max_tokens: 1500, // Increased for complete HTML content without cutting
-        temperature: 0.7 // Balanced creativity and accuracy
+        max_tokens: 1500,
+        temperature: 0.7
       });
 
       const enhancedContent = response.choices[0]?.message?.content?.trim();
